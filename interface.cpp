@@ -94,15 +94,12 @@ class TensorFile {
         // ?
 
         auto long_extents = this->get_tensor_extents(tensor_name);
-        // shorten extents to non -1
         auto num_nonzero =
             long_extents.size() -
             std::count(long_extents.begin(), long_extents.end(), -1);
-        std::pmr::vector<int> extents(long_extents.begin(),
-                                      long_extents.begin() + num_nonzero);
-        auto total_size = std::accumulate(extents.begin(), extents.end(), 1,
+        return std::accumulate(long_extents.begin(),
+                                          long_extents.begin() + num_nonzero, 1,
                                           std::multiplies<size_t>());
-        return total_size;
     }
 
     size_t get_nnz(std::string tensor_name) {
@@ -125,9 +122,15 @@ class TensorFile {
                            const int *permutation = nullptr) {
         // This function will read the whole file and load the tensor,
         // optionally transposing it according to the permutation
-        for (size_t i = 0; i < this->get_num_tensor_elements(tensor_name);
-             i++) {
-            tensor[i] = static_cast<std::byte>(i);  // chunk from weightFormat
+        const auto num_elements = this->get_num_tensor_elements(tensor_name);
+        assert(sizeof_weight_format<weightFormat>() ==
+               4);  // assume float for now
+        for (size_t i = 0; i < num_elements; i++) {
+            float f = static_cast<float>(i);
+            auto b = reinterpret_cast<std::byte *>(&f);
+            for (size_t j = 0; j != sizeof(float); ++j) {
+                tensor[i * sizeof(float) + j] = b[j];
+            }
         }
     }
 
@@ -137,10 +140,11 @@ class TensorFile {
                             int *first_indices, int *second_indices) {
         // This function will read the whole file and load the tensor into the
         // three arrays
-        for (int i = 0; i < 10; i++) {
+        const auto num_nonzero = this->get_nnz(tensor_name);
+        for (int i = 0; i < num_nonzero; ++i) {
             values[i] = static_cast<std::byte>(i);  // chunk from weightFormat;
             first_indices[i] = i;
-            second_indices[i] = i;
+            second_indices[i] = i;  // TODO implement
         }
     }
 
@@ -167,9 +171,9 @@ load_tensor_dense(std::string filename, std::string tensor_name,
                        std::count(long_extents.begin(), long_extents.end(), -1);
     std::pmr::vector<int> true_extents(
         long_extents.begin(), long_extents.begin() + num_nonzero, allocator);
-    // true_extents.assign();
     auto total_size = std::accumulate(true_extents.begin(), true_extents.end(),
                                       1, std::multiplies<size_t>());
+
     std::pmr::vector<value_type> tensor(allocator);
     if constexpr (std::is_same_v<value_type, std::byte>) {
     tensor.resize(total_size * sizeof_weight_format<weight_format>());
@@ -177,7 +181,8 @@ load_tensor_dense(std::string filename, std::string tensor_name,
         tensor.resize(total_size);
     }
     dalotia_file.load_tensor_dense<weight_format, ordering>(
-        tensor_name, tensor.data(), permutation.data());
+        tensor_name, reinterpret_cast<std::byte *>(tensor.data()),
+        permutation.data());
     return std::make_pair(true_extents, tensor);
 }
 
@@ -377,6 +382,14 @@ int main(int argc, char *argv[]) {
     auto [extents, tensor_cpp] =
         dalotia::load_tensor_dense<dalotia_float_32>(filename, tensor_name);
 
+    // small tensors can even live on the stack!
+    std::array<float, 100> storage_array;
+    std::pmr::monotonic_buffer_resource storage_resource(
+        storage_array.data(), storage_array.size() * sizeof(float));
+    std::pmr::polymorphic_allocator<float> storage_allocator(&storage_resource);
+    auto [extents2, tensor_cpp2] =
+        dalotia::load_tensor_dense<dalotia_float_32, float>(
+            filename, tensor_name, storage_allocator);
     //... // do something with the tensor
     // everything alex calls a runtime = possibly jit compiled
 
