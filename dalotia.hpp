@@ -1,8 +1,11 @@
+#pragma once
+
 #include <stdio.h>
 
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <iostream>  //TODO remove
 #include <memory>
 #include <memory_resource>
 #include <numeric>
@@ -63,9 +66,15 @@ constexpr uint8_t sizeof_weight_format() {
 class TensorFile {
    public:
     TensorFile(std::string filename) {
-        this->file_ = std::fopen(filename.c_str(), "rb");
+        bool opened = (this->file_ = fopen(filename.c_str(), "rb"));
+        if (!opened) {
+            throw std::runtime_error("Could not open file " + filename);
+        }
     }
-    ~TensorFile() { std::fclose(this->file_); }
+    ~TensorFile() { 
+        assert(this->file_ != nullptr);
+        fclose(this->file_);
+    }
 
     bool is_sparse(std::string tensor_name) {
         // This function will (lazily) read the file and return true if the
@@ -98,8 +107,8 @@ class TensorFile {
             long_extents.size() -
             std::count(long_extents.begin(), long_extents.end(), -1);
         return std::accumulate(long_extents.begin(),
-                                          long_extents.begin() + num_nonzero, 1,
-                                          std::multiplies<size_t>());
+                               long_extents.begin() + num_nonzero, 1,
+                               std::multiplies<size_t>());
     }
 
     size_t get_nnz(std::string tensor_name) {
@@ -149,7 +158,7 @@ class TensorFile {
     }
 
     // no private section to allow visibility from C
-    std::FILE *file_;
+    FILE *file_ = nullptr;
 };
 
 // C++17 version -> will not compile on Fugaku...
@@ -176,7 +185,7 @@ load_tensor_dense(std::string filename, std::string tensor_name,
 
     std::pmr::vector<value_type> tensor(allocator);
     if constexpr (std::is_same_v<value_type, std::byte>) {
-    tensor.resize(total_size * sizeof_weight_format<weight_format>());
+        tensor.resize(total_size * sizeof_weight_format<weight_format>());
     } else {
         tensor.resize(total_size);
     }
@@ -229,12 +238,12 @@ extern "C" int get_nnz(DalotiaTensorFile *file, const char *tensor_name) {
 
 extern "C" int get_tensor_extents(DalotiaTensorFile *file,
                                   const char *tensor_name, int *extents) {
-    int num_dimensions =
-        reinterpret_cast<dalotia::TensorFile *>(file)->get_num_dimensions(
-            tensor_name);
+    auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
+    int num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
+
     std::array<int, 10> extents_array =
-        reinterpret_cast<dalotia::TensorFile *>(file)->get_tensor_extents(
-            tensor_name);
+        dalotia_file->get_tensor_extents(tensor_name);
+
     std::copy(extents_array.begin(), extents_array.end(), extents);
     return num_dimensions;
 }
@@ -313,88 +322,3 @@ extern "C" void load_tensor_sparse(DalotiaTensorFile *file,
     }
 }
 // TODO ...also with permutation and named tensors...
-
-// application code
-
-int main(int argc, char *argv[]) {
-    char *filename = "data.txt";
-    char *tensor_name = "layer_12";
-    DalotiaTensorFile *file = open_file(filename);
-    bool tensor_is_sparse =
-        is_sparse(file, "dense_layer_12");  //...repeat later
-    char *tensor;
-    dalotia_WeightFormat weightFormat = dalotia_WeightFormat::dalotia_float_32;
-    dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
-    if (!tensor_is_sparse) {
-        // get the tensor extents
-        int extents[10];  // ? or call get_num_dimensions before?
-                          // file formats: gguf, safetensors, onnx? channel
-                          // orders? gguf with quantized ops?
-                          // -> look at dnnl, darknet, safetensors-cpp, tinyml?
-                          // torch: named dimensions tensor name data format
-                          // data shape offsets
-        int num_dimensions = get_tensor_extents(file, tensor_name, extents);
-
-        // calculate the total number of elements
-        int total_size = 1;
-        for (int i = 0; i < 10; i++) {
-            if (extents[i] == -1) {
-                assert(i > 0);
-                break;
-            }
-            total_size *= extents[i];
-        }
-
-        assert(total_size == get_num_tensor_elements(file, tensor_name));
-
-        // I want to store the tensor as a very long array
-        // allocate memory for the tensor
-        tensor = (char *)malloc(sizeof(float) * total_size);
-
-        // load the tensor
-        int permutation[3] = {2, 1, 0};
-
-        // load_tensor_dense_with_permutation(file, tensor_name, tensor,
-        //                                    weightFormat, ordering,
-        //                                    permutation);
-        load_tensor_dense(file, tensor_name, tensor, weightFormat, ordering);
-    } else {
-        dalotia_SparseFormat format = dalotia_SparseFormat::dalotia_CSR;
-        // get the tensor extents
-        int extents[10];
-        int num_dimensions = get_tensor_extents(file, tensor_name, extents);
-
-        int sparse_extents[10];
-        get_sparse_tensor_extents(file, tensor_name, sparse_extents,
-                                  dalotia_CSR);
-
-        // I want to store the tensor as compressed sparse row
-        char *values = reinterpret_cast<char *>(
-            new float[sparse_extents[0]]);  // blah blah malloc...
-        int *first_indices = new int[sparse_extents[1]];
-        int *second_indices = new int[sparse_extents[2]];
-        load_tensor_sparse(file, tensor_name, values, first_indices,
-                           second_indices, format, weightFormat, ordering);
-    }
-    close_file(file);
-
-    // alternative: the C++17 version
-    auto [extents, tensor_cpp] =
-        dalotia::load_tensor_dense<dalotia_float_32>(filename, tensor_name);
-
-    // small tensors can even live on the stack!
-    std::array<float, 100> storage_array;
-    std::pmr::monotonic_buffer_resource storage_resource(
-        storage_array.data(), storage_array.size() * sizeof(float));
-    std::pmr::polymorphic_allocator<float> storage_allocator(&storage_resource);
-    auto [extents2, tensor_cpp2] =
-        dalotia::load_tensor_dense<dalotia_float_32, float>(
-            filename, tensor_name, storage_allocator);
-    //... // do something with the tensor
-    // everything alex calls a runtime = possibly jit compiled
-
-    // example: nicam ai, genesis, ...reconstruct?
-    // run here with cuDNN, or BLIS, or...
-
-    return 0;
-}

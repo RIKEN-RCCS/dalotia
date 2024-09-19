@@ -1,0 +1,125 @@
+#include <array>
+#include <cassert>
+#include <iostream>  //TODO remove
+#include <memory_resource>
+#include <string>
+#include <vector>
+
+#include "dalotia.hpp"
+
+// application code
+
+int main(int argc, char *argv[]) {
+    char *filename = "data.txt";
+    char *tensor_name = "layer_12";
+    DalotiaTensorFile *file = open_file(filename);
+    bool tensor_is_sparse =
+        is_sparse(file, "dense_layer_12");  //...repeat later
+    char *tensor;
+    dalotia_WeightFormat weightFormat = dalotia_WeightFormat::dalotia_float_32;
+    dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
+
+    if (!tensor_is_sparse) {
+        // get the tensor extents
+        int extents[10];  // ? or call get_num_dimensions before?
+                          // file formats: gguf, safetensors, onnx? channel
+                          // orders? gguf with quantized ops?
+                          // -> look at dnnl, darknet, safetensors-cpp, tinyml?
+                          // torch: named dimensions tensor name data format
+                          // data shape offsets
+        int num_dimensions = get_tensor_extents(file, tensor_name, extents);
+
+        // calculate the total number of elements
+        int total_size = 1;
+        for (int i = 0; i < 10; i++) {
+            if (extents[i] == -1) {
+                assert(i > 0);
+                break;
+            }
+            total_size *= extents[i];
+        }
+
+        assert(total_size == get_num_tensor_elements(file, tensor_name));
+
+        // I want to store the tensor as a very long array
+        // allocate memory for the tensor
+        tensor = (char *)malloc(sizeof(float) * total_size);
+
+        // load the tensor
+        int permutation[3] = {2, 1, 0};
+
+        // load_tensor_dense_with_permutation(file, tensor_name, tensor,
+        //                                    weightFormat, ordering,
+        //                                    permutation);
+        load_tensor_dense(file, tensor_name, tensor, weightFormat, ordering);
+    } else {
+        dalotia_SparseFormat format = dalotia_SparseFormat::dalotia_CSR;
+        // get the tensor extents
+        int extents[10];
+        int num_dimensions = get_tensor_extents(file, tensor_name, extents);
+
+        for (int i = 0; i < 10; i++) {
+            if (extents[i] == -1) {
+                assert(i > 0);
+                break;
+            }
+            std::cout << extents[i] << " ";
+        }
+        int sparse_extents[10];
+        get_sparse_tensor_extents(file, tensor_name, sparse_extents,
+                                  dalotia_CSR);
+
+        for (int i = 0; i < 10; i++) {
+            if (sparse_extents[i] == -1) {
+                assert(i > 0);
+                break;
+            }
+            std::cout << sparse_extents[i] << " ";
+        }
+
+        // I want to store the tensor as compressed sparse row
+        char *values = reinterpret_cast<char *>(
+            new float[sparse_extents[0]]);  // blah blah malloc...
+        int *first_indices = new int[sparse_extents[1]];
+        int *second_indices = new int[sparse_extents[2]];
+        load_tensor_sparse(file, tensor_name, values, first_indices,
+                           second_indices, format, weightFormat, ordering);
+    }
+    close_file(file);
+
+    // alternative: the C++17 version
+    auto [extents, tensor_cpp] =
+        dalotia::load_tensor_dense<dalotia_float_32>(filename, tensor_name);
+
+    // small tensors can even live on the stack!
+    std::array<float, 100> storage_array;
+    std::pmr::monotonic_buffer_resource storage_resource(
+        storage_array.data(), storage_array.size() * sizeof(float));
+    std::pmr::polymorphic_allocator<float> storage_allocator(&storage_resource);
+    auto [extents2, tensor_cpp2] =
+        dalotia::load_tensor_dense<dalotia_float_32, float>(
+            filename, tensor_name, storage_allocator);
+
+    for (int i = 0; i < storage_array.size(); ++i) {
+        std::cout << storage_array[i] << " ";
+    }
+    std::cout << std::endl;
+
+    for (int i = 0; i < extents2.size(); ++i) {
+        std::cout << extents2[i] << " ";
+    }
+    std::cout << std::endl;
+
+    for (int i = 0; i < tensor_cpp2.size(); ++i) {
+        std::cout << tensor_cpp2[i] << " ";
+    }
+    std::cout << std::endl;
+
+    //... // do something with the tensor
+    // everything alex calls a runtime = possibly jit compiled
+
+    // example: nicam ai, genesis, ...reconstruct?
+    // run here with cuDNN, or BLIS, or...
+
+    return 0;
+}
