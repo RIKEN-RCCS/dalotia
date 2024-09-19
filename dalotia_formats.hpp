@@ -16,6 +16,7 @@ enum dalotia_SparseFormat  // cannot be scoped to allow for C interface
 //  https://dl.acm.org/doi/abs/10.1145/3447818.3461703 could be interesting
 
 enum dalotia_WeightFormat {
+    dalotia_float_64,
     dalotia_float_32,
     dalotia_float_16,
     dalotia_float_8,
@@ -31,8 +32,10 @@ enum dalotia_Ordering {
 namespace dalotia {
 
 template <dalotia_WeightFormat format>
-constexpr uint8_t sizeof_weight_format() {
-    if constexpr (format == dalotia_float_32) {
+constexpr int8_t sizeof_weight_format() {
+    if constexpr (format == dalotia_float_64) {
+        return 8;
+    } else if constexpr (format == dalotia_float_32) {
         return 4;
     } else if constexpr (format == dalotia_float_16) {
         return 2;
@@ -46,19 +49,23 @@ constexpr uint8_t sizeof_weight_format() {
 }
 
 // runtime version
-uint8_t sizeof_weight_format(dalotia_WeightFormat format) {
+int8_t sizeof_weight_format(dalotia_WeightFormat format) {
+    // TODO is there a nicer (visitor-like) way to do this?
     switch (format) {
+        case dalotia_float_64:
+            return sizeof_weight_format<dalotia_float_64>();
         case dalotia_float_32:
-            return 4;
+            return sizeof_weight_format<dalotia_float_32>();
         case dalotia_float_16:
-            return 2;
+            return sizeof_weight_format<dalotia_float_16>();
         case dalotia_float_8:
-            return 1;
+            return sizeof_weight_format<dalotia_float_8>();
         case dalotia_bfloat_16:
-            return 2;
+            return sizeof_weight_format<dalotia_bfloat_16>();
         case dalotia_int_2:
-            return 1;
-        default :
+            return sizeof_weight_format<dalotia_int_2>();
+
+        default:
             throw std::runtime_error("Invalid weight format");
     }
 }

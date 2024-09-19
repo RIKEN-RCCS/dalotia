@@ -2,9 +2,9 @@
 #include "safetensors.hh"
 
 namespace dalotia {
-class Safetensors : public TensorFile {
+class SafetensorsFile : public TensorFile {
    public:
-    Safetensors(std::string filename) : TensorFile(filename) {
+    SafetensorsFile(std::string filename) : TensorFile(filename) {
         std::string warn, err;
         bool ret = safetensors::mmap_from_file(filename, &st, &warn, &err);
         if (warn.size() > 0) {
@@ -15,7 +15,7 @@ class Safetensors : public TensorFile {
             std::cerr << "  ERR: " << err << "\n";
             throw std::runtime_error("Could not open file " + filename);
         }
-        // Check if data_offsets are valid.
+        // Check if data_offsets are valid
         if (!safetensors::validate_data_offsets(st, err)) {
             std::cerr << "Invalid data_offsets\n";
             std::cerr << err << "\n";
@@ -23,7 +23,7 @@ class Safetensors : public TensorFile {
         }
     }
 
-    ~Safetensors() {
+    ~SafetensorsFile() {
         if (st.st_file != nullptr) {
             //?free  // TODO not sure where ownership is
         }
@@ -56,9 +56,7 @@ class Safetensors : public TensorFile {
     }
 
     size_t get_num_dimensions(std::string tensor_name) override {
-        std::cout << "get_num_dimensions " << tensor_name << std::endl;
         safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name);
-        std::cout << "get_num_dimensions " << safetensor.shape.size() << std::endl;
         return safetensor.shape.size();
     }
 
@@ -99,6 +97,8 @@ class Safetensors : public TensorFile {
                 auto element_pointer = databuffer + safetensor.data_offsets[0] +
                                        i * file_item_bytes;
                 // TODO cast from safetensor.dtype to weightFormat -- how ???
+                // use gmpxx? use quantization things?
+                assert(load_item_bytes == file_item_bytes);
                 for (size_t j = 0; j < load_item_bytes; ++j) {
                     tensor[i * load_item_bytes + j] =
                         static_cast<std::byte>(element_pointer[j]);

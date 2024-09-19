@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     bool tensor_is_sparse =
         is_sparse(file, tensor_name);  //...repeat later
     char *tensor;
-    dalotia_WeightFormat weightFormat = dalotia_WeightFormat::dalotia_float_32;
+    constexpr dalotia_WeightFormat weightFormat = dalotia_WeightFormat::dalotia_float_64;
     dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
 
     std::cout << "tensor is sparse: " << tensor_is_sparse << std::endl;
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 
         // I want to store the tensor as a very long array
         // allocate memory for the tensor
-        tensor = (char *)malloc(sizeof(float) * total_size);
+        tensor = (char *)malloc(dalotia::sizeof_weight_format<weightFormat>() * total_size);
 
         // load the tensor
         int permutation[3] = {2, 1, 0};
@@ -103,16 +103,16 @@ int main(int argc, char *argv[]) {
 
     // alternative: the C++17 version
     auto [extents, tensor_cpp] =
-        dalotia::load_tensor_dense(filename, tensor_name, dalotia_float_32);
+        dalotia::load_tensor_dense(filename, tensor_name, weightFormat);
 
     // small tensors can even live on the stack!
-    std::array<float, 100> storage_array;
+    std::array<double, 300> storage_array;
     std::pmr::monotonic_buffer_resource storage_resource(
-        storage_array.data(), storage_array.size() * sizeof(float));
-    std::pmr::polymorphic_allocator<float> storage_allocator(&storage_resource);
+        storage_array.data(), storage_array.size() * sizeof(double));
+    std::pmr::polymorphic_allocator<std::byte> storage_allocator(&storage_resource);
     auto [extents2, tensor_cpp2] =
-        dalotia::load_tensor_dense<float>(
-            filename, tensor_name, dalotia_float_32, dalotia_C_ordering, storage_allocator);
+        dalotia::load_tensor_dense<double>(
+            filename, tensor_name, weightFormat, dalotia_C_ordering, storage_allocator);
 
     for (int i = 0; i < storage_array.size(); ++i) {
         std::cout << storage_array[i] << " ";
