@@ -10,14 +10,16 @@
 // application code
 
 int main(int argc, char *argv[]) {
-    char *filename = "data.txt";
-    char *tensor_name = "layer_12";
+    char *filename = "model.safetensors";
+    char *tensor_name = "weight2";
     DalotiaTensorFile *file = open_file(filename);
     bool tensor_is_sparse =
-        is_sparse(file, "dense_layer_12");  //...repeat later
+        is_sparse(file, tensor_name);  //...repeat later
     char *tensor;
     dalotia_WeightFormat weightFormat = dalotia_WeightFormat::dalotia_float_32;
     dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
+
+    std::cout << "tensor is sparse: " << tensor_is_sparse << std::endl;
 
     if (!tensor_is_sparse) {
         // get the tensor extents
@@ -28,6 +30,7 @@ int main(int argc, char *argv[]) {
                           // torch: named dimensions tensor name data format
                           // data shape offsets
         int num_dimensions = get_tensor_extents(file, tensor_name, extents);
+        std::cout << "num_dim: " << num_dimensions << std::endl;
 
         // calculate the total number of elements
         int total_size = 1;
@@ -40,6 +43,7 @@ int main(int argc, char *argv[]) {
         }
 
         assert(total_size == get_num_tensor_elements(file, tensor_name));
+        std::cout << "total size: " << total_size << std::endl;
 
         // I want to store the tensor as a very long array
         // allocate memory for the tensor
@@ -87,9 +91,19 @@ int main(int argc, char *argv[]) {
     }
     close_file(file);
 
+    // print
+    if (!tensor_is_sparse) {
+        double* tensor_double = reinterpret_cast<double*>(tensor);
+        for (int i = 0; i < 256; i++) {
+            std::cout << tensor_double[i] << " ";
+        }
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+
     // alternative: the C++17 version
     auto [extents, tensor_cpp] =
-        dalotia::load_tensor_dense<dalotia_float_32>(filename, tensor_name);
+        dalotia::load_tensor_dense(filename, tensor_name, dalotia_float_32);
 
     // small tensors can even live on the stack!
     std::array<float, 100> storage_array;
@@ -97,8 +111,8 @@ int main(int argc, char *argv[]) {
         storage_array.data(), storage_array.size() * sizeof(float));
     std::pmr::polymorphic_allocator<float> storage_allocator(&storage_resource);
     auto [extents2, tensor_cpp2] =
-        dalotia::load_tensor_dense<dalotia_float_32, float>(
-            filename, tensor_name, storage_allocator);
+        dalotia::load_tensor_dense<float>(
+            filename, tensor_name, dalotia_float_32, dalotia_C_ordering, storage_allocator);
 
     for (int i = 0; i < storage_array.size(); ++i) {
         std::cout << storage_array[i] << " ";

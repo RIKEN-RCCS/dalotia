@@ -1,10 +1,9 @@
 #pragma once
 
-#include <stdio.h>
-
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <filesystem>
 #include <iostream>  //TODO remove
 #include <memory>
 #include <memory_resource>
@@ -12,192 +11,42 @@
 #include <string>
 #include <vector>
 
-// for safetensors, should definitely use
-// https://github.com/syoyo/safetensors-cpp
+#include "dalotia_formats.hpp"
+#include "tensor_file.hpp"
 
-// C++ library code
-
-enum dalotia_SparseFormat  // cannot be scoped to allow for C interface
-{
-    dalotia_CSR,
-    dalotia_COO
-};  //? compressed formats for d > 2? -> NO common ones
-//  pytorch uses M+K, but M is always 2, K is dense
-//  onnx also has only 2d sparse tensors, same for tensorflow
-//  compressed-tensors (recent, based on safetensors): only bitmask compression,
-//  but for arbitrary dimensions
-//  ALTO https://github.com/IntelLabs/ALTO /
-//  https://dl.acm.org/doi/abs/10.1145/3447818.3461703 could be interesting
-
-enum dalotia_WeightFormat {
-    dalotia_float_32,
-    dalotia_float_16,
-    dalotia_float_8,
-    dalotia_bfloat_16,
-    dalotia_int_2,
-};
-
-enum dalotia_Ordering {
-    dalotia_C_ordering,  // row-major: last index is most contiguous
-    dalotia_F_ordering,  // column-major: first index is most contiguous
-};
+#ifdef DALOTIA_WITH_SAFETENSORS_CPP
+#include "safetensors_file.hpp"
+#endif
 
 namespace dalotia {
-
-template <dalotia_WeightFormat format>
-constexpr uint8_t sizeof_weight_format() {
-    if constexpr (format == dalotia_float_32) {
-        return 4;
-    } else if constexpr (format == dalotia_float_16) {
-        return 2;
-    } else if constexpr (format == dalotia_float_8) {
-        return 1;
-    } else if constexpr (format == dalotia_bfloat_16) {
-        return 2;
-    } else if constexpr (format == dalotia_int_2) {
-        return 1;  // TODO a bit unhappy with this one
-    }
-}
-
-//? better pass around file pointer to opened file for efficiency? instead of
-// every function taking filename
-// then could have a class in C++ that opens the file and closes it in the
-// destructor
-class TensorFile {
-   public:
-    TensorFile(std::string filename) {
-        bool opened = (this->file_ = fopen(filename.c_str(), "rb"));
-        if (!opened) {
-            throw std::runtime_error("Could not open file " + filename);
-        }
-    }
-    ~TensorFile() { 
-        assert(this->file_ != nullptr);
-        fclose(this->file_);
+// factory function for the file, selected by file extension and
+// available implementations
+TensorFile *make_tensor_file(std::string filename) {
+    std::cout << "make_tensor_file " << filename << std::endl;
+    // make sure the file exists
+    if (!std::filesystem::exists(filename)) {
+        throw std::runtime_error("File " + filename + " does not exist");
     }
 
-    bool is_sparse(std::string tensor_name) {
-        // This function will (lazily) read the file and return true if the
-        // tensor is sparse
-        return true;
-    }
+    // check file extension
+    std::string extension = filename.substr(filename.find_last_of(".") + 1);
+    std::transform(extension.begin(), extension.end(), extension.begin(),
+                   ::tolower);
 
-    size_t get_num_dimensions(std::string tensor_name) {
-        // This function will (lazily) read the file and return the number of
-        // dimensions
-        return 3;
-    }
-
-    std::array<int, 10> get_tensor_extents(
-        std::string tensor_name =
-            "")  //? have the maximum number of dimensions = 10?
-    {
-        // This function will (lazily) read the file and return the tensor
-        // extents, passing -1 for "unused" dimensions
-        return {
-            5, 4, 3, -1, -1, -1, -1, -1, -1, -1,
-        };
-    }
-
-    size_t get_num_tensor_elements(std::string tensor_name) {
-        // ?
-
-        auto long_extents = this->get_tensor_extents(tensor_name);
-        auto num_nonzero =
-            long_extents.size() -
-            std::count(long_extents.begin(), long_extents.end(), -1);
-        return std::accumulate(long_extents.begin(),
-                               long_extents.begin() + num_nonzero, 1,
-                               std::multiplies<size_t>());
-    }
-
-    size_t get_nnz(std::string tensor_name) {
-        // This function will read the file and return the number of non-zero
-        // elements ? may take a while for dense tensors, only allow for sparse?
-        return 12;
-    }
-
-    template <dalotia_SparseFormat format>
-    std::array<int, 10> get_sparse_tensor_extents(std::string tensor_name) {
-        // This function will (lazily) read the file and return the tensor
-        // extents
-        return {
-            12, 12, 13, -1, -1, -1, -1, -1, -1, -1,
-        };
-    }
-
-    template <dalotia_WeightFormat weightFormat, dalotia_Ordering ordering>
-    void load_tensor_dense(std::string tensor_name, std::byte *tensor,
-                           const int *permutation = nullptr) {
-        // This function will read the whole file and load the tensor,
-        // optionally transposing it according to the permutation
-        const auto num_elements = this->get_num_tensor_elements(tensor_name);
-        assert(sizeof_weight_format<weightFormat>() ==
-               4);  // assume float for now
-        for (size_t i = 0; i < num_elements; i++) {
-            float f = static_cast<float>(i);
-            auto b = reinterpret_cast<std::byte *>(&f);
-            for (size_t j = 0; j != sizeof(float); ++j) {
-                tensor[i * sizeof(float) + j] = b[j];
-            }
-        }
-    }
-
-    template <dalotia_SparseFormat sparseFormat,
-              dalotia_WeightFormat weightFormat, dalotia_Ordering ordering>
-    void load_tensor_sparse(std::string tensor_name, std::byte *values,
-                            int *first_indices, int *second_indices) {
-        // This function will read the whole file and load the tensor into the
-        // three arrays
-        const auto num_nonzero = this->get_nnz(tensor_name);
-        for (int i = 0; i < num_nonzero; ++i) {
-            values[i] = static_cast<std::byte>(i);  // chunk from weightFormat;
-            first_indices[i] = i;
-            second_indices[i] = i;  // TODO implement
-        }
-    }
-
-    // no private section to allow visibility from C
-    FILE *file_ = nullptr;
-};
-
-// C++17 version -> will not compile on Fugaku...
-// -- pmr vector types can accept different allocators
-//? more memory interface than that? detect if CUDA device pointer through
-// unified access... how about other devices?
-template <
-    dalotia_WeightFormat weight_format, typename value_type = std::byte,
-    dalotia_Ordering ordering = dalotia_C_ordering>  //? or have no defaults?
-[[nodiscard]] std::pair<std::pmr::vector<int>, std::pmr::vector<value_type>>
-load_tensor_dense(std::string filename, std::string tensor_name,
-                  const std::pmr::polymorphic_allocator<std::byte> &allocator =
-                      std::pmr::polymorphic_allocator<std::byte>(),
-                  const std::pmr::vector<int> &permutation = {}) {
-    auto dalotia_file = TensorFile(filename);
-    auto long_extents = dalotia_file.get_tensor_extents(tensor_name);
-    // shorten extents to nonzeros
-    auto num_nonzero = long_extents.size() -
-                       std::count(long_extents.begin(), long_extents.end(), -1);
-    std::pmr::vector<int> true_extents(
-        long_extents.begin(), long_extents.begin() + num_nonzero, allocator);
-    auto total_size = std::accumulate(true_extents.begin(), true_extents.end(),
-                                      1, std::multiplies<size_t>());
-
-    std::pmr::vector<value_type> tensor(allocator);
-    if constexpr (std::is_same_v<value_type, std::byte>) {
-        tensor.resize(total_size * sizeof_weight_format<weight_format>());
+    // select the file implementation
+    if (extension == "txt") {
+        // TODO remove and throw errors in implementation, only for testing
+        return new TensorFile(filename);
+    } else if (extension == "safetensors") {
+#ifdef DALOTIA_WITH_SAFETENSORS_CPP
+        return new Safetensors(filename);
+#else   // DALOTIA_WITH_SAFETENSORS_CPP
+        throw std::runtime_error("Safetensors support not enabled");
+#endif  // DALOTIA_WITH_SAFETENSORS_CPP
     } else {
-        tensor.resize(total_size);
+        throw std::runtime_error("Unsupported file extension: ." + extension);
     }
-    dalotia_file.load_tensor_dense<weight_format, ordering>(
-        tensor_name, reinterpret_cast<std::byte *>(tensor.data()),
-        permutation.data());
-    return std::make_pair(true_extents, tensor);
 }
-
-// TODO same for sparse
-
-// TODO allow md-range sub-tensor requests
 }  // namespace dalotia
 
 // C / Fortran interface
@@ -208,7 +57,7 @@ typedef struct DalotiaTensorFile DalotiaTensorFile;
 
 extern "C" DalotiaTensorFile *open_file(const char *filename) {
     return reinterpret_cast<DalotiaTensorFile *>(
-        new dalotia::TensorFile(filename));
+        dalotia::make_tensor_file(std::string(filename)));
 }
 
 extern "C" void close_file(DalotiaTensorFile *file) {
@@ -255,9 +104,8 @@ extern "C" int get_sparse_tensor_extents(DalotiaTensorFile *file,
     int num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
     if (format == dalotia_SparseFormat::dalotia_CSR) {
         std::array<int, 10> extents_array =
-            dalotia_file
-                ->get_sparse_tensor_extents<dalotia_SparseFormat::dalotia_CSR>(
-                    tensor_name);
+            dalotia_file->get_sparse_tensor_extents(
+                tensor_name, dalotia_SparseFormat::dalotia_CSR);
         assert(extents_array[0] == dalotia_file->get_nnz(tensor_name));
         std::copy(extents_array.begin(), extents_array.end(), extents);
     } else {
@@ -273,24 +121,8 @@ extern "C" int load_tensor_dense(DalotiaTensorFile *file,
                                  dalotia_Ordering ordering) {
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
     auto byte_tensor = reinterpret_cast<std::byte *>(tensor);
-    if (format == dalotia_float_32 && ordering == dalotia_C_ordering) {
-        dalotia_file->load_tensor_dense<dalotia_float_32, dalotia_C_ordering>(
-            tensor_name, byte_tensor);
-    } else if (format == dalotia_float_16 && ordering == dalotia_C_ordering) {
-        dalotia_file->load_tensor_dense<dalotia_float_16, dalotia_C_ordering>(
-            tensor_name, byte_tensor);
-    } else if (format == dalotia_float_8 && ordering == dalotia_C_ordering) {
-        dalotia_file->load_tensor_dense<dalotia_float_8, dalotia_C_ordering>(
-            tensor_name, byte_tensor);
-    } else if (format == dalotia_bfloat_16 && ordering == dalotia_C_ordering) {
-        dalotia_file->load_tensor_dense<dalotia_bfloat_16, dalotia_C_ordering>(
-            tensor_name, byte_tensor);
-    } else if (format == dalotia_int_2 && ordering == dalotia_C_ordering) {
-        dalotia_file->load_tensor_dense<dalotia_int_2, dalotia_C_ordering>(
-            tensor_name, byte_tensor);
-    } else {
-        return 1;
-    }
+    dalotia_file->load_tensor_dense(tensor_name, dalotia_int_2,
+                                    dalotia_C_ordering, byte_tensor);
     return 0;
 }
 
@@ -313,10 +145,10 @@ extern "C" void load_tensor_sparse(DalotiaTensorFile *file,
         weightFormat == dalotia_WeightFormat::dalotia_float_32 &&
         ordering == dalotia_Ordering::dalotia_C_ordering) {
         return reinterpret_cast<dalotia::TensorFile *>(file)
-            ->load_tensor_sparse<dalotia_SparseFormat::dalotia_CSR,
+            ->load_tensor_sparse(tensor_name, dalotia_SparseFormat::dalotia_CSR,
                                  dalotia_WeightFormat::dalotia_float_32,
-                                 dalotia_Ordering::dalotia_C_ordering>(
-                tensor_name, byte_tensor, first_indices, second_indices);
+                                 dalotia_Ordering::dalotia_C_ordering,
+                                 byte_tensor, first_indices, second_indices);
     } else {
         assert(false);
     }
