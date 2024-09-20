@@ -26,6 +26,7 @@ if (DALOTIA_CPP_BUILD_EXAMPLES)
   target_link_libraries(example dalotia_cpp)
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/model.safetensors DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
 
   if (DALOTIA_CPP_BUILD_C_API)
     add_executable(example-c example-c.c)
