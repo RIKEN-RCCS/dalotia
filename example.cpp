@@ -10,11 +10,10 @@
 // application code
 
 int main(int argc, char *argv[]) {
-    char *filename = "model.safetensors";
-    char *tensor_name = "weight2";
+    char *filename = "data/model.safetensors";
+    char *tensor_name = "embedding_firstchanged";
     DalotiaTensorFile *file = open_file(filename);
-    bool tensor_is_sparse =
-        is_sparse(file, tensor_name);  //...repeat later
+    bool tensor_is_sparse = is_sparse(file, tensor_name);  //...repeat later
     char *tensor;
     constexpr dalotia_WeightFormat weightFormat = dalotia_WeightFormat::dalotia_float_64;
     dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
@@ -47,10 +46,10 @@ int main(int argc, char *argv[]) {
 
         // I want to store the tensor as a very long array
         // allocate memory for the tensor
-        tensor = (char *)malloc(dalotia::sizeof_weight_format<weightFormat>() * total_size);
+        tensor = (char *)malloc(dalotia::sizeof_weight_format<weightFormat>() *
+                                total_size);
 
         // load the tensor
-        int permutation[3] = {2, 1, 0};
 
         // load_tensor_dense_with_permutation(file, tensor_name, tensor,
         //                                    weightFormat, ordering,

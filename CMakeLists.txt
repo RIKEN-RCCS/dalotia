@@ -35,3 +35,5 @@ if (DALOTIA_CPP_BUILD_EXAMPLES)
   endif ()
 endif ()
 
+enable_testing()
+add_subdirectory(test)
