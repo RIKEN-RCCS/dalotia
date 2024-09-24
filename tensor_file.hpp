@@ -35,15 +35,15 @@ class TensorFile {
     }
 
     virtual bool is_sparse(std::string tensor_name) {
-        // This function will (lazily) read the file and return true if the
-        // tensor is sparse
-        return true;
+        throw std::runtime_error(
+            "is_sparse not implemented for this tensor type");
     }
 
     virtual size_t get_num_dimensions(std::string tensor_name) {
-        // This function will (lazily) read the file and return the number of
-        // dimensions
-        return 3;
+        auto extents = this->get_tensor_extents(tensor_name);
+        auto num_not_dimensions =
+            std::count(extents.begin(), extents.end(), -1);
+        return extents.size() - num_not_dimensions;
     }
 
     virtual std::array<int, 10> get_tensor_extents(
@@ -51,38 +51,36 @@ class TensorFile {
         const int *permutation =
             nullptr)  //? have the maximum number of dimensions = 10?
     {
-        // This function will (lazily) read the file and return the tensor
-        // extents, passing -1 for "unused" dimensions
-        return {
-            5, 4, 3, -1, -1, -1, -1, -1, -1, -1,
-        };
+        throw std::runtime_error(
+            "get_tensor_extents not implemented for this tensor type");
     }
 
     virtual size_t get_num_tensor_elements(std::string tensor_name) {
         // ?
 
         auto long_extents = this->get_tensor_extents(tensor_name);
-        auto num_nonzero =
+        auto num_zero =
             long_extents.size() -
             std::count(long_extents.begin(), long_extents.end(), -1);
-        return std::accumulate(long_extents.begin(),
-                               long_extents.begin() + num_nonzero, 1,
-                               std::multiplies<size_t>());
+        return std::accumulate(
+            long_extents.begin(),
+            long_extents.begin() + (long_extents.size() - num_zero), 1,
+            std::multiplies<size_t>());
     }
 
     virtual size_t get_nnz(std::string tensor_name) {
         // This function will read the file and return the number of non-zero
         // elements ? may take a while for dense tensors, only allow for sparse?
-        return 12;
+        throw std::runtime_error(
+            "get_nnz not implemented for this tensor type");
     }
 
     virtual std::array<int, 10> get_sparse_tensor_extents(
         std::string tensor_name, dalotia_SparseFormat format) {
         // This function will (lazily) read the file and return the tensor
         // extents
-        return {
-            12, 12, 13, -1, -1, -1, -1, -1, -1, -1,
-        };
+        throw std::runtime_error(
+            "get_sparse_tensor_extents not implemented for this tensor type");
     }
 
     virtual void load_tensor_dense(std::string tensor_name,
@@ -91,16 +89,8 @@ class TensorFile {
                                    const int *permutation = nullptr) {
         // This function will read the whole file and load the tensor,
         // optionally transposing it according to the permutation
-        const auto num_elements = this->get_num_tensor_elements(tensor_name);
-        assert(sizeof_weight_format(weightFormat) ==
-               4);  // assume float for now
-        for (size_t i = 0; i < num_elements; i++) {
-            float f = static_cast<float>(i);
-            auto b = reinterpret_cast<std::byte *>(&f);
-            for (size_t j = 0; j != sizeof(float); ++j) {
-                tensor[i * sizeof(float) + j] = b[j];
-            }
-        }
+        throw std::runtime_error(
+            "load_tensor_dense not implemented for this tensor type");
     }
 
     virtual void load_tensor_sparse(std::string tensor_name,
@@ -111,12 +101,8 @@ class TensorFile {
                                     int *second_indices) {
         // This function will read the whole file and load the tensor into the
         // three arrays
-        const auto num_nonzero = this->get_nnz(tensor_name);
-        for (int i = 0; i < num_nonzero; ++i) {
-            values[i] = static_cast<std::byte>(i);  // chunk from weightFormat;
-            first_indices[i] = i;
-            second_indices[i] = i;  // TODO implement
-        }
+        throw std::runtime_error(
+            "load_tensor_sparse not implemented for this tensor type");
     }
 
     // no private section to allow visibility from C
