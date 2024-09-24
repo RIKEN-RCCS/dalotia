@@ -47,8 +47,9 @@ class TensorFile {
     }
 
     virtual std::array<int, 10> get_tensor_extents(
-        std::string tensor_name =
-            "")  //? have the maximum number of dimensions = 10?
+        std::string tensor_name = "",
+        const int *permutation =
+            nullptr)  //? have the maximum number of dimensions = 10?
     {
         // This function will (lazily) read the file and return the tensor
         // extents, passing -1 for "unused" dimensions

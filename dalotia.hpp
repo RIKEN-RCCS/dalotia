@@ -60,7 +60,12 @@ load_tensor_dense(std::string filename, std::string tensor_name,
                       std::pmr::polymorphic_allocator<std::byte>(),
                   const std::pmr::vector<int> &permutation = {}) {
     auto dalotia_file = std::unique_ptr<TensorFile>(make_tensor_file(filename));
-    auto long_extents = dalotia_file->get_tensor_extents(tensor_name);
+    const int *permutation_ptr = nullptr;
+    if (!permutation.empty()) {
+        permutation_ptr = permutation.data();
+    }
+    auto long_extents =
+        dalotia_file->get_tensor_extents(tensor_name, permutation_ptr);
     // shorten extents to nonzeros
     auto num_nonzero = long_extents.size() -
                        std::count(long_extents.begin(), long_extents.end(), -1);
@@ -75,9 +80,9 @@ load_tensor_dense(std::string filename, std::string tensor_name,
     } else {
         tensor.resize(total_size);
     }
-    dalotia_file->load_tensor_dense(tensor_name, weight_format, ordering,
-                                   reinterpret_cast<std::byte *>(tensor.data()),
-                                   permutation.data());
+    dalotia_file->load_tensor_dense(
+        tensor_name, weight_format, ordering,
+        reinterpret_cast<std::byte *>(tensor.data()), permutation_ptr);
     return std::make_pair(true_extents, tensor);
 }
 

@@ -15,7 +15,9 @@ int main(int argc, char *argv[]) {
     DalotiaTensorFile *file = open_file(filename);
     bool tensor_is_sparse = is_sparse(file, tensor_name);  //...repeat later
     char *tensor;
-    constexpr dalotia_WeightFormat weightFormat = dalotia_WeightFormat::dalotia_float_64;
+    int permutation[3] = {0, 1, 2};
+    constexpr dalotia_WeightFormat weightFormat =
+        dalotia_WeightFormat::dalotia_float_64;
     dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
 
     std::cout << "tensor is sparse: " << tensor_is_sparse << std::endl;
@@ -51,10 +53,9 @@ int main(int argc, char *argv[]) {
 
         // load the tensor
 
-        // load_tensor_dense_with_permutation(file, tensor_name, tensor,
-        //                                    weightFormat, ordering,
-        //                                    permutation);
-        load_tensor_dense(file, tensor_name, tensor, weightFormat, ordering);
+        load_tensor_dense_with_permutation(file, tensor_name, tensor,
+                                           weightFormat, ordering, permutation);
+        // load_tensor_dense(file, tensor_name, tensor, weightFormat, ordering);
     } else {
         dalotia_SparseFormat format = dalotia_SparseFormat::dalotia_CSR;
         // get the tensor extents
@@ -92,7 +93,7 @@ int main(int argc, char *argv[]) {
 
     // print
     if (!tensor_is_sparse) {
-        double* tensor_double = reinterpret_cast<double*>(tensor);
+        double *tensor_double = reinterpret_cast<double *>(tensor);
         for (int i = 0; i < 256; i++) {
             std::cout << tensor_double[i] << " ";
         }
@@ -105,13 +106,15 @@ int main(int argc, char *argv[]) {
         dalotia::load_tensor_dense(filename, tensor_name, weightFormat);
 
     // small tensors can even live on the stack!
+    auto vector_permutation = std::pmr::vector<int>{1, 2, 0};
     std::array<double, 300> storage_array;
     std::pmr::monotonic_buffer_resource storage_resource(
         storage_array.data(), storage_array.size() * sizeof(double));
-    std::pmr::polymorphic_allocator<std::byte> storage_allocator(&storage_resource);
-    auto [extents2, tensor_cpp2] =
-        dalotia::load_tensor_dense<double>(
-            filename, tensor_name, weightFormat, dalotia_C_ordering, storage_allocator);
+    std::pmr::polymorphic_allocator<std::byte> storage_allocator(
+        &storage_resource);
+    auto [extents2, tensor_cpp2] = dalotia::load_tensor_dense<double>(
+        filename, tensor_name, weightFormat, dalotia_C_ordering,
+        storage_allocator, vector_permutation);
 
     for (int i = 0; i < storage_array.size(); ++i) {
         std::cout << storage_array[i] << " ";
