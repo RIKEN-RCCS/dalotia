@@ -85,7 +85,8 @@ class TensorFile {
 
     virtual void load_tensor_dense(std::string tensor_name,
                                    dalotia_WeightFormat weightFormat,
-                                   dalotia_Ordering ordering, std::byte *tensor,
+                                   dalotia_Ordering ordering,
+                                   std::byte *__restrict__ tensor,
                                    const int *permutation = nullptr) {
         // This function will read the whole file and load the tensor,
         // optionally transposing it according to the permutation

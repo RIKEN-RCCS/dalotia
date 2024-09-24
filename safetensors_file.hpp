@@ -14,16 +14,20 @@ namespace dalotia {
 // TODO move to own header once fully tested
 
 template <uint8_t num_dimensions>
-void assign_permuted(std::byte *dest, const safetensors::tensor_t &src,
-                     const std::byte *tensor_start, const int *permutation) {
+void assign_permuted(std::byte *__restrict__dest,
+                     const safetensors::tensor_t &src,
+                     const std::byte *__restrict__tensor_start,
+                     const int *permutation) {
     throw std::runtime_error("assign_permuted not yet implemented for " +
                              std::to_string(num_dimensions) + " dimensions");
 }
 
 // specialization for 2d
 template <>
-void assign_permuted<2>(std::byte *dest, const safetensors::tensor_t &src,
-                        const std::byte *tensor_start, const int *permutation) {
+void assign_permuted<2>(std::byte *__restrict__ dest,
+                        const safetensors::tensor_t &src,
+                        const std::byte *__restrict__ tensor_start,
+                        const int *permutation) {
     assert(src.shape.size() == 2);
     auto desired_shape = src.shape;
     for (size_t i = 0; i < src.shape.size(); ++i) {
@@ -52,8 +56,10 @@ void assign_permuted<2>(std::byte *dest, const safetensors::tensor_t &src,
 
 // specialization for 3d
 template <>
-void assign_permuted<3>(std::byte *dest, const safetensors::tensor_t &src,
-                        const std::byte *tensor_start, const int *permutation) {
+void assign_permuted<3>(std::byte *__restrict__ dest,
+                        const safetensors::tensor_t &src,
+                        const std::byte *__restrict__ tensor_start,
+                        const int *permutation) {
     assert(src.shape.size() == 3);
     auto desired_shape = src.shape;
     for (size_t i = 0; i < 3; ++i) {
@@ -194,7 +200,8 @@ class SafetensorsFile : public TensorFile {
 
     void load_tensor_dense(std::string tensor_name,
                            dalotia_WeightFormat weightFormat,
-                           dalotia_Ordering ordering, std::byte *tensor,
+                           dalotia_Ordering ordering,
+                           std::byte *__restrict__ tensor,
                            const int *permutation = nullptr) override {
         safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name);
         const auto num_dimensions = safetensor.shape.size();
@@ -209,8 +216,9 @@ class SafetensorsFile : public TensorFile {
             safetensors::get_dtype_bytes(safetensor.dtype);
         const size_t load_item_bytes =
             dalotia::sizeof_weight_format(weightFormat);
-        auto *tensor_start = reinterpret_cast<const std::byte *>(databuffer) +
-                             safetensor.data_offsets[0];
+        auto *tensor_start =
+            reinterpret_cast<const std::byte *__restrict__>(databuffer) +
+            safetensor.data_offsets[0];
         if (!final_permutation_in_c_order.empty()) {
             if (num_dimensions == 2) {
                 assign_permuted<2>(tensor, safetensor, tensor_start,
