@@ -18,10 +18,10 @@ namespace dalotia {
 class TensorFile {
    public:
     TensorFile(std::string filename) {
-        bool opened = (this->file_ = fopen(filename.c_str(), "rb"));
-        if (!opened) {
-            throw std::runtime_error("Could not open file " + filename);
-        }
+        // bool opened = (this->file_ = fopen(filename.c_str(), "rb"));
+        // if (!opened) {
+        //     throw std::runtime_error("Could not open file " + filename);
+        // }
     }
 
     TensorFile(const TensorFile &) = delete;
@@ -30,8 +30,8 @@ class TensorFile {
     TensorFile &operator=(TensorFile &&) = delete;
 
     virtual ~TensorFile() {
-        assert(this->file_ != nullptr);
-        fclose(this->file_);
+        // assert(this->file_ != nullptr);
+        // fclose(this->file_);
     }
 
     virtual bool is_sparse(std::string tensor_name) {
@@ -107,7 +107,7 @@ class TensorFile {
     }
 
     // no private section to allow visibility from C
-    FILE *file_ = nullptr;
+    // FILE *file_ = nullptr;
 };
 
 }  // namespace dalotia
