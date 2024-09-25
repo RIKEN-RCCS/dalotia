@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <stdexcept>
 
 enum dalotia_SparseFormat  // cannot be scoped to allow for C interface
@@ -21,6 +22,7 @@ enum dalotia_WeightFormat {
     dalotia_float_16,
     dalotia_float_8,
     dalotia_bfloat_16,
+    dalotia_int_8,
     dalotia_int_2,
 };
 
@@ -43,6 +45,8 @@ constexpr int8_t sizeof_weight_format() {
         return 1;
     } else if constexpr (format == dalotia_bfloat_16) {
         return 2;
+    } else if constexpr (format == dalotia_int_8) {
+        return 1;
     } else if constexpr (format == dalotia_int_2) {
         return 1;  // TODO a bit unhappy with this one
     }
@@ -62,6 +66,8 @@ int8_t sizeof_weight_format(dalotia_WeightFormat format) {
             return sizeof_weight_format<dalotia_float_8>();
         case dalotia_bfloat_16:
             return sizeof_weight_format<dalotia_bfloat_16>();
+        case dalotia_int_8:
+            return sizeof_weight_format<dalotia_int_8>();
         case dalotia_int_2:
             return sizeof_weight_format<dalotia_int_2>();
 
@@ -69,5 +75,11 @@ int8_t sizeof_weight_format(dalotia_WeightFormat format) {
             throw std::runtime_error("Invalid weight format");
     }
 }
+
+std::map<dalotia_WeightFormat, dalotia_WeightFormat> bfloat_compatible_float{
+    //   {dalotia_bfloat_8, dalotia_float_16},
+    {dalotia_bfloat_16, dalotia_float_32},
+    //   {dalotia_bfloat_32, dalotia_float_64},
+};
 
 }  // namespace dalotia

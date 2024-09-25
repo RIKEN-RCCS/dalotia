@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <functional>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -64,24 +65,96 @@ std::pmr::vector<int> final_c_permutation_from_permutation_and_order(
     return final_permutation_in_c_order;
 }
 
+std::function<void(std::byte *__restrict__, const std::byte *__restrict__)>
+get_assignment_function(dalotia_WeightFormat weight_output_format,
+                        dalotia_WeightFormat weight_input_format) {
+    const size_t load_item_bytes =
+        dalotia::sizeof_weight_format(weight_input_format);
+    const size_t store_item_bytes =
+        dalotia::sizeof_weight_format(weight_output_format);
+    if (weight_input_format == weight_output_format) {
+        // if they are the same, just assign them byte by byte
+        assert(load_item_bytes == store_item_bytes);
+        auto fcn = [load_item_bytes](
+                       std::byte *__restrict__ output_bytes,
+                       const std::byte *__restrict__ input_bytes) {
+            for (size_t j = 0; j < load_item_bytes; ++j) {
+                output_bytes[j] = input_bytes[j];
+            }
+        };
+        return fcn;
+    } else if (weight_input_format == dalotia_float_64 &&
+               // TODO abstract all the combinations, or copy paste this here
+               // quite often...
+               weight_output_format == dalotia_float_32) {
+        // if both types are builtins, cast input and assign the resulting bytes
+        auto fcn = [store_item_bytes](
+                       std::byte *__restrict__ output_bytes,
+                       const std::byte *__restrict__ input_bytes) {
+            auto input_cast =
+                reinterpret_cast<const double *__restrict__>(input_bytes);
+            auto output_cast = static_cast<float>(*input_cast);
+            assert(sizeof(output_cast) == store_item_bytes);
+            auto copy_bytes =
+                reinterpret_cast<const std::byte *__restrict__>(&output_cast);
+            for (size_t j = 0; j < store_item_bytes; ++j) {
+                output_bytes[j] = copy_bytes[j];
+            }
+        };
+    } else {
+        auto b_in = bfloat_compatible_float.find(weight_input_format);
+        auto b_out = bfloat_compatible_float.find(weight_output_format);
+        if (b_in != bfloat_compatible_float.end() &&
+            b_in->second == weight_output_format) {
+            // if the input format is bfloat and if the output format is
+            // bfloat-compatible, assign and add zeros at the end (?)
+            assert(2 * load_item_bytes == store_item_bytes);
+            auto fcn = [load_item_bytes](
+                           std::byte *__restrict__ output_bytes,
+                           const std::byte *__restrict__ input_bytes) {
+                for (size_t j = 0; j < load_item_bytes; ++j) {
+                    output_bytes[j] = input_bytes[j];
+                }
+                for (size_t j = 0; j < load_item_bytes; ++j) {
+                    output_bytes[j] = static_cast<std::byte>(0);
+                }
+            };
+            return fcn;
+        } else if (b_out != bfloat_compatible_float.end() &&
+                   b_in->second == weight_input_format) {
+            // conversely, if the output format is bfloat and if the input
+            // format is bfloat-compatible, assign only a few bytes and drop the
+            // rest
+            assert(load_item_bytes == 2 * store_item_bytes);
+            auto fcn = [store_item_bytes](
+                           std::byte *__restrict__ output_bytes,
+                           const std::byte *__restrict__ input_bytes) {
+                for (size_t j = 0; j < store_item_bytes; ++j) {
+                    output_bytes[j] = input_bytes[j];
+                }
+            };
+        }
+    }
+    // use gmpxx? use floatx? use quantization things?
+    throw std::runtime_error(
+        "get_assignment_function: unsupported format combination");
+}
+
 void assign_linearly(std::byte *__restrict__ dest,
                      dalotia_WeightFormat weight_output_format,
                      size_t num_items,
                      const std::byte *const __restrict__ tensor_start,
                      dalotia_WeightFormat weight_input_format) {
-    const size_t file_item_bytes =
-        dalotia::sizeof_weight_format(weight_input_format);
     const size_t load_item_bytes =
+        dalotia::sizeof_weight_format(weight_input_format);
+    const size_t store_item_bytes =
         dalotia::sizeof_weight_format(weight_output_format);
+    auto assign_function =
+        get_assignment_function(weight_output_format, weight_input_format);
     for (size_t i = 0; i < num_items; i++) {
-        auto element_pointer = tensor_start + i * file_item_bytes;
-        // TODO cast from safetensor.dtype to weightFormat -- how ???
-        // use gmpxx? use quantization things?
-        assert(load_item_bytes == file_item_bytes);
-        for (size_t j = 0; j < load_item_bytes; ++j) {
-            dest[i * load_item_bytes + j] =
-                static_cast<std::byte>(element_pointer[j]);
-        }
+        auto input_pointer = tensor_start + i * load_item_bytes;
+        auto output_pointer = dest + i * store_item_bytes;
+        assign_function(output_pointer, input_pointer);
     }
 }
 
@@ -113,18 +186,19 @@ void assign_permuted<2>(std::byte *__restrict__ dest,
     }
     assert(permutation[0] == 1);
     assert(permutation[1] == 0);
-    const size_t file_item_bytes =
-        dalotia::sizeof_weight_format(weight_input_format);  // TODO casting
+    const size_t load_item_bytes =
+        dalotia::sizeof_weight_format(weight_input_format);
+    const size_t store_item_bytes =
+        dalotia::sizeof_weight_format(weight_output_format);
+    auto assign_function =
+        get_assignment_function(weight_output_format, weight_input_format);
     size_t load_index = 0;
     for (size_t i = 0; i < input_shape[1]; ++i) {
         for (size_t j = 0; j < input_shape[0]; ++j) {
             auto store_index = j * input_shape[1] + i;
-            for (size_t k = 0; k < file_item_bytes; ++k) {
-                auto element_pointer =
-                    tensor_start + load_index * file_item_bytes;
-                dest[store_index * file_item_bytes + j] =
-                    static_cast<std::byte>(element_pointer[k]);
-            }
+            auto input_pointer = tensor_start + load_index * load_item_bytes;
+            auto output_pointer = dest + store_index * store_item_bytes;
+            assign_function(output_pointer, input_pointer);
             ++load_index;
         }
     }
@@ -156,8 +230,12 @@ void assign_permuted<3>(std::byte *__restrict__ dest,
         new_strides_permuted[i] = new_strides[permutation[i]];
     }
 
-    const size_t file_item_bytes =
-        dalotia::sizeof_weight_format(weight_input_format);  // TODO casting
+    const size_t load_item_bytes =
+        dalotia::sizeof_weight_format(weight_input_format);
+    const size_t store_item_bytes =
+        dalotia::sizeof_weight_format(weight_output_format);
+    auto assign_function =
+        get_assignment_function(weight_output_format, weight_input_format);
     size_t load_index = 0;
     std::array<size_t, num_dimensions> load_index_array{0, 0, 0};
     auto &[i, j, k] = load_index_array;
@@ -171,12 +249,10 @@ void assign_permuted<3>(std::byte *__restrict__ dest,
                     load_index_array.begin(), 0);
                 assert(store_index < total_size);
 
-                for (size_t l = 0; l < file_item_bytes; ++l) {
-                    auto element_pointer =
-                        tensor_start + load_index * file_item_bytes;
-                    dest[store_index * file_item_bytes + l] =
-                        static_cast<std::byte>(element_pointer[l]);
-                }
+                auto input_pointer =
+                    tensor_start + load_index * load_item_bytes;
+                auto output_pointer = dest + store_index * store_item_bytes;
+                assign_function(output_pointer, input_pointer);
                 ++load_index;
             }
         }
@@ -184,6 +260,11 @@ void assign_permuted<3>(std::byte *__restrict__ dest,
 
     assert(load_index == total_size);
 }
+// TODO use BOOST_PP_* to generate something like Julia @nloops macro for
+// arbitrary dimensions?
+// ->
+// https://github.com/JuliaLang/julia/blob/master/base/multidimensional.jl#L1685
+// https://stackoverflow.com/questions/77130743/boost-preprocessor-boost-pp-local-iterate-nested-loops
 
 template <typename... Args>
 void assign_permuted(uint8_t num_dimensions, Args &&...args) {
@@ -197,11 +278,5 @@ void assign_permuted(uint8_t num_dimensions, Args &&...args) {
                                  " dimensions");
     }
 }
-
-// TODO use BOOST_PP_* to generate something like Julia @nloops macro?
-// for all dimensions
-// ->
-// https://github.com/JuliaLang/julia/blob/master/base/multidimensional.jl#L1685
-// https://stackoverflow.com/questions/77130743/boost-preprocessor-boost-pp-local-iterate-nested-loops
 
 }  // namespace dalotia
