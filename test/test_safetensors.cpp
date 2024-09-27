@@ -105,6 +105,35 @@ void test_permuted_load() {
     }
 }
 
+void test_load_other_float_format() {
+    // the C++ 17 version
+    std::string filename = "../data/model.safetensors";
+    std::string tensor_name = "embedding_firstchanged";
+    const dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
+    {
+        constexpr dalotia_WeightFormat weightFormat =
+            dalotia_WeightFormat::dalotia_float_32;
+        auto permutation = std::pmr::vector<int>{1, 0, 2};
+        // test loading to float
+        auto [extents, tensor_cpp] = dalotia::load_tensor_dense<float>(
+            filename, tensor_name, weightFormat, ordering,
+            std::pmr::polymorphic_allocator<std::byte>(), permutation);
+        for (int i = 0; i < tensor_cpp.size(); i++) {
+            assert(tensor_cpp[i] == i);
+        }
+    }
+    {
+        constexpr dalotia_WeightFormat weightFormat =
+            dalotia_WeightFormat::dalotia_bfloat_16;
+        auto permutation = std::pmr::vector<int>{1, 0, 2};
+        // TODO needs other input or multicasting
+        // auto [extents, tensor_cpp] = dalotia::load_tensor_dense(
+        //     filename, tensor_name, weightFormat, ordering,
+        //     std::pmr::polymorphic_allocator<std::byte>(), permutation);
+        // TODO how to check values?
+    }
+}
+
 int main(int, char **) {
     test_simple_linear_load();
     test_permutation();
