@@ -15,7 +15,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 include(FetchContent)
 FetchContent_Declare(
   safetensors-cpp
-  GIT_REPOSITORY git@github.com:syoyo/safetensors-cpp.git
+  GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
   GIT_TAG main
   # OVERRIDE_FIND_PACKAGE
 )
