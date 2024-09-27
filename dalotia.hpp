@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "dalotia_assignment.hpp"
 #include "dalotia_formats.hpp"
 #include "tensor_file.hpp"
 

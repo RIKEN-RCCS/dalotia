@@ -1,5 +1,4 @@
 #include "../dalotia.hpp"
-#include "../safetensors_file.hpp"
 
 void test_simple_linear_load() {
     // the C version

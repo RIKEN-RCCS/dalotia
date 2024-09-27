@@ -7,7 +7,7 @@ option(DALOTIA_CPP_BUILD_EXAMPLES "Build examples" ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MAKE_PROGRAM "make")
 
-set(DALOTIA_CPP_SOURCES dalotia.cpp)
+set(DALOTIA_CPP_SOURCES dalotia_assignment.cpp dalotia_formats.cpp safetensors_file.cpp)
 add_library(dalotia_cpp ${DALOTIA_CPP_SOURCES})
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
