@@ -110,5 +110,7 @@ int main(int, char **) {
     test_simple_linear_load();
     test_permutation();
     test_permuted_load();
+    test_load_other_float_format();
+    std::cout << "test_safetensors succeded" << std::endl;
     return 0;
 }

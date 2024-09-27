@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <stdexcept>
 
@@ -73,6 +74,7 @@ int8_t sizeof_weight_format(dalotia_WeightFormat format) {
 
         default:
             throw std::runtime_error("Invalid weight format");
+            return std::numeric_limits<int8_t>::min();
     }
 }
 

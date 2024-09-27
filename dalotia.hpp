@@ -41,6 +41,7 @@ TensorFile *make_tensor_file(std::string filename) {
     } else {
         throw std::runtime_error("Unsupported file extension: ." + extension);
     }
+    return nullptr;
 }
 
 // C++17 version -> will not compile on Fugaku...

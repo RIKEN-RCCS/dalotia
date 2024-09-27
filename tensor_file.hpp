@@ -37,6 +37,7 @@ class TensorFile {
     virtual bool is_sparse(std::string tensor_name) {
         throw std::runtime_error(
             "is_sparse not implemented for this tensor type");
+        return false;
     }
 
     virtual size_t get_num_dimensions(std::string tensor_name) {
@@ -53,6 +54,7 @@ class TensorFile {
     {
         throw std::runtime_error(
             "get_tensor_extents not implemented for this tensor type");
+        return std::array<int, 10>();
     }
 
     virtual size_t get_num_tensor_elements(std::string tensor_name) {
@@ -73,6 +75,7 @@ class TensorFile {
         // elements ? may take a while for dense tensors, only allow for sparse?
         throw std::runtime_error(
             "get_nnz not implemented for this tensor type");
+        return 0;
     }
 
     virtual std::array<int, 10> get_sparse_tensor_extents(
@@ -81,6 +84,7 @@ class TensorFile {
         // extents
         throw std::runtime_error(
             "get_sparse_tensor_extents not implemented for this tensor type");
+        return std::array<int, 10>();
     }
 
     virtual void load_tensor_dense(std::string tensor_name,
