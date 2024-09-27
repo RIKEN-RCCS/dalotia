@@ -33,7 +33,7 @@ if (DALOTIA_CPP_BUILD_EXAMPLES)
   add_executable(dalotia-example example.cpp)
   target_compile_definitions(dalotia-example PRIVATE "DALOTIA_CPP_NO_IMPLEMENTATION")
   target_link_libraries(dalotia-example dalotia_cpp)
-  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/model.safetensors DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
 
   if (DALOTIA_CPP_BUILD_C_API)
     add_executable(example-c example-c.c)
