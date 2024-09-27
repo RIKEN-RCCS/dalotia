@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.24)
 project(DALOTIA_CPP CXX C)
 
 option(DALOTIA_CPP_BUILD_EXAMPLES "Build examples" ON)
+option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MAKE_PROGRAM "make")
@@ -12,22 +13,27 @@ add_library(dalotia_cpp ${DALOTIA_CPP_SOURCES})
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
-include(FetchContent)
-FetchContent_Declare(
-  safetensors-cpp
-  GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
-  GIT_TAG main
-  # OVERRIDE_FIND_PACKAGE
-)
-set(SAFETENSORS_CPP_CXX_EXCEPTIONS true)
-FetchContent_MakeAvailable(safetensors-cpp)
+if (DALOTIA_WITH_SAFETENSORS_CPP)
+  include(FetchContent)
+  FetchContent_Declare(
+    safetensors-cpp
+    GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
+    GIT_TAG 82571c11c2dc47a6663fc9ec0251241baf339c16
+    FIND_PACKAGE_ARGS # allow finding system installations
+  )
+  set(SAFETENSORS_CPP_CXX_EXCEPTIONS true)
+  FetchContent_MakeAvailable(safetensors-cpp)
+  FetchContent_GetProperties(safetensors-cpp SOURCE_DIR SAFETENSORS_CPP_INCLUDE_DIR BINARY_DIR SAFETENSORS_CPP_LIBRARY)
+  # add dependecy from safetensors_cpp to sources 
+  # so that everything that links to safetensors_cpp will also get the headers
+  target_include_directories(safetensors_cpp PUBLIC  
+      $<BUILD_INTERFACE:${SAFETENSORS_CPP_INCLUDE_DIR}>
+    )
 
-find_package(safetensors-cpp REQUIRED)
-if(SAFETENSORS_CPP_FOUND)
   target_include_directories(dalotia_cpp PUBLIC ${SAFETENSORS_CPP_INCLUDE_DIR} ${safetensors-cpp_DIR})
-  target_link_libraries(dalotia_cpp ${SAFETENSORS_CPP_LIBRARY} safetensors_cpp)
+  target_link_libraries(dalotia_cpp safetensors_cpp)
   target_compile_options(dalotia_cpp PUBLIC "-DDALOTIA_WITH_SAFETENSORS_CPP")
-endif (SAFETENSORS_CPP_FOUND)
+endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
 if (DALOTIA_CPP_BUILD_EXAMPLES)
   add_executable(dalotia-example example.cpp)
