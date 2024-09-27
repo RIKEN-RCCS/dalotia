@@ -65,6 +65,25 @@ std::pmr::vector<int> final_c_permutation_from_permutation_and_order(
     return final_permutation_in_c_order;
 }
 
+template <typename InType, typename OutType>
+std::function<void(std::byte *__restrict__, const std::byte *__restrict__)>
+cpp_type_assignment(size_t store_item_bytes) {
+    // if both types are builtins, cast input and assign the resulting bytes
+    auto fcn = [store_item_bytes](std::byte *__restrict__ output_bytes,
+                                  const std::byte *__restrict__ input_bytes) {
+        auto input_cast =
+            reinterpret_cast<const InType *__restrict__>(input_bytes);
+        auto output_cast = static_cast<OutType>(*input_cast);
+        assert(sizeof(output_cast) == store_item_bytes);
+        auto copy_bytes =
+            reinterpret_cast<std::byte *__restrict__>(&output_cast);
+        for (size_t j = 0; j < store_item_bytes; ++j) {
+            output_bytes[j] = copy_bytes[j];
+        }
+    };
+    return fcn;
+}
+
 std::function<void(std::byte *__restrict__, const std::byte *__restrict__)>
 get_assignment_function(dalotia_WeightFormat weight_output_format,
                         dalotia_WeightFormat weight_input_format) {
@@ -84,24 +103,14 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
         };
         return fcn;
     } else if (weight_input_format == dalotia_float_64 &&
-               // TODO abstract all the combinations, or copy paste this here
-               // quite often...
                weight_output_format == dalotia_float_32) {
-        // if both types are builtins, cast input and assign the resulting bytes
-        auto fcn = [store_item_bytes](
-                       std::byte *__restrict__ output_bytes,
-                       const std::byte *__restrict__ input_bytes) {
-            auto input_cast =
-                reinterpret_cast<const double *__restrict__>(input_bytes);
-            auto output_cast = static_cast<float>(*input_cast);
-            assert(sizeof(output_cast) == store_item_bytes);
-            auto copy_bytes =
-                reinterpret_cast<const std::byte *__restrict__>(&output_cast);
-            for (size_t j = 0; j < store_item_bytes; ++j) {
-                output_bytes[j] = copy_bytes[j];
-            }
-        };
-    } else {
+        // TODO abstract all the combinations, or copy paste this here
+        // for all type combinations...
+        return cpp_type_assignment<double, float>(store_item_bytes);
+    } else if (weight_input_format == dalotia_float_32 &&
+               weight_output_format == dalotia_float_64) {
+        return cpp_type_assignment<float, double>(store_item_bytes);
+    } else {  // TODO chain builtin conversion and bfloat conversion?
         auto b_in = bfloat_compatible_float.find(weight_input_format);
         auto b_out = bfloat_compatible_float.find(weight_output_format);
         if (b_in != bfloat_compatible_float.end() &&
@@ -121,7 +130,7 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
             };
             return fcn;
         } else if (b_out != bfloat_compatible_float.end() &&
-                   b_in->second == weight_input_format) {
+                   b_out->second == weight_input_format) {
             // conversely, if the output format is bfloat and if the input
             // format is bfloat-compatible, assign only a few bytes and drop the
             // rest
@@ -133,6 +142,7 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
                     output_bytes[j] = input_bytes[j];
                 }
             };
+            return fcn;
         }
     }
     // use gmpxx? use floatx? use quantization things?

@@ -4,7 +4,6 @@
 #include <array>
 #include <cassert>
 #include <filesystem>
-#include <iostream>  //TODO remove
 #include <memory>
 #include <memory_resource>
 #include <numeric>
@@ -33,10 +32,7 @@ TensorFile *make_tensor_file(std::string filename) {
                    ::tolower);
 
     // select the file implementation
-    if (extension == "txt") {
-        // TODO remove and throw errors in implementation, only for testing
-        return new TensorFile(filename);
-    } else if (extension == "safetensors") {
+    if (extension == "safetensors") {
 #ifdef DALOTIA_WITH_SAFETENSORS_CPP
         return new SafetensorsFile(filename);
 #else   // DALOTIA_WITH_SAFETENSORS_CPP
