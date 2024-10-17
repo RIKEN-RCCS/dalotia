@@ -119,7 +119,7 @@ void test_inference(std::string filename) {
     auto conv2 = test_load(filename, "conv2");
     auto fc1 = test_load(filename, "fc1");
 
-    // return;  // early return for CI, to avoid data handling ;)
+    return;  // early return for CI, to avoid data handling ;)
 
     // load the mnist test data // as in
     // https://medium.com/@myringoleMLGOD/simple-convolutional-neural-network-cnn-for-dummies-in-pytorch-a-step-by-step-guide-6f4109f6df80
