@@ -13,19 +13,19 @@ add_library(dalotia_cpp ${DALOTIA_CPP_SOURCES})
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
-# mdspan
+# boost::multi instead of multi
 include(FetchContent)
 FetchContent_Declare(
-  mdspan
-  GIT_REPOSITORY https://github.com/kokkos/mdspan.git
-  GIT_TAG 260f525ed71669e5dcf2438622d2c433b3e5c281
+  multi
+  GIT_REPOSITORY https://github.com/correaa/boost-multi.git
+  GIT_TAG f549688718345435aabaa1ac49c392965ca082a5
   FIND_PACKAGE_ARGS
 )
-FetchContent_MakeAvailable(mdspan)
-FetchContent_GetProperties(mdspan SOURCE_DIR MDSPAN_CPP_INCLUDE_DIR BINARY_DIR MDSPAN_CPP_LIBRARY)
+FetchContent_MakeAvailable(multi)
+FetchContent_GetProperties(multi SOURCE_DIR MULTI_CPP_INCLUDE_DIR BINARY_DIR MULTI_CPP_LIBRARY)
 
-target_include_directories(dalotia_cpp PUBLIC ${MDSPAN_CPP_INCLUDE_DIR} ${MDSPAN_DIR})
-target_link_libraries(dalotia_cpp mdspan)
+target_include_directories(dalotia_cpp PUBLIC ${MULTI_CPP_INCLUDE_DIR} ${MULTI_DIR})
+target_link_libraries(dalotia_cpp multi)
 
 # safetensors-cpp
 if (DALOTIA_WITH_SAFETENSORS_CPP)
