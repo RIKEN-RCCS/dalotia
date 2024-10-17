@@ -37,7 +37,6 @@ class TensorFile {
     virtual const std::vector<std::string> &get_tensor_names() const {
         throw std::runtime_error(
             "get_tensor_names not implemented for this tensor type");
-        return std::vector<std::string>();
     }
 
     virtual bool is_sparse(std::string tensor_name) const {
