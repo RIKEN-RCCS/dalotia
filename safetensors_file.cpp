@@ -32,6 +32,10 @@ safetensors::tensor_t get_tensor_from_name(
     throw std::runtime_error("Tensor " + tensor_name + " not found");
 }
 
+const std::vector<std::string> &SafetensorsFile::get_tensor_names() const {
+    return st_.tensors.keys();
+}
+
 SafetensorsFile::SafetensorsFile(std::string filename) : TensorFile(filename) {
     // as far as I can tell, safetensors are saved in C order
     std::string warn, err;

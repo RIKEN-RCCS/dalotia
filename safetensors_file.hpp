@@ -31,6 +31,8 @@ class SafetensorsFile : public TensorFile {
 
     ~SafetensorsFile();
 
+    const std::vector<std::string> &get_tensor_names() const override;
+
     bool is_sparse(std::string tensor_name) const override;
 
     size_t get_num_dimensions(std::string tensor_name) const override;
