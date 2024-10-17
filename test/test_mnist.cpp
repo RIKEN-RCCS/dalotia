@@ -97,16 +97,9 @@ std::vector<uint8_t> read_mnist(std::string full_path) {
         n_cols = reverseEndianness(n_cols);
         assert(n_cols == 28);
         vector_of_images.resize(number_of_images * n_rows * n_cols);
-        for (int i = 0; i < number_of_images; ++i) {
-            for (int r = 0; r < n_rows; ++r) {
-                for (int c = 0; c < n_cols; ++c) {
-                    file.read((char *)&(vector_of_images[image_index]), 1);
-                    ++image_index;
-                }
-            }
-        }
+        file.read((char *)&(vector_of_images[image_index]),
+                  vector_of_images.size());
     }
-    assert(image_index == vector_of_images.size());
     return vector_of_images;
 }
 
