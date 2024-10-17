@@ -155,17 +155,18 @@ void test_inference(std::string filename) {
         for (size_t i = 1; i < image_span.extent(0) - 1; ++i) {
             for (int j = 1; j < image_span.extent(1) - 1; ++j) {
                 for (int k = 0; k < conv1_span.extent(0); ++k) {
-                    output_span[k, i, j] =  // sum_m_n(conv1_span[k, 0, m, n] *
-                                            // image_span[i + m, j + n] )
-                        conv1_span[k, 0, 0, 0] * image_span[i + 0, j + 0] +
-                        conv1_span[k, 0, 0, 1] * image_span[i + 0, j + 1] +
-                        conv1_span[k, 0, 0, 2] * image_span[i + 0, j + 2] +
-                        conv1_span[k, 0, 1, 0] * image_span[i + 1, j + 0] +
-                        conv1_span[k, 0, 1, 1] * image_span[i + 1, j + 1] +
-                        conv1_span[k, 0, 1, 2] * image_span[i + 1, j + 2] +
-                        conv1_span[k, 0, 2, 0] * image_span[i + 2, j + 0] +
-                        conv1_span[k, 0, 2, 1] * image_span[i + 2, j + 1] +
-                        conv1_span[k, 0, 2, 2] * image_span[i + 2, j + 2];
+                    // sum_m_n(conv1_span[k, 0, m, n] *
+                    // image_span[i + m, j + n] )
+                    output_span(k, i, j) =
+                        conv1_span(k, 0, 0, 0) * image_span(i + 0, j + 0) +
+                        conv1_span(k, 0, 0, 1) * image_span(i + 0, j + 1) +
+                        conv1_span(k, 0, 0, 2) * image_span(i + 0, j + 2) +
+                        conv1_span(k, 0, 1, 0) * image_span(i + 1, j + 0) +
+                        conv1_span(k, 0, 1, 1) * image_span(i + 1, j + 1) +
+                        conv1_span(k, 0, 1, 2) * image_span(i + 1, j + 2) +
+                        conv1_span(k, 0, 2, 0) * image_span(i + 2, j + 0) +
+                        conv1_span(k, 0, 2, 1) * image_span(i + 2, j + 1) +
+                        conv1_span(k, 0, 2, 2) * image_span(i + 2, j + 2);
                 }
             }
         }
