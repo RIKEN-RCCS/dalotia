@@ -3,6 +3,7 @@
 
 #include "../dalotia.hpp"
 #include "../safetensors_file.hpp"
+#include "mdspan/mdspan.hpp"
 
 void test_get_tensor_names(std::string filename) {
     auto dalotia_file = std::unique_ptr<dalotia::TensorFile>(
@@ -109,12 +110,73 @@ std::vector<uint8_t> read_mnist(std::string full_path) {
     return vector_of_images;
 }
 
+namespace md = Kokkos;  // for mdspan; replace by std:: once c++23 is widely
+                        // enough supported (and drop dependency)
+
 void test_inference(std::string filename) {
+    using span_4d_float =
+        md::mdspan<float, md::dextents<size_t, 4>, md::layout_right>;
+    using span_3d_float =
+        md::mdspan<float, md::dextents<size_t, 3>, md::layout_right>;
+    using span_2d_float =
+        md::mdspan<float, md::dextents<size_t, 2>, md::layout_right>;
+    using span_2d_char =
+        md::mdspan<std::uint8_t, md::dextents<size_t, 2>, md::layout_right>;
+
+    auto [conv1_weight, conv1_bias] = test_load(filename, "conv1");
+    auto conv1_span = span_4d_float(conv1_weight.data(), 8, 1, 3, 3);
+    assert(conv1_span.extent(1) == 1);  // 1 input channel
 
     auto conv2 = test_load(filename, "conv2");
     auto fc1 = test_load(filename, "fc1");
 
     return;  // early return for CI, to avoid data handling ;)
+
+    // load the mnist test data // as in
+    // https://medium.com/@myringoleMLGOD/simple-convolutional-neural-network-cnn-for-dummies-in-pytorch-a-step-by-step-guide-6f4109f6df80
+    // too
+    std::string mnist_test_images_filename =
+        "../../python-fiddling/dataset/MNIST/raw/t10k-images-idx3-ubyte";
+    std::string mnist_test_labels_filename =
+        "../../python-fiddling/dataset/MNIST/raw/t10k-labels-idx3-ubyte";
+
+    auto images = read_mnist(mnist_test_images_filename);
+    // auto labels = read_mnist(mnist_test_labels_filename);
+    auto num_images = images.size() / (28 * 28);
+
+    // for (auto &image : images) {  // todo minibatching
+    for (size_t image_index = 0; image_index < num_images; ++image_index) {
+        auto image_span =
+            span_2d_char(images.data() + image_index * (28 * 28), 28, 28);
+        auto conv1_output = std::pmr::vector<float>(8 * 28 * 28);
+        auto output_span = span_3d_float(conv1_output.data(), 8, 28, 28);
+// apply first convolution
+#pragma omp parallel for
+        for (size_t i = 1; i < image_span.extent(0) - 1; ++i) {
+            for (int j = 1; j < image_span.extent(1) - 1; ++j) {
+                for (int k = 0; k < conv1_span.extent(0); ++k) {
+                    output_span[k, i, j] =  // sum_m_n(conv1_span[k, 0, m, n] *
+                                            // image_span[i + m, j + n] )
+                        conv1_span[k, 0, 0, 0] * image_span[i + 0, j + 0] +
+                        conv1_span[k, 0, 0, 1] * image_span[i + 0, j + 1] +
+                        conv1_span[k, 0, 0, 2] * image_span[i + 0, j + 2] +
+                        conv1_span[k, 0, 1, 0] * image_span[i + 1, j + 0] +
+                        conv1_span[k, 0, 1, 1] * image_span[i + 1, j + 1] +
+                        conv1_span[k, 0, 1, 2] * image_span[i + 1, j + 2] +
+                        conv1_span[k, 0, 2, 0] * image_span[i + 2, j + 0] +
+                        conv1_span[k, 0, 2, 1] * image_span[i + 2, j + 1] +
+                        conv1_span[k, 0, 2, 2] * image_span[i + 2, j + 2];
+                }
+            }
+        }
+// apply first activation function (relu)
+#pragma omp parallel for
+        for (auto &val : conv1_output) {
+            if (val < 0.) {
+                val = 0.;
+            }
+        }
+    }
 }
 
 int main(int, char **) {
