@@ -13,7 +13,7 @@ add_library(dalotia_cpp ${DALOTIA_CPP_SOURCES})
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
-# boost::multi instead of multi
+# boost::multi instead of mdspan
 include(FetchContent)
 FetchContent_Declare(
   multi
