@@ -77,7 +77,6 @@ int reverseEndianness(int i) {
 }
 std::pmr::vector<uint8_t> read_mnist(std::string full_path) {
     std::pmr::vector<uint8_t> vector_of_images;
-    size_t image_index = 0;
     std::ifstream file(full_path, std::ios::binary);
     std::cout << "Reading " << full_path << std::endl;
     if (file.is_open()) {
@@ -98,8 +97,7 @@ std::pmr::vector<uint8_t> read_mnist(std::string full_path) {
         n_cols = reverseEndianness(n_cols);
         assert(n_cols == 28);
         vector_of_images.resize(number_of_images * n_rows * n_cols);
-        file.read((char *)&(vector_of_images[image_index]),
-                  vector_of_images.size());
+        file.read((char *)vector_of_images.data(), vector_of_images.size());
     }
     return vector_of_images;
 }
