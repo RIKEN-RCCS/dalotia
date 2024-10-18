@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 
@@ -5,6 +6,9 @@
 #include "../safetensors_file.hpp"
 // #include "mdspan/mdspan.hpp"
 #include <boost/multi/array.hpp>
+#include <multi/adaptors/blas.hpp>
+
+#include "multi/adaptors/blas.hpp"
 
 void test_get_tensor_names(std::string filename) {
     auto dalotia_file = std::unique_ptr<dalotia::TensorFile>(
@@ -103,25 +107,31 @@ std::pmr::vector<uint8_t> read_mnist(std::string full_path) {
 }
 
 namespace multi = boost::multi;
+// using namespace multi::operators; // not yet found
 
 void test_inference(std::string filename) {
     using span_4d_float = multi::array_ref<float, 4>;
     using span_3d_float = multi::array_ref<float, 3>;
     using span_2d_float = multi::array_ref<float, 2>;
-    using span_2d_char = multi::array_ref<uint8_t, 2>;
+    using span_3d_char = multi::array_ref<uint8_t, 3>;
 
-    auto [conv1_weight, conv1_bias] = test_load(filename, "conv1");
+    auto [conv1_weight, conv1_bias] =
+        test_load(filename, "conv1");  // TODO why can't I make them const?
     const auto conv1_weight_span =
         span_4d_float({8, 1, 3, 3}, conv1_weight.data());
     const auto conv1_bias_span = span_2d_float({8, 1}, conv1_bias.data());
     assert(conv1_weight_span.sizes().get<1>() == 1);  // 1 input channel
 
-    auto conv2 = test_load(filename, "conv2");
-    auto fc1 = test_load(filename, "fc1");
-    const auto fc1_weight_span = span_2d_float({10, 784}, fc1.first.data());
-    const auto fc1_bias_span = span_2d_float({10, 1}, fc1.second.data());
+    auto [conv2_weight, conv2_bias] = test_load(filename, "conv2");
+    const auto conv2_weight_span =
+        span_4d_float({16, 8, 3, 3}, conv1_weight.data());
+    const auto conv2_bias_span = span_2d_float({16, 1}, conv2_bias.data());
 
-    return;  // early return for CI, to avoid data handling ;)
+    auto [fc1_weight, fc1_bias] = test_load(filename, "fc1");
+    const auto fc1_weight_span = span_2d_float({10, 784}, fc1_weight.data());
+    const auto fc1_bias_span = span_2d_float({10, 1}, fc1_bias.data());
+
+    // return;  // early return for CI, to avoid data handling ;)
 
     // load the mnist test data // as in
     // https://medium.com/@myringoleMLGOD/simple-convolutional-neural-network-cnn-for-dummies-in-pytorch-a-step-by-step-guide-6f4109f6df80
@@ -133,73 +143,183 @@ void test_inference(std::string filename) {
 
     auto images = read_mnist(mnist_test_images_filename);
     // auto labels = read_mnist(mnist_test_labels_filename);
-    auto num_images = images.size() / (28 * 28);
+    auto total_num_images = images.size() / (28 * 28);
 
-    // for (auto &image : images) {  // todo minibatching
-    std::cout << "num_images: " << num_images << std::endl;
-    for (size_t image_index = 0; image_index < num_images; ++image_index) {
+    // minibatching
+    constexpr size_t batch_size = 64;
+    auto num_batches = static_cast<int>(
+        std::ceil(total_num_images / static_cast<float>(batch_size)));
+    for (size_t batch_index = 0; batch_index < num_batches; ++batch_index) {
+        auto num_images_in_batch =
+            std::min(batch_size, total_num_images - batch_index * batch_size);
+        auto inum_images_in_batch = static_cast<int>(num_images_in_batch);
+        std::cout << "batch index: " << batch_index << " / " << num_batches
+                  << " num images in batch: " << num_images_in_batch
+                  << std::endl;
+
+        // apply first convolution
         // copy data to larger array for zero-padding at the edges
-        auto image_vector_padded = std::pmr::vector<uint8_t>(30 * 30);
-        auto image_padded_span =
-            span_2d_char({30, 30}, image_vector_padded.data());
-        image_padded_span({1, 29}, {1, 29}) =
-            span_2d_char({28, 28}, images.data() + image_index * (28 * 28));
+        auto image_vector_padded =
+            std::pmr::vector<uint8_t>(num_images_in_batch * 30 * 30);
+        auto image_padded_span = span_3d_char({inum_images_in_batch, 30, 30},
+                                              image_vector_padded.data());
+        image_padded_span(multi::_, {1, 29}, {1, 29}) =
+            span_3d_char({inum_images_in_batch, 28, 28},
+                         images.data() + batch_index * (batch_size * 28 * 28));
 
-        auto conv1_output = std::pmr::vector<float>(8 * 28 * 28);
-        auto conv1_output_span =
-            span_3d_float({8, 28, 28}, conv1_output.data());
-// apply first convolution
+        auto conv1_output =
+            std::pmr::vector<float>(num_images_in_batch * 8 * 28 * 28);
+        auto conv1_output_span = span_4d_float(
+            {inum_images_in_batch, 8, 28, 28}, conv1_output.data());
 #pragma omp parallel for
-        for (int i = 1; i < image_padded_span.sizes().get<0>() - 1; ++i) {
-            for (int j = 1; j < image_padded_span.sizes().get<1>() - 1; ++j) {
-                for (int k = 0; k < conv1_weight_span.sizes().get<0>(); ++k) {
-                    // sum_m_n(conv1_weight_span[k, 0, m, n] *
-                    // image_padded_span[i + m -1, j + n -1] ) + bias[k] (10
-                    // terms per k)
-                    conv1_output_span(k, i - 1, j - 1) =
-                        conv1_weight_span(k, 0, 0, 0) *
-                            image_padded_span(i - 1, j - 1) +
-                        conv1_weight_span(k, 0, 0, 1) *
-                            image_padded_span(i - 1, j + 0) +
-                        conv1_weight_span(k, 0, 0, 2) *
-                            image_padded_span(i - 1, j + 1) +
-                        conv1_weight_span(k, 0, 1, 0) *
-                            image_padded_span(i + 0, j - 1) +
-                        conv1_weight_span(k, 0, 1, 1) *
-                            image_padded_span(i + 0, j + 0) +
-                        conv1_weight_span(k, 0, 1, 2) *
-                            image_padded_span(i + 0, j + 1) +
-                        conv1_weight_span(k, 0, 2, 0) *
-                            image_padded_span(i + 1, j - 1) +
-                        conv1_weight_span(k, 0, 2, 1) *
-                            image_padded_span(i + 1, j + 0) +
-                        conv1_weight_span(k, 0, 2, 2) *
-                            image_padded_span(i + 1, j + 1) +
-                        conv1_bias_span(k, 0);
-                    // apply first activation function (relu)
-                    if (conv1_output_span(k, i - 1, j - 1) < 0.) {
-                        conv1_output_span(k, i - 1, j - 1) = 0.;
+        for (int o = 0; o < image_padded_span.sizes().get<0>(); ++o) {
+            for (int i = 1; i < image_padded_span.sizes().get<1>() - 1; ++i) {
+                for (int j = 1; j < image_padded_span.sizes().get<2>() - 1;
+                     ++j) {
+                    for (int k = 0; k < conv1_weight_span.sizes().get<0>();
+                         ++k) {
+                        // sum_m_n(conv1_weight_span[k, 0, m, n] *
+                        // image_padded_span[i + m -1, j + n -1] ) + bias[k] (10
+                        // terms per k)
+                        conv1_output_span(o, k, i - 1, j - 1) =
+                            conv1_weight_span(k, 0, 0, 0) *
+                                image_padded_span(o, i - 1, j - 1) +
+                            conv1_weight_span(k, 0, 0, 1) *
+                                image_padded_span(o, i - 1, j + 0) +
+                            conv1_weight_span(k, 0, 0, 2) *
+                                image_padded_span(o, i - 1, j + 1) +
+                            conv1_weight_span(k, 0, 1, 0) *
+                                image_padded_span(o, i + 0, j - 1) +
+                            conv1_weight_span(k, 0, 1, 1) *
+                                image_padded_span(o, i + 0, j + 0) +
+                            conv1_weight_span(k, 0, 1, 2) *
+                                image_padded_span(o, i + 0, j + 1) +
+                            conv1_weight_span(k, 0, 2, 0) *
+                                image_padded_span(o, i + 1, j - 1) +
+                            conv1_weight_span(k, 0, 2, 1) *
+                                image_padded_span(o, i + 1, j + 0) +
+                            conv1_weight_span(k, 0, 2, 2) *
+                                image_padded_span(o, i + 1, j + 1) +
+                            conv1_bias_span(k, 0);
+                        // apply first activation function (relu)
+                        if (conv1_output_span(o, k, i - 1, j - 1) < 0.) {
+                            conv1_output_span(o, k, i - 1, j - 1) = 0.;
+                        }
                     }
                 }
             }
         }
 
         // apply max pooling
-        std::pmr::vector<float> conv1_output_pooled(8 * 14 * 14);
-        auto conv1_output_pooled_span =
-            span_3d_float({8, 14, 14}, conv1_output_pooled.data());
+        std::pmr::vector<float> conv1_output_pooled(num_images_in_batch * 8 *
+                                                    14 * 14);
+        auto conv1_output_pooled_span = span_4d_float(
+            {inum_images_in_batch, 8, 14, 14}, conv1_output_pooled.data());
 #pragma omp parallel for
-        for (int i = 0; i < 14; ++i) {
-            for (int j = 0; j < 14; ++j) {
-                for (int k = 0; k < 8; ++k) {
-                    auto window = conv1_output_span(k, {2 * i, 2 * i + 1},
-                                                    {2 * j, 2 * j + 1});
-                    auto max_val =
-                        (*std::max_element(window.begin(), window.end()))[0];
-                    conv1_output_pooled_span(k, i, j) = max_val;
+        for (int o = 0; o < num_images_in_batch; ++o) {
+            for (int i = 0; i < 14; ++i) {
+                for (int j = 0; j < 14; ++j) {
+                    for (int k = 0; k < 8; ++k) {
+                        auto window = conv1_output_span(
+                            o, k, {2 * i, 2 * i + 1}, {2 * j, 2 * j + 1});
+                        auto max_val = (*std::max_element(window.begin(),
+                                                          window.end()))[0];
+                        conv1_output_pooled_span(o, k, i, j) = max_val;
+                    }
                 }
             }
         }
+
+        // apply second convolution
+        // copy data to larger array for zero-padding at the edges
+        auto feature_vector_padded =
+            std::pmr::vector<float>(num_images_in_batch * 8 * 16 * 16);
+        auto feature_padded_span = span_4d_float(
+            {inum_images_in_batch, 8, 16, 16}, feature_vector_padded.data());
+        feature_padded_span(multi::_, multi::_, {1, 15}, {1, 15}) =
+            conv1_output_pooled_span;
+
+        auto conv2_output =
+            std::pmr::vector<float>(num_images_in_batch * 16 * 14 * 14);
+        auto conv2_output_span = span_4d_float(
+            {inum_images_in_batch, 16, 14, 14}, conv2_output.data());
+#pragma omp parallel for
+        for (int o = 0; o < feature_padded_span.sizes().get<0>(); ++o) {
+            for (int i = 1; i < feature_padded_span.sizes().get<1>() - 1; ++i) {
+                for (int j = 1; j < feature_padded_span.sizes().get<2>() - 1;
+                     ++j) {
+                    for (int k = 0; k < conv2_weight_span.sizes().get<0>();
+                         ++k) {
+                        conv2_output_span(o, k, i - 1, j - 1) =
+                            conv2_weight_span(k, 0, 0, 0) *
+                                image_padded_span(o, i - 1, j - 1) +
+                            conv2_weight_span(k, 0, 0, 1) *
+                                image_padded_span(o, i - 1, j + 0) +
+                            conv2_weight_span(k, 0, 0, 2) *
+                                image_padded_span(o, i - 1, j + 1) +
+                            conv2_weight_span(k, 0, 1, 0) *
+                                image_padded_span(o, i + 0, j - 1) +
+                            conv2_weight_span(k, 0, 1, 1) *
+                                image_padded_span(o, i + 0, j + 0) +
+                            conv2_weight_span(k, 0, 1, 2) *
+                                image_padded_span(o, i + 0, j + 1) +
+                            conv2_weight_span(k, 0, 2, 0) *
+                                image_padded_span(o, i + 1, j - 1) +
+                            conv2_weight_span(k, 0, 2, 1) *
+                                image_padded_span(o, i + 1, j + 0) +
+                            conv2_weight_span(k, 0, 2, 2) *
+                                image_padded_span(o, i + 1, j + 1) +
+                            conv2_bias_span(k, 0);
+                        // apply activation function (relu)
+                        if (conv2_output_span(o, k, i - 1, j - 1) < 0.) {
+                            conv2_output_span(o, k, i - 1, j - 1) = 0.;
+                        }
+                    }
+                }
+            }
+        }
+
+        // apply max pooling
+        std::pmr::vector<float> conv2_output_pooled(num_images_in_batch * 16 *
+                                                    7 * 7);
+        auto conv2_output_pooled_span = span_4d_float(
+            {inum_images_in_batch, 16, 7, 7}, conv2_output_pooled.data());
+#pragma omp parallel for
+        for (int o = 0; o < num_images_in_batch; ++o) {
+            for (int i = 0; i < 7; ++i) {
+                for (int j = 0; j < 7; ++j) {
+                    for (int k = 0; k < 16; ++k) {
+                        auto window = conv2_output_span(
+                            o, k, {2 * i, 2 * i + 1}, {2 * j, 2 * j + 1});
+                        auto max_val = (*std::max_element(window.begin(),
+                                                          window.end()))[0];
+                        conv2_output_pooled_span(o, k, i, j) = max_val;
+                    }
+                }
+            }
+        }
+
+        // apply dense layer
+        std::pmr::vector<float> fc1_output(num_images_in_batch * 10);
+        auto fc1_output_span =
+            span_2d_float({10, inum_images_in_batch}, fc1_output.data());
+        auto conv2_output_flattened = span_2d_float(
+            {inum_images_in_batch, 16 * 7 * 7}, conv2_output_pooled.data());
+        fc1_output_span = multi::blas::gemm(
+            1., fc1_weight_span, conv2_output_flattened.transposed());
+        // using multi::operator+=; // doesn't work yet? ->
+        // https://github.com/correaa/boost-multi/blob/master/include/boost/multi/adaptors/blas/README.md
+        // footnote 3
+        // std::transform(fc1_bias_span.begin(), fc1_bias_span.end(),
+        // // appears to not work
+        //                fc1_output_span.begin(), fc1_output_span.begin(),
+        //                [](auto ex, auto ey) {
+        //                    return ex[0] + ey[0];
+        //                });  // this would also be nicer without the [0]
+        //                indexing
+        std::transform(fc1_bias.begin(), fc1_bias.end(), fc1_output.begin(),
+                       fc1_output.begin(),
+                       [](auto ex, auto ey) { return ex + ey; });
     }
 }
 

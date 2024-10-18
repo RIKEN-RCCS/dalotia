@@ -27,6 +27,10 @@ FetchContent_GetProperties(multi SOURCE_DIR MULTI_CPP_INCLUDE_DIR BINARY_DIR MUL
 target_include_directories(dalotia_cpp PUBLIC ${MULTI_CPP_INCLUDE_DIR} ${MULTI_DIR})
 target_link_libraries(dalotia_cpp multi)
 
+find_package(BLAS REQUIRED BLA_STATIC)
+target_link_libraries(dalotia_cpp ${BLAS_LIBRARIES})
+message(STATUS "BLAS_LIBRARIES: ${BLAS_LIBRARIES}") #TODO only link necessary
+
 # safetensors-cpp
 if (DALOTIA_WITH_SAFETENSORS_CPP)
   FetchContent_Declare(
