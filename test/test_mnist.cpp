@@ -113,6 +113,45 @@ std::pmr::vector<float> read_mnist_scaled(std::string full_path) {
 
 namespace multi = boost::multi;
 // using namespace multi::operators; // not yet found
+// output helper function for debugging
+template <long int N>
+std::ostream &operator<<(
+    std::ostream &os,
+    multi::subarray<float, N, float *,
+                    boost::multi::layout_t<N, long int>> const &arrayref) {
+    os << "subarray of " << N << "D array" << std::endl;
+    if constexpr (N == 2) {
+        auto [ni, nj] = arrayref.sizes();
+        std::cout << "sizes: " << ni << " " << nj << std::endl;
+        auto [is, js] = arrayref.extensions();
+        for (const auto &i : is) {
+            for (const auto &j : js) {
+                os << arrayref[i][j] << ' ';
+            }
+            os << std::endl;
+        }
+    } else if constexpr (N == 3) {
+        auto [ni, nj, nk] = arrayref.sizes();
+        std::cout << "sizes: " << ni << " " << nj << " " << nk << std::endl;
+        auto [is, js, ks] = arrayref.extensions();
+        // arrayref.extensions().template get<0>()
+        // arrayref.extensions()[0]
+        // arrayref.sizes()[1]
+        for (const auto &i : is) {
+            for (const auto &j : js) {
+                for (const auto &k : ks) {
+                    os << arrayref[i][j][k] << ' ';
+                }
+                os << std::endl;
+            }
+            os << std::endl;
+        }
+    } else {
+        throw std::runtime_error("only < ?D arrays supported");
+    }
+    os << std::endl;
+    return os;
+}
 
 void test_inference(std::string filename) {
     using span_4d_float = multi::array_ref<float, 4>;
@@ -305,6 +344,11 @@ void test_inference(std::string filename) {
 
         std::cout << conv2_output_span(0, multi::_, multi::_, multi::_)
                   << std::endl;
+        
+        if (batch_index == 0) { // compare to python result
+            assert(conv2_output_span[0][0][0][0] < 0.4063);
+            assert(conv2_output_span[0][0][0][0] > 0.4062);
+        }
 
         // apply max pooling
         std::pmr::vector<float> conv2_output_pooled(num_images_in_batch * 16 *
