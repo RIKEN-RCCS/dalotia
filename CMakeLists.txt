@@ -8,9 +8,9 @@ option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MAKE_PROGRAM "make")
 
-set(DALOTIA_CPP_SOURCES dalotia_assignment.cpp dalotia_formats.cpp safetensors_file.cpp)
-add_library(dalotia_cpp ${DALOTIA_CPP_SOURCES})
+add_subdirectory(src)
 
+# external dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
 # boost::multi instead of mdspan

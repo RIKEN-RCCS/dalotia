@@ -1,6 +1,6 @@
 #include <assert.h>
 
-#include "../dalotia.h"
+#include "dalotia.h"
 
 void test_get_tensor_names(const char* filename) {
     DalotiaTensorFile* dalotia_file = open_file(filename);
