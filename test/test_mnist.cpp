@@ -79,8 +79,9 @@ int reverseEndianness(int i) {
     c4 = (i >> 24) & 255;
     return ((int)c1 << 24) + ((int)c2 << 16) + ((int)c3 << 8) + c4;
 }
-std::pmr::vector<uint8_t> read_mnist(std::string full_path) {
+std::pmr::vector<float> read_mnist_scaled(std::string full_path) {
     std::pmr::vector<uint8_t> vector_of_images;
+    std::pmr::vector<float> vector_of_images_scaled;
     std::ifstream file(full_path, std::ios::binary);
     std::cout << "Reading " << full_path << std::endl;
     if (file.is_open()) {
@@ -102,8 +103,12 @@ std::pmr::vector<uint8_t> read_mnist(std::string full_path) {
         assert(n_cols == 28);
         vector_of_images.resize(number_of_images * n_rows * n_cols);
         file.read((char *)vector_of_images.data(), vector_of_images.size());
+        std::transform(vector_of_images.begin(), vector_of_images.end(),
+                       std::back_inserter(vector_of_images_scaled),
+                       [](uint8_t x) { return x / 255.0; });
+        file.close();
     }
-    return vector_of_images;
+    return vector_of_images_scaled;
 }
 
 namespace multi = boost::multi;
@@ -113,7 +118,6 @@ void test_inference(std::string filename) {
     using span_4d_float = multi::array_ref<float, 4>;
     using span_3d_float = multi::array_ref<float, 3>;
     using span_2d_float = multi::array_ref<float, 2>;
-    using span_3d_char = multi::array_ref<uint8_t, 3>;
 
     auto [conv1_weight, conv1_bias] =
         test_load(filename, "conv1");  // TODO why can't I make them const?
@@ -131,7 +135,7 @@ void test_inference(std::string filename) {
     const auto fc1_weight_span = span_2d_float({10, 784}, fc1_weight.data());
     const auto fc1_bias_span = span_2d_float({10, 1}, fc1_bias.data());
 
-    // return;  // early return for CI, to avoid data handling ;)
+    return;  // early return for CI, to avoid data handling ;)
 
     // load the mnist test data // as in
     // https://medium.com/@myringoleMLGOD/simple-convolutional-neural-network-cnn-for-dummies-in-pytorch-a-step-by-step-guide-6f4109f6df80
@@ -141,7 +145,7 @@ void test_inference(std::string filename) {
     std::string mnist_test_labels_filename =
         "../../python-fiddling/dataset/MNIST/raw/t10k-labels-idx3-ubyte";
 
-    auto images = read_mnist(mnist_test_images_filename);
+    auto images = read_mnist_scaled(mnist_test_images_filename);
     // auto labels = read_mnist(mnist_test_labels_filename);
     auto total_num_images = images.size() / (28 * 28);
 
@@ -160,12 +164,12 @@ void test_inference(std::string filename) {
         // apply first convolution
         // copy data to larger array for zero-padding at the edges
         auto image_vector_padded =
-            std::pmr::vector<uint8_t>(num_images_in_batch * 30 * 30);
-        auto image_padded_span = span_3d_char({inum_images_in_batch, 30, 30},
-                                              image_vector_padded.data());
+            std::pmr::vector<float>(num_images_in_batch * 30 * 30);
+        auto image_padded_span = span_3d_float({inum_images_in_batch, 30, 30},
+                                               image_vector_padded.data());
         image_padded_span(multi::_, {1, 29}, {1, 29}) =
-            span_3d_char({inum_images_in_batch, 28, 28},
-                         images.data() + batch_index * (batch_size * 28 * 28));
+            span_3d_float({inum_images_in_batch, 28, 28},
+                          images.data() + batch_index * (batch_size * 28 * 28));
 
         auto conv1_output =
             std::pmr::vector<float>(num_images_in_batch * 8 * 28 * 28);
