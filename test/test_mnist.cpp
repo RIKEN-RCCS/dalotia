@@ -2,8 +2,8 @@
 #include <cassert>
 #include <fstream>
 
-#include "../dalotia.hpp"
-#include "../safetensors_file.hpp"
+#include "dalotia.hpp"
+#include "safetensors_file.hpp"
 // #include "mdspan/mdspan.hpp"
 #include <boost/multi/array.hpp>
 #include <multi/adaptors/blas.hpp>
