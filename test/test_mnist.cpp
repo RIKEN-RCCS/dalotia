@@ -177,14 +177,14 @@ void test_inference(std::string filename) {
             {inum_images_in_batch, 8, 28, 28}, conv1_output.data());
 #pragma omp parallel for
         for (int o = 0; o < image_padded_span.sizes().get<0>(); ++o) {
-            for (int i = 1; i < image_padded_span.sizes().get<1>() - 1; ++i) {
-                for (int j = 1; j < image_padded_span.sizes().get<2>() - 1;
-                     ++j) {
-                    for (int k = 0; k < conv1_weight_span.sizes().get<0>();
-                         ++k) {
+            for (int k = 0; k < conv1_weight_span.sizes().get<0>(); ++k) {
+                for (int i = 1; i < image_padded_span.sizes().get<1>() - 1;
+                     ++i) {
+                    for (int j = 1; j < image_padded_span.sizes().get<2>() - 1;
+                         ++j) {
                         // sum_m_n(conv1_weight_span[k, 0, m, n] *
-                        // image_padded_span[i + m -1, j + n -1] ) + bias[k] (10
-                        // terms per k)
+                        // image_padded_span[i + m -1, j + n -1] ) + bias[k]
+                        // (=> 10 terms per o and k)
                         conv1_output_span(o, k, i - 1, j - 1) =
                             conv1_weight_span(k, 0, 0, 0) *
                                 image_padded_span(o, i - 1, j - 1) +
@@ -221,9 +221,9 @@ void test_inference(std::string filename) {
             {inum_images_in_batch, 8, 14, 14}, conv1_output_pooled.data());
 #pragma omp parallel for
         for (int o = 0; o < num_images_in_batch; ++o) {
-            for (int i = 0; i < 14; ++i) {
-                for (int j = 0; j < 14; ++j) {
-                    for (int k = 0; k < 8; ++k) {
+            for (int k = 0; k < 8; ++k) {
+                for (int i = 0; i < 14; ++i) {
+                    for (int j = 0; j < 14; ++j) {
                         auto window = conv1_output_span(
                             o, k, {2 * i, 2 * i + 1}, {2 * j, 2 * j + 1});
                         auto max_val = (*std::max_element(window.begin(),
@@ -242,46 +242,69 @@ void test_inference(std::string filename) {
             {inum_images_in_batch, 8, 16, 16}, feature_vector_padded.data());
         feature_padded_span(multi::_, multi::_, {1, 15}, {1, 15}) =
             conv1_output_pooled_span;
+        const auto &c_feature_padded_span = feature_padded_span;
 
         auto conv2_output =
             std::pmr::vector<float>(num_images_in_batch * 16 * 14 * 14);
         auto conv2_output_span = span_4d_float(
             {inum_images_in_batch, 16, 14, 14}, conv2_output.data());
+
+        // assert that the sizes match
+        assert(conv2_weight_span.sizes().get<0>() ==
+               conv2_output_span.sizes().get<1>());  // 16 output channels
+        assert(conv2_bias_span.sizes().get<0>() ==
+               conv2_weight_span.sizes().get<0>());
+        assert(conv2_weight_span.sizes().get<1>() ==
+               c_feature_padded_span.sizes().get<1>());  // 8 input channels
+        assert(conv2_output_span.sizes().get<2>() ==
+               c_feature_padded_span.sizes().get<2>() - 2);
+        assert(conv2_output_span.sizes().get<3>() ==
+               c_feature_padded_span.sizes().get<3>() - 2);
+        assert(c_feature_padded_span.sizes().get<0>() == inum_images_in_batch);
+        assert(conv2_output_span.sizes().get<0>() == inum_images_in_batch);
 #pragma omp parallel for
-        for (int o = 0; o < feature_padded_span.sizes().get<0>(); ++o) {
-            for (int i = 1; i < feature_padded_span.sizes().get<1>() - 1; ++i) {
-                for (int j = 1; j < feature_padded_span.sizes().get<2>() - 1;
-                     ++j) {
-                    for (int k = 0; k < conv2_weight_span.sizes().get<0>();
-                         ++k) {
-                        conv2_output_span(o, k, i - 1, j - 1) =
-                            conv2_weight_span(k, 0, 0, 0) *
-                                image_padded_span(o, i - 1, j - 1) +
-                            conv2_weight_span(k, 0, 0, 1) *
-                                image_padded_span(o, i - 1, j + 0) +
-                            conv2_weight_span(k, 0, 0, 2) *
-                                image_padded_span(o, i - 1, j + 1) +
-                            conv2_weight_span(k, 0, 1, 0) *
-                                image_padded_span(o, i + 0, j - 1) +
-                            conv2_weight_span(k, 0, 1, 1) *
-                                image_padded_span(o, i + 0, j + 0) +
-                            conv2_weight_span(k, 0, 1, 2) *
-                                image_padded_span(o, i + 0, j + 1) +
-                            conv2_weight_span(k, 0, 2, 0) *
-                                image_padded_span(o, i + 1, j - 1) +
-                            conv2_weight_span(k, 0, 2, 1) *
-                                image_padded_span(o, i + 1, j + 0) +
-                            conv2_weight_span(k, 0, 2, 2) *
-                                image_padded_span(o, i + 1, j + 1) +
-                            conv2_bias_span(k, 0);
-                        // apply activation function (relu)
-                        if (conv2_output_span(o, k, i - 1, j - 1) < 0.) {
-                            conv2_output_span(o, k, i - 1, j - 1) = 0.;
+        for (int o = 0; o < c_feature_padded_span.sizes().get<0>(); ++o) {
+            for (int k = 0; k < conv2_weight_span.sizes().get<0>(); ++k) {
+                for (int i = 1; i < c_feature_padded_span.sizes().get<2>() - 1;
+                     ++i) {
+                    for (int j = 1;
+                         j < c_feature_padded_span.sizes().get<3>() - 1; ++j) {
+                        float value = 0;
+                        for (int l = 0; l < conv2_weight_span.sizes().get<1>();
+                             ++l) {
+                            value +=
+                                conv2_weight_span(l, k, 0, 0) *
+                                    c_feature_padded_span(o, l, i - 1, j - 1) +
+                                conv2_weight_span(l, k, 0, 1) *
+                                    c_feature_padded_span(o, l, i - 1, j + 0) +
+                                conv2_weight_span(l, k, 0, 2) *
+                                    c_feature_padded_span(o, l, i - 1, j + 1) +
+                                conv2_weight_span(l, k, 1, 0) *
+                                    c_feature_padded_span(o, l, i + 0, j - 1) +
+                                conv2_weight_span(l, k, 1, 1) *
+                                    c_feature_padded_span(o, l, i + 0, j + 0) +
+                                conv2_weight_span(l, k, 1, 2) *
+                                    c_feature_padded_span(o, l, i + 0, j + 1) +
+                                conv2_weight_span(l, k, 2, 0) *
+                                    c_feature_padded_span(o, l, i + 1, j - 1) +
+                                conv2_weight_span(l, k, 2, 1) *
+                                    c_feature_padded_span(o, l, i + 1, j + 0) +
+                                conv2_weight_span(l, k, 2, 2) *
+                                    c_feature_padded_span(o, l, i + 1, j + 1) +
+                                conv2_bias_span(l, 0);
                         }
+                        // apply activation function (relu)
+                        if (value < 0.) {
+                            value = 0.;
+                        }
+                        conv2_output_span(o, k, i - 1, j - 1) = value;
                     }
                 }
             }
         }
+
+        std::cout << conv2_output_span(0, multi::_, multi::_, multi::_)
+                  << std::endl;
 
         // apply max pooling
         std::pmr::vector<float> conv2_output_pooled(num_images_in_batch * 16 *
@@ -306,11 +329,11 @@ void test_inference(std::string filename) {
         // apply dense layer
         std::pmr::vector<float> fc1_output(num_images_in_batch * 10);
         auto fc1_output_span =
-            span_2d_float({10, inum_images_in_batch}, fc1_output.data());
+            span_2d_float({inum_images_in_batch, 10}, fc1_output.data());
         auto conv2_output_flattened = span_2d_float(
             {inum_images_in_batch, 16 * 7 * 7}, conv2_output_pooled.data());
-        fc1_output_span = multi::blas::gemm(
-            1., fc1_weight_span, conv2_output_flattened.transposed());
+        fc1_output_span = multi::blas::gemm(1., conv2_output_flattened,
+                                            fc1_weight_span.transposed());
         // using multi::operator+=; // doesn't work yet? ->
         // https://github.com/correaa/boost-multi/blob/master/include/boost/multi/adaptors/blas/README.md
         // footnote 3
