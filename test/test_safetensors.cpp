@@ -1,4 +1,5 @@
 #include "../dalotia.hpp"
+#include "../dalotia.h"
 
 void test_simple_linear_load() {
     // the C version
