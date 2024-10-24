@@ -5,10 +5,10 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <iostream>  //TODO remove
 #include <memory>
 #include <memory_resource>
 #include <numeric>
+#include <stdexcept>
 #include <string>
 #include <vector>
 

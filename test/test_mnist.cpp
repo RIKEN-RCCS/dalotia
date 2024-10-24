@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <fstream>
+#include <iostream>
 
 #include "dalotia.hpp"
 #include "safetensors_file.hpp"
@@ -344,8 +345,8 @@ void test_inference(std::string filename) {
 
         std::cout << conv2_output_span(0, multi::_, multi::_, multi::_)
                   << std::endl;
-        
-        if (batch_index == 0) { // compare to python result
+
+        if (batch_index == 0) {  // compare to python result
             assert(conv2_output_span[0][0][0][0] < 0.4063);
             assert(conv2_output_span[0][0][0][0] > 0.4062);
         }

@@ -1,5 +1,8 @@
-#include "dalotia.hpp"
+#include <cassert>
+#include <iostream>
+
 #include "dalotia.h"
+#include "dalotia.hpp"
 
 void test_simple_linear_load() {
     // the C version

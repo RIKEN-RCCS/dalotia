@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 
 #include "dalotia_assignment.hpp"
 // #include "dalotia_formats.hpp"
