@@ -8,7 +8,8 @@ namespace dalotia {
 TensorFile *make_tensor_file(std::string filename) {
     // make sure the file exists
     if (!std::filesystem::exists(filename)) {
-        throw std::runtime_error("File " + filename + " does not exist");
+        throw std::runtime_error("dalotia make_tensor_file: File " + filename +
+                                 " does not exist");
     }
 
     // check file extension
@@ -49,6 +50,14 @@ int get_num_tensors(DalotiaTensorFile *file) {
     return static_cast<int>(reinterpret_cast<dalotia::TensorFile *>(file)
                                 ->get_tensor_names()
                                 .size());
+}
+
+void get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
+    auto tensor_names =
+        reinterpret_cast<dalotia::TensorFile *>(file)->get_tensor_names();
+    const std::string &tensor_name = tensor_names.at(index);
+    std::copy(tensor_name.begin(), tensor_name.end(), name);
+    name[tensor_name.size()] = '\0';
 }
 
 int get_num_dimensions(DalotiaTensorFile *file, const char *tensor_name) {
