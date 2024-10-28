@@ -60,6 +60,8 @@ int get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
     name[tensor_name.size()] = '\0'; // zero-terminate
     // return the length of the string
     //TODO find out if safetensors specifies a maximum length??
+    // for now, assume 255
+    assert (tensor_name.size() < 256);
     return static_cast<int>(tensor_name.size());
 }
 

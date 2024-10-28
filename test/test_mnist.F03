@@ -22,20 +22,52 @@ module dalotia_c_interface !TODO move to src
         type(C_ptr),intent(in), value:: dalotia_file_pointer
     end subroutine dalotia_close_file
 
+    logical function dalotia_is_sparse(dalotia_file_pointer, tensor_name) bind(C,name="is_sparse")
+        use,intrinsic::ISO_C_BINDING
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=c_char),intent(in), value:: tensor_name
+    end function dalotia_is_sparse
+
     integer function dalotia_get_num_tensors(dalotia_file_pointer) bind(C,name="get_num_tensors")
         use,intrinsic::ISO_C_BINDING
         implicit none
         type(C_ptr),intent(in), value :: dalotia_file_pointer
     end function dalotia_get_num_tensors
 
-    subroutine dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index, tensor_name) bind(C,name="get_tensor_name")
+    integer function dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index_c, tensor_name) bind(C,name="get_tensor_name")
         use,intrinsic::ISO_C_BINDING
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
-        integer(C_INT),intent(in), value:: tensor_index
+        integer(C_INT),intent(in), value:: tensor_index_c
         character(kind=c_char), dimension(*), intent(out):: tensor_name
-    end subroutine dalotia_get_tensor_name_c
+    end function dalotia_get_tensor_name_c
   end interface
+  contains
+    integer function dalotia_get_tensor_name(dalotia_file_pointer, tensor_index_fortran, tensor_name)
+        use,intrinsic::ISO_C_BINDING
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        integer,intent(in), value:: tensor_index_fortran
+        integer(C_INT):: tensor_index_c
+        character(kind=c_char), dimension(255), intent(out):: tensor_name
+        integer :: i, tensor_name_length
+        
+        ! use C indexing
+        tensor_index_c = tensor_index_fortran - 1
+        tensor_name_length = dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index_c, tensor_name)
+        if (tensor_name(tensor_name_length + 1) .ne. NUL) then
+            !should not happen
+            write (*, *) "not nul '", tensor_name(tensor_name_length + 1)
+        end if
+        ! fill with blank spaces
+        i = tensor_name_length + 1
+        do while(i<=size(tensor_name))
+         tensor_name(i) = ' '
+         i = i + 1
+        end do
+        dalotia_get_tensor_name = tensor_name_length
+    end function dalotia_get_tensor_name
 end module dalotia_c_interface
 
 program test_mnist
@@ -67,11 +99,18 @@ subroutine raise_exception(message)
   i=1/(i-i)
 end subroutine raise_exception
 
+subroutine assert(condition)
+  logical, intent(in) :: condition
+  if (.not. condition) then
+    call raise_exception("Assertion failed")
+  end if
+end subroutine assert
+
 subroutine assert_equal(a, b)
   real, intent(in) :: a, b
   if (a /= b) then
     write (*, *) "Expected ", a, ", got ", b
-    call raise_exception("Assertion failed")
+    call assert(.false.)
   end if
 end subroutine assert_equal
 
@@ -79,15 +118,16 @@ subroutine assert_equal_strings(a, b)
   character(len=*), intent(in) :: a, b
   if (a /= b) then
     write (*, *) "Expected ", b, ", got ", a
-    call raise_exception("Assertion failed")
+    call assert(.false.)
   end if
 end subroutine assert_equal_strings
 
 subroutine test_get_tensor_names(filename)
     character(*), intent(in) :: filename
-    character(100) :: tensor_name
-    integer :: num_tensors, i
+    character(255) :: tensor_name
+    integer :: num_tensors, i, tensor_name_length
     type (C_ptr) :: dalotia_file_pointer
+    logical :: is_sparse
 
     dalotia_file_pointer = dalotia_open_file(trim(filename))
 
@@ -96,15 +136,25 @@ subroutine test_get_tensor_names(filename)
         call raise_exception("Expected 6 tensors in model-mnist.safetensors")
     end if
 
-    do i = 0, num_tensors-1
-        call dalotia_get_tensor_name_c(dalotia_file_pointer, i, tensor_name)
-        write (*, *) "Tensor name: ", trim(tensor_name)
-        ! if (i == 1) then
-        !     call assert_equal_strings(trim(tensor_name),"conv1.weight")
-        ! end if
+    do i = 1, num_tensors
+        tensor_name_length = dalotia_get_tensor_name(dalotia_file_pointer, i, tensor_name)
+        if (i == 1) then
+            call assert_equal_strings(trim(tensor_name),"conv1.bias")
+        else if (i == 2) then
+            call assert_equal_strings(trim(tensor_name),"conv1.weight")
+        else if (i == 3) then
+            call assert_equal_strings(trim(tensor_name),"conv2.bias")
+        else if (i == 4) then
+            call assert_equal_strings(trim(tensor_name),"conv2.weight")
+        else if (i == 5) then
+            call assert_equal_strings(trim(tensor_name),"fc1.bias")
+        else if (i == 6) then
+            call assert_equal_strings(trim(tensor_name),"fc1.weight")
+        end if
+        is_sparse = dalotia_is_sparse(dalotia_file_pointer, trim(tensor_name))
+        call assert(.not. is_sparse)
     end do
 
-    write (*, *) "OK??"
     call dalotia_close_file(dalotia_file_pointer)
 end subroutine test_get_tensor_names
 
