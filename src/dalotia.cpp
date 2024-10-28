@@ -52,12 +52,15 @@ int get_num_tensors(DalotiaTensorFile *file) {
                                 .size());
 }
 
-void get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
+int get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
     auto tensor_names =
         reinterpret_cast<dalotia::TensorFile *>(file)->get_tensor_names();
     const std::string &tensor_name = tensor_names.at(index);
     std::copy(tensor_name.begin(), tensor_name.end(), name);
-    name[tensor_name.size()] = '\0';
+    name[tensor_name.size()] = '\0'; // zero-terminate
+    // return the length of the string
+    //TODO find out if safetensors specifies a maximum length??
+    return static_cast<int>(tensor_name.size());
 }
 
 int get_num_dimensions(DalotiaTensorFile *file, const char *tensor_name) {

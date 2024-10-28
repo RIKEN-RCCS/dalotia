@@ -23,7 +23,7 @@ EXTERNC bool is_sparse(DalotiaTensorFile *file, const char *tensor_name);
 
 EXTERNC int get_num_tensors(DalotiaTensorFile *file);
 
-EXTERNC void get_tensor_name(DalotiaTensorFile *file, int index, char *name);
+EXTERNC int get_tensor_name(DalotiaTensorFile *file, int index, char *name);
 
 EXTERNC int get_num_dimensions(DalotiaTensorFile *file,
                                const char *tensor_name);
