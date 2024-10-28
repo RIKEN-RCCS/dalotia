@@ -7,32 +7,35 @@ module dalotia_c_interface !TODO move to src
       C_const_char_ptr => C_ptr, &
       C_void_ptr => C_ptr, &
       C_const_void_ptr => C_ptr
+    implicit none
   interface
-    type(C_ptr) function open_file(file_name) bind(C,name="open_file")
+    type(C_ptr) function dalotia_open_file(file_name) bind(C,name="open_file")
         use,intrinsic::ISO_C_BINDING
         implicit none
         character(kind=c_char),intent(in):: file_name
-    end function open_file
+    end function dalotia_open_file
 
-    subroutine close_file(dalotia_file_pointer) bind(C,name="close_file")
+    subroutine dalotia_close_file(dalotia_file_pointer) bind(C,name="close_file")
         use,intrinsic::ISO_C_BINDING
         implicit none
-        type(C_ptr),intent(in):: dalotia_file_pointer
-    end subroutine close_file
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        ! integer, pointer :: dalotia_file_pointer
+    end subroutine dalotia_close_file
 
-    integer function get_num_tensors(dalotia_file_pointer) bind(C,name="get_num_tensors")
+    integer function dalotia_get_num_tensors(dalotia_file_pointer) bind(C,name="get_num_tensors")
         use,intrinsic::ISO_C_BINDING
         implicit none
-        type(C_ptr),intent(in):: dalotia_file_pointer
-    end function get_num_tensors
+        type(C_ptr),intent(in), value :: dalotia_file_pointer
+        ! integer, pointer :: dalotia_file_pointer
+    end function dalotia_get_num_tensors
 
-    subroutine get_tensor_name(dalotia_file_pointer, tensor_index, tensor_name) bind(C,name="get_tensor_name")
+    subroutine dalotia_get_tensor_name(dalotia_file_pointer, tensor_index, tensor_name) bind(C,name="get_tensor_name")
         use,intrinsic::ISO_C_BINDING
         implicit none
-        type(C_ptr),intent(in):: dalotia_file_pointer
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
         integer(C_INT),intent(in):: tensor_index
         character(kind=c_char),dimension(*),intent(out):: tensor_name
-    end subroutine get_tensor_name
+    end subroutine dalotia_get_tensor_name
   end interface
 end module dalotia_c_interface
 
@@ -56,7 +59,7 @@ program test_mnist
     ! write (*, *) images(:, :, 1)
 contains
 
-!https://stackoverflow.com/a/55376595
+!cf. https://stackoverflow.com/a/55376595
 subroutine raise_exception(message)
   integer i
   character(len=*) message
@@ -69,17 +72,17 @@ subroutine test_get_tensor_names(filename)
     character(*), intent(in) :: filename
     character(100) :: tensor_name
     integer :: num_tensors, i
-    type(C_ptr) :: dalotia_file_pointer
+    type (C_ptr) :: dalotia_file_pointer
 
-    dalotia_file_pointer = open_file(filename)
-    ! num_tensors = get_num_tensors(dalotia_file_pointer) !TODO why invalid memory reference?
+    dalotia_file_pointer = dalotia_open_file(trim(filename))
 
-    ! if (num_tensors .ne. 6) then
-    !     call raise_exception("Expected 6 tensors in model-mnist.safetensors")
-    ! end if
+    num_tensors = dalotia_get_num_tensors(dalotia_file_pointer)
+    if (num_tensors .ne. 6) then
+        call raise_exception("Expected 6 tensors in model-mnist.safetensors")
+    end if
 
     ! do i = 1, num_tensors
-    !     call get_tensor_name(dalotia_file_pointer, i, tensor_name)
+    !     call dalotia_get_tensor_name(dalotia_file_pointer, i, tensor_name)
     !     if (i == 1) then
     !         if (trim(tensor_name) /= "konv1") then
     !             call raise_exception("Expected tensor name conv1, got " // trim(tensor_name))
@@ -87,7 +90,8 @@ subroutine test_get_tensor_names(filename)
     !     end if
     ! end do
 
-    ! call close_file(dalotia_file_pointer)
+    write (*, *) "OK??"
+    call dalotia_close_file(dalotia_file_pointer)
 end subroutine test_get_tensor_names
 
 function read_mnist_scaled(full_path) result (array_of_images)
