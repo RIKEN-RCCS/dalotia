@@ -8,34 +8,33 @@ module dalotia_c_interface !TODO move to src
       C_void_ptr => C_ptr, &
       C_const_void_ptr => C_ptr
     implicit none
+    character(len=1,kind=C_char), parameter :: NUL = C_NULL_char
   interface
     type(C_ptr) function dalotia_open_file(file_name) bind(C,name="open_file")
         use,intrinsic::ISO_C_BINDING
         implicit none
-        character(kind=c_char),intent(in):: file_name
+        character(kind=c_char),intent(in), value:: file_name
     end function dalotia_open_file
 
     subroutine dalotia_close_file(dalotia_file_pointer) bind(C,name="close_file")
         use,intrinsic::ISO_C_BINDING
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
-        ! integer, pointer :: dalotia_file_pointer
     end subroutine dalotia_close_file
 
     integer function dalotia_get_num_tensors(dalotia_file_pointer) bind(C,name="get_num_tensors")
         use,intrinsic::ISO_C_BINDING
         implicit none
         type(C_ptr),intent(in), value :: dalotia_file_pointer
-        ! integer, pointer :: dalotia_file_pointer
     end function dalotia_get_num_tensors
 
-    subroutine dalotia_get_tensor_name(dalotia_file_pointer, tensor_index, tensor_name) bind(C,name="get_tensor_name")
+    subroutine dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index, tensor_name) bind(C,name="get_tensor_name")
         use,intrinsic::ISO_C_BINDING
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
-        integer(C_INT),intent(in):: tensor_index
-        character(kind=c_char),dimension(*),intent(out):: tensor_name
-    end subroutine dalotia_get_tensor_name
+        integer(C_INT),intent(in), value:: tensor_index
+        character(kind=c_char), dimension(*), intent(out):: tensor_name
+    end subroutine dalotia_get_tensor_name_c
   end interface
 end module dalotia_c_interface
 
@@ -68,6 +67,22 @@ subroutine raise_exception(message)
   i=1/(i-i)
 end subroutine raise_exception
 
+subroutine assert_equal(a, b)
+  real, intent(in) :: a, b
+  if (a /= b) then
+    write (*, *) "Expected ", a, ", got ", b
+    call raise_exception("Assertion failed")
+  end if
+end subroutine assert_equal
+
+subroutine assert_equal_strings(a, b)
+  character(len=*), intent(in) :: a, b
+  if (a /= b) then
+    write (*, *) "Expected ", b, ", got ", a
+    call raise_exception("Assertion failed")
+  end if
+end subroutine assert_equal_strings
+
 subroutine test_get_tensor_names(filename)
     character(*), intent(in) :: filename
     character(100) :: tensor_name
@@ -81,14 +96,13 @@ subroutine test_get_tensor_names(filename)
         call raise_exception("Expected 6 tensors in model-mnist.safetensors")
     end if
 
-    ! do i = 1, num_tensors
-    !     call dalotia_get_tensor_name(dalotia_file_pointer, i, tensor_name)
-    !     if (i == 1) then
-    !         if (trim(tensor_name) /= "konv1") then
-    !             call raise_exception("Expected tensor name conv1, got " // trim(tensor_name))
-    !         end if !TODO
-    !     end if
-    ! end do
+    do i = 0, num_tensors-1
+        call dalotia_get_tensor_name_c(dalotia_file_pointer, i, tensor_name)
+        write (*, *) "Tensor name: ", trim(tensor_name)
+        ! if (i == 1) then
+        !     call assert_equal_strings(trim(tensor_name),"conv1.weight")
+        ! end if
+    end do
 
     write (*, *) "OK??"
     call dalotia_close_file(dalotia_file_pointer)
