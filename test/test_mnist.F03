@@ -42,6 +42,13 @@ module dalotia_c_interface !TODO move to src
         integer(C_int),intent(in), value:: tensor_index_c
         character(kind=c_char), dimension(*), intent(inout):: tensor_name
     end function dalotia_get_tensor_name_c
+
+    integer function dalotia_get_num_dimensions(dalotia_file_pointer, tensor_name) bind(C,name="get_num_dimensions")
+        use,intrinsic::ISO_C_binding
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=c_char),intent(in), value:: tensor_name
+    end function dalotia_get_num_dimensions
   end interface
   contains
     integer function dalotia_get_tensor_name(dalotia_file_pointer, tensor_index_fortran, tensor_name)
