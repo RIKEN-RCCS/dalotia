@@ -1,6 +1,6 @@
 module dalotia_c_interface !TODO move to src
   ! cf. https://fortranwiki.org/fortran/show/c_interface_module
-  use, intrinsic :: ISO_C_Binding, &
+  use, intrinsic :: ISO_C_binding, &
   ! C type aliases for pointer derived types:
       C_ptr => C_ptr , &
       C_char_ptr => C_ptr, &
@@ -36,36 +36,38 @@ module dalotia_c_interface !TODO move to src
     end function dalotia_get_num_tensors
 
     integer function dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index_c, tensor_name) bind(C,name="get_tensor_name")
-        use,intrinsic::ISO_C_BINDING
+        use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
-        integer(C_INT),intent(in), value:: tensor_index_c
-        character(kind=c_char), dimension(*), intent(out):: tensor_name
+        integer(C_int),intent(in), value:: tensor_index_c
+        character(kind=c_char), dimension(*), intent(inout):: tensor_name
     end function dalotia_get_tensor_name_c
   end interface
   contains
     integer function dalotia_get_tensor_name(dalotia_file_pointer, tensor_index_fortran, tensor_name)
-        use,intrinsic::ISO_C_BINDING
+        use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
         integer,intent(in), value:: tensor_index_fortran
         integer(C_INT):: tensor_index_c
-        character(kind=c_char), dimension(255), intent(out):: tensor_name
-        integer :: i, tensor_name_length
+        character(:,kind=c_char), allocatable, intent(inout):: tensor_name
+        character(:,kind=c_char), allocatable :: tensor_name_c
+        integer :: tensor_name_length
         
         ! use C indexing
         tensor_index_c = tensor_index_fortran - 1
-        tensor_name_length = dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index_c, tensor_name)
-        if (tensor_name(tensor_name_length + 1) .ne. NUL) then
+        allocate(character(kind=c_char,len=256) :: tensor_name_c)
+        tensor_name_length = dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index_c, tensor_name_c)
+        if (tensor_name_c(tensor_name_length + 1:tensor_name_length + 1) .ne. NUL) then
             !should not happen
-            write (*, *) "not nul '", tensor_name(tensor_name_length + 1)
+            write (*, *) "not nul '", tensor_name_c(tensor_name_length + 1:tensor_name_length + 1)
         end if
-        ! fill with blank spaces
-        i = tensor_name_length + 1
-        do while(i<=size(tensor_name))
-         tensor_name(i) = ' '
-         i = i + 1
-        end do
+        ! if tensor_name is already allocated, deallocate it first
+        if( allocated(tensor_name) )  deallocate( tensor_name ) 
+        allocate(character(kind=c_char,len=tensor_name_length) :: tensor_name)
+        tensor_name = tensor_name_c(1:tensor_name_length)
+
+        ! set return value
         dalotia_get_tensor_name = tensor_name_length
     end function dalotia_get_tensor_name
 end module dalotia_c_interface
@@ -124,10 +126,11 @@ end subroutine assert_equal_strings
 
 subroutine test_get_tensor_names(filename)
     character(*), intent(in) :: filename
-    character(255) :: tensor_name
+    character(len=:), allocatable :: tensor_name
     integer :: num_tensors, i, tensor_name_length
     type (C_ptr) :: dalotia_file_pointer
     logical :: is_sparse
+    integer(C_int) :: num_dimensions
 
     dalotia_file_pointer = dalotia_open_file(trim(filename))
 
@@ -153,6 +156,8 @@ subroutine test_get_tensor_names(filename)
         end if
         is_sparse = dalotia_is_sparse(dalotia_file_pointer, trim(tensor_name))
         call assert(.not. is_sparse)
+        num_dimensions = dalotia_get_num_dimensions(dalotia_file_pointer, trim(tensor_name))
+        call assert(num_dimensions > 0)
     end do
 
     call dalotia_close_file(dalotia_file_pointer)
