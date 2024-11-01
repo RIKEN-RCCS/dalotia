@@ -47,8 +47,25 @@ module dalotia_c_interface !TODO move to src
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
-        character(kind=c_char),intent(in), value:: tensor_name
+        character(kind=c_char), dimension(*), intent(in):: tensor_name
     end function dalotia_get_num_dimensions
+
+    integer function dalotia_get_num_tensor_elements(dalotia_file_pointer, tensor_name) bind(C,name="get_num_tensor_elements")
+        use,intrinsic::ISO_C_binding
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=c_char), dimension(*), intent(in):: tensor_name
+    end function dalotia_get_num_tensor_elements
+
+    integer function dalotia_get_tensor_extents_c(dalotia_file_pointer, &
+            tensor_name, tensor_extents) bind(C,name="get_tensor_extents")
+        use,intrinsic::ISO_C_binding
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=c_char), dimension(*), intent(in):: tensor_name
+        integer(C_int), dimension(*), intent(inout):: tensor_extents
+    end function dalotia_get_tensor_extents_c
+
   end interface
   contains
     integer function dalotia_get_tensor_name(dalotia_file_pointer, tensor_index_fortran, tensor_name)
@@ -57,7 +74,7 @@ module dalotia_c_interface !TODO move to src
         type(C_ptr),intent(in), value:: dalotia_file_pointer
         integer,intent(in), value:: tensor_index_fortran
         integer(C_INT):: tensor_index_c
-        character(:,kind=c_char), allocatable, intent(inout):: tensor_name
+        character(:,kind=c_char), allocatable, intent(out):: tensor_name
         character(:,kind=c_char), allocatable :: tensor_name_c
         integer :: tensor_name_length
         
@@ -77,6 +94,23 @@ module dalotia_c_interface !TODO move to src
         ! set return value
         dalotia_get_tensor_name = tensor_name_length
     end function dalotia_get_tensor_name
+
+    integer function dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
+        use,intrinsic::ISO_C_binding
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*),intent(in):: tensor_name
+        integer(C_int), allocatable, intent(out):: tensor_extents(:)
+        integer(C_int) :: tensor_rank
+
+        ! character(kind=c_char, len=:), allocatable :: tensor_name_c
+        ! tensor_name_c = trim(tensor_name) // NUL !Appending null appears to be unnecessary
+        
+        tensor_rank = dalotia_get_num_dimensions(dalotia_file_pointer, tensor_name)
+        allocate(tensor_extents(tensor_rank))
+        tensor_rank = dalotia_get_tensor_extents_c(dalotia_file_pointer, tensor_name, tensor_extents)
+        dalotia_get_tensor_extents = tensor_rank
+    end function dalotia_get_tensor_extents
 end module dalotia_c_interface
 
 program test_mnist
@@ -88,9 +122,9 @@ program test_mnist
     filename = "../data/model-mnist.safetensors"
 
     call test_get_tensor_names(trim(filename))
-    ! test_load(filename, "conv1"); !TODO
-    ! test_load(filename, "conv2");
-    ! test_load(filename, "fc1");
+    call test_load(filename, "conv1"); !TODO
+    ! call test_load(filename, "conv2");
+    ! call test_load(filename, "fc1");
 
     stop ! early return for CI, to avoid data handling ;)
 
@@ -169,6 +203,50 @@ subroutine test_get_tensor_names(filename)
 
     call dalotia_close_file(dalotia_file_pointer)
 end subroutine test_get_tensor_names
+
+subroutine test_load(filename, tensor_name)
+    character(*), intent(in) :: filename, tensor_name
+    character(:), allocatable :: tensor_name_weight, tensor_name_bias
+    type(C_ptr) :: dalotia_file_pointer
+    integer(C_int), dimension(:), allocatable :: tensor_extents_weight, tensor_extents_bias
+    real(C_float), dimension(:,:), allocatable :: tensor
+    integer(C_int) :: num_dimensions_weight, num_dimensions_bias
+
+    tensor_name_weight = trim(tensor_name) // ".weight"
+    tensor_name_bias = trim(tensor_name) // ".bias"
+
+    dalotia_file_pointer = dalotia_open_file(trim(filename) // NUL)
+    num_dimensions_weight = dalotia_get_tensor_extents(dalotia_file_pointer, trim(tensor_name_weight), tensor_extents_weight)
+    num_dimensions_bias = dalotia_get_tensor_extents(dalotia_file_pointer, trim(tensor_name_bias), tensor_extents_bias)
+    if (tensor_name == "conv1") then
+        call assert(num_dimensions_weight == 4)
+        call assert(num_dimensions_bias == 1)
+        call assert(tensor_extents_weight(1) == 8)
+        call assert(tensor_extents_weight(2) == 1)
+        call assert(tensor_extents_weight(3) == 3)
+        call assert(tensor_extents_weight(4) == 3)
+        call assert(tensor_extents_bias(1) == 8)
+    else if (tensor_name == "conv2") then
+        call assert(num_dimensions_weight == 4)
+        call assert(num_dimensions_bias == 1)
+        call assert(tensor_extents_weight(1) == 16)
+        call assert(tensor_extents_weight(2) == 6)
+        call assert(tensor_extents_weight(3) == 5)
+        call assert(tensor_extents_weight(4) == 5)
+    else if (tensor_name == "fc1") then
+        call assert(num_dimensions_weight == 2)
+        call assert(num_dimensions_bias == 1)
+        call assert(tensor_extents_weight(1) == 10)
+        call assert(tensor_extents_weight(2) == 256)
+    else
+        call raise_exception("Unknown tensor name")
+    end if
+
+     ! call dalotia_load_tensor_dense(dalotia_file_pointer, trim(tensor_name_weight), ...) !!TODO
+
+    write(*,*) "All extents are correct "
+    call dalotia_close_file(dalotia_file_pointer)
+end subroutine test_load
 
 function read_mnist_scaled(full_path) result (array_of_images)
     use, intrinsic :: iso_fortran_env, only: INT32, INT8
