@@ -6,10 +6,12 @@ jobs:
     strategy:
       matrix:
         build_type: [Debug, Release]
-        # compiler: [gcc, clang]
-    name: Test Project
+        compiler: [gcc, clang]
+    name: Test Dalotia
     runs-on: ubuntu-latest
     steps:
+    - name: install valgrind
+      run: sudo apt-get install valgrind
     - name: Checkout
       uses: actions/checkout@v4.2.0
 
@@ -18,9 +20,12 @@ jobs:
       with:
         run-build: true
         build-args: --config ${{ matrix.build_type }}
+        cxx-compiler: ${{ matrix.compiler }}
+        build-dir: build-${{ matrix.compiler }}-${{ matrix.build_type }}
 
     - name: Test Project
       uses: threeal/ctest-action@v1.1.0
       with:
         # build-config: ${{ matrix.build_type }}
+        test-dir: build-${{ matrix.compiler }}-${{ matrix.build_type }}
         args: --output-on-failure -T memcheck
