@@ -17,7 +17,7 @@ jobs:
       uses: threeal/cmake-action@v1.3.0
       with:
         run-build: true
-        build-args: -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        build-args: --config ${{ matrix.build_type }}
 
     - name: Test Project
       uses: threeal/ctest-action@v1.1.0
