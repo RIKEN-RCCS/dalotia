@@ -86,8 +86,6 @@ module dalotia_c_interface !TODO move to src
             !should not happen
             write (*, *) "not nul '", tensor_name_c(tensor_name_length + 1:tensor_name_length + 1)
         end if
-        ! if tensor_name is already allocated, deallocate it first
-        if( allocated(tensor_name) )  deallocate( tensor_name ) 
         allocate(character(kind=c_char,len=tensor_name_length) :: tensor_name)
         tensor_name = tensor_name_c(1:tensor_name_length)
 
@@ -95,13 +93,12 @@ module dalotia_c_interface !TODO move to src
         dalotia_get_tensor_name = tensor_name_length
     end function dalotia_get_tensor_name
 
-    integer function dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
+    integer(C_int) function dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents) result(tensor_rank)
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*),intent(in):: tensor_name
         integer(C_int), allocatable, intent(out):: tensor_extents(:)
-        integer(C_int) :: tensor_rank
 
         ! character(kind=c_char, len=:), allocatable :: tensor_name_c
         ! tensor_name_c = trim(tensor_name) // NUL !Appending null appears to be unnecessary
@@ -109,7 +106,9 @@ module dalotia_c_interface !TODO move to src
         tensor_rank = dalotia_get_num_dimensions(dalotia_file_pointer, tensor_name)
         allocate(tensor_extents(tensor_rank))
         tensor_rank = dalotia_get_tensor_extents_c(dalotia_file_pointer, tensor_name, tensor_extents)
-        dalotia_get_tensor_extents = tensor_rank
+        
+        ! reverse the order of the dimensions; Fortran is column-major
+        tensor_extents = tensor_extents(tensor_rank:1:-1)
     end function dalotia_get_tensor_extents
 end module dalotia_c_interface
 
@@ -209,22 +208,24 @@ subroutine test_load(filename, tensor_name)
     character(:), allocatable :: tensor_name_weight, tensor_name_bias
     type(C_ptr) :: dalotia_file_pointer
     integer(C_int), dimension(:), allocatable :: tensor_extents_weight, tensor_extents_bias
-    real(C_float), dimension(:,:), allocatable :: tensor
-    integer(C_int) :: num_dimensions_weight, num_dimensions_bias
+    integer(C_int) :: num_dimensions_weight, num_dimensions_bias, num_elements_weight
 
     tensor_name_weight = trim(tensor_name) // ".weight"
     tensor_name_bias = trim(tensor_name) // ".bias"
 
     dalotia_file_pointer = dalotia_open_file(trim(filename) // NUL)
+    
+    num_elements_weight = dalotia_get_num_tensor_elements(dalotia_file_pointer, tensor_name_weight);
     num_dimensions_weight = dalotia_get_tensor_extents(dalotia_file_pointer, trim(tensor_name_weight), tensor_extents_weight)
     num_dimensions_bias = dalotia_get_tensor_extents(dalotia_file_pointer, trim(tensor_name_bias), tensor_extents_bias)
     if (tensor_name == "conv1") then
         call assert(num_dimensions_weight == 4)
+        call assert(num_elements_weight == 72)
         call assert(num_dimensions_bias == 1)
-        call assert(tensor_extents_weight(1) == 8)
-        call assert(tensor_extents_weight(2) == 1)
-        call assert(tensor_extents_weight(3) == 3)
-        call assert(tensor_extents_weight(4) == 3)
+        call assert(tensor_extents_weight(4) == 8)
+        call assert(tensor_extents_weight(3) == 1)
+        call assert(tensor_extents_weight(2) == 3)
+        call assert(tensor_extents_weight(1) == 3)
         call assert(tensor_extents_bias(1) == 8)
     else if (tensor_name == "conv2") then
         call assert(num_dimensions_weight == 4)
