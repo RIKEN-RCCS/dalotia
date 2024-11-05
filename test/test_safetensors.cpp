@@ -6,8 +6,8 @@
 
 void test_simple_linear_load() {
     // the C version
-    char *filename = "../data/model.safetensors";
-    char *tensor_name = "embedding";
+    char filename[] = "../data/model.safetensors";
+    char tensor_name[] = "embedding";
     DalotiaTensorFile *file = open_file(filename);
     bool tensor_is_sparse = is_sparse(file, tensor_name);
     assert(!tensor_is_sparse);
@@ -47,6 +47,9 @@ void test_simple_linear_load() {
     for (int i = 0; i < total_size; i++) {
         assert(double_tensor[i] == i);
     }
+
+    close_file(file);
+    free(tensor);
 }
 
 void test_permutation() {

@@ -11,8 +11,8 @@
 // application code
 
 int main(int argc, char *argv[]) {
-    char *filename = "data/model.safetensors";
-    char *tensor_name = "embedding_firstchanged";
+    char filename[] = "data/model.safetensors";
+    char tensor_name[] = "embedding_firstchanged";
     DalotiaTensorFile *file = open_file(filename);
     bool tensor_is_sparse = is_sparse(file, tensor_name);  //...repeat later
     char *tensor;
