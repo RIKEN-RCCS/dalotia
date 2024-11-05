@@ -1,18 +1,26 @@
-name: Test
+name: Build and Test
 on:
   push:
 jobs:
   test-project:
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        # compiler: [gcc, clang]
     name: Test Project
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4.2.0
+    - name: Checkout
+      uses: actions/checkout@v4.2.0
 
-      - name: Configure and Build Project
-        uses: threeal/cmake-action@v1.3.0
-        with:
-          run-build: true
+    - name: Configure and Build Project
+      uses: threeal/cmake-action@v1.3.0
+      with:
+        run-build: true
+        build-type: ${{ matrix.build_type }}
 
-      - name: Test Project
-        uses: threeal/ctest-action@v1.1.0
+    - name: Test Project
+      uses: threeal/ctest-action@v1.1.0
+      with:
+        build-config: ${{ matrix.build_type }}
+        args: --output-on-failure -T memcheck
