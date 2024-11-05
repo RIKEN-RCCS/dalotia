@@ -59,7 +59,7 @@ SafetensorsFile::SafetensorsFile(std::string filename) : TensorFile(filename) {
 
 SafetensorsFile::~SafetensorsFile() {
     if (st_.st_file != nullptr) {
-        //?free  // TODO not sure where ownership is
+        delete st_.st_file;
     }
 }
 
