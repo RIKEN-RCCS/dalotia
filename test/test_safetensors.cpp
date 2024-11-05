@@ -16,6 +16,10 @@ void test_simple_linear_load() {
     dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
 
     int extents[10];
+    // initialize to -1
+    for (int i = 0; i < 10; i++) {
+        extents[i] = -1;
+    }
     int num_dimensions = get_tensor_extents(file, tensor_name, extents);
     assert(num_dimensions == 3);
     assert(extents[0] == 3);

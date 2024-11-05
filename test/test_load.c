@@ -44,6 +44,11 @@ void test_load(const char* filename, const char* tensor_name) {
         sprintf(tensor_name_weight, "%s.weight", tensor_name);
         sprintf(tensor_name_bias, "%s.bias", tensor_name);
         int extents_weight[10], extents_bias[10];
+        // initialize to -1
+        for (int i = 0; i < 10; i++) {
+            extents_weight[i] = -1;
+            extents_bias[i] = -1;
+        }
         int num_dimensions_weight = get_tensor_extents(
             dalotia_file, tensor_name_weight, extents_weight);
         int num_elements_weight =

@@ -3,6 +3,8 @@
 #include "dalotia.h"
 
 namespace dalotia {
+//TODO prepend all functions with dalotia_ to avoid name clashes?
+
 // factory function for the file, selected by file extension and
 // available implementations
 TensorFile *make_tensor_file(std::string filename) {
@@ -57,11 +59,11 @@ int get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
         reinterpret_cast<dalotia::TensorFile *>(file)->get_tensor_names();
     const std::string &tensor_name = tensor_names.at(index);
     std::copy(tensor_name.begin(), tensor_name.end(), name);
-    name[tensor_name.size()] = '\0'; // zero-terminate
+    name[tensor_name.size()] = '\0';  // zero-terminate
     // return the length of the string
-    //TODO find out if safetensors specifies a maximum length??
+    // TODO find out if safetensors specifies a maximum length??
     // for now, assume 255
-    assert (tensor_name.size() < 256);
+    assert(tensor_name.size() < 256);
     return static_cast<int>(tensor_name.size());
 }
 
@@ -83,11 +85,13 @@ int get_tensor_extents(DalotiaTensorFile *file, const char *tensor_name,
                        int *extents) {
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
     int num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
+    {
+        auto extents_array = dalotia_file->get_tensor_extents(
+            tensor_name);  // TODO make this a vector?
 
-    std::array<int, 10> extents_array =
-        dalotia_file->get_tensor_extents(tensor_name);
-
-    std::copy(extents_array.begin(), extents_array.end(), extents);
+        std::copy(extents_array.begin(), extents_array.begin() + num_dimensions,
+                  extents);
+    }
     return num_dimensions;
 }
 
