@@ -39,6 +39,12 @@ module dalotia_c_interface !TODO move to src
         type(C_ptr),intent(in), value:: dalotia_file_pointer
     end subroutine dalotia_close_file
 
+    pure integer function dalotia_sizeof_weight_format(dalotia_weight_format) bind(C,name="dalotia_sizeof_weight_format")
+        use,intrinsic::ISO_C_BINDING
+        implicit none
+        integer(C_int),intent(in), value:: dalotia_weight_format
+    end function dalotia_sizeof_weight_format
+
     logical function dalotia_is_sparse(dalotia_file_pointer, tensor_name) bind(C,name="dalotia_is_sparse")
         use,intrinsic::ISO_C_BINDING
         implicit none
@@ -98,10 +104,11 @@ module dalotia_c_interface !TODO move to src
   end interface
 
   interface dalotia_load_tensor_dense
-    module procedure dalotia_load_rank_1_tensor_dense
-    module procedure dalotia_load_rank_2_tensor_dense
-    module procedure dalotia_load_rank_3_tensor_dense
-    module procedure dalotia_load_rank_4_tensor_dense
+    module procedure dalotia_load_rank_1_float_tensor_dense
+    module procedure dalotia_load_rank_2_float_tensor_dense
+    module procedure dalotia_load_rank_2_double_tensor_dense
+    module procedure dalotia_load_rank_3_float_tensor_dense
+    module procedure dalotia_load_rank_4_float_tensor_dense
   end interface
   
   contains
@@ -148,22 +155,38 @@ module dalotia_c_interface !TODO move to src
         tensor_extents = tensor_extents(tensor_rank:1:-1)
     end function dalotia_get_tensor_extents
 
-    subroutine dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, tensor_bytes)
+    subroutine dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, tensor_bytes, weight_format)
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*),intent(in):: tensor_name
-        integer(C_int) :: num_tensor_elements
+        integer(C_int) :: num_tensor_elements, ordering
+        integer(C_int), intent(in) :: weight_format
         character(C_char), dimension(:), allocatable, target, intent(out):: tensor_bytes
 
         num_tensor_elements = dalotia_get_num_tensor_elements(dalotia_file_pointer, tensor_name)
 
-        allocate( tensor_bytes(num_tensor_elements * 4)) !TODO sizeof
+        ordering = dalotia_C_ordering
+        allocate( tensor_bytes(num_tensor_elements * dalotia_sizeof_weight_format(weight_format)))
         call dalotia_load_tensor_dense_c(dalotia_file_pointer, tensor_name, tensor_bytes, &
-                 dalotia_float_32, dalotia_C_ordering) !TODO add version that takes permutation and F_ordering
+                 weight_format, ordering) !TODO add version that takes permutation and F_ordering
     end subroutine dalotia_load_rank_1_byte_tensor_dense
 
-    subroutine dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
+    integer(kind=C_int) function get_dalotia_weight_format_from_kind(tensor_kind)
+        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_Fortran_env
+        implicit none
+        integer, intent(in) :: tensor_kind
+        if (tensor_kind == C_float .or. tensor_kind == REAL32) then
+            get_dalotia_weight_format_from_kind = dalotia_float_32
+        else if (tensor_kind == C_double .or. tensor_kind == REAL64) then
+            get_dalotia_weight_format_from_kind = dalotia_float_64
+        else
+            ! call raise_exception("dalotia fortran interface: unsupported tensor type")
+        end if
+    end function get_dalotia_weight_format_from_kind
+
+    subroutine dalotia_load_rank_1_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
@@ -172,25 +195,47 @@ module dalotia_c_interface !TODO move to src
         character(C_char), dimension(:), allocatable:: tensor_bytes
         integer(C_int) :: tensor_rank
         integer(C_int), allocatable:: tensor_extents(:)
-        type(C_ptr) :: tensor_pointer_bytes
 
         tensor_rank = dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
         ! assert(tensor_rank == 1)
-        call dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, tensor_bytes)
+
+        call dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, tensor_bytes, &
+                get_dalotia_weight_format_from_kind(kind(tensor)))
 
         ! transfer into the real tensor
         ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
         tensor = transfer(tensor_bytes, tensor, product(tensor_extents))
-    end subroutine dalotia_load_rank_1_tensor_dense
+    end subroutine dalotia_load_rank_1_float_tensor_dense
 
-    subroutine dalotia_load_rank_2_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
+    subroutine dalotia_load_rank_1_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
+        use,intrinsic::ISO_C_binding
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*),intent(in):: tensor_name
+        real(C_double), allocatable, intent(out):: tensor(:)
+        character(C_char), dimension(:), allocatable:: tensor_bytes
+        integer(C_int) :: tensor_rank
+        integer(C_int), allocatable:: tensor_extents(:)
+
+        tensor_rank = dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
+        ! assert(tensor_rank == 1)
+
+        call dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, tensor_bytes, &
+                get_dalotia_weight_format_from_kind(kind(tensor)))
+
+        ! transfer into the real tensor
+        ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
+        tensor = transfer(tensor_bytes, tensor, product(tensor_extents))
+    end subroutine dalotia_load_rank_1_double_tensor_dense
+
+    subroutine dalotia_load_rank_2_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
         !TODO: is there a way to make this rank agnostic / less code duplication?
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*),intent(in):: tensor_name
         real(C_float), dimension(:,:), allocatable, intent(out) :: tensor
-        real(C_float), dimension(:), allocatable:: tensor_1d
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
         integer(C_int) :: tensor_rank
         integer(C_int), dimension(:), allocatable:: tensor_extents
         integer(C_int), dimension(2) :: fixed_tensor_extents
@@ -198,19 +243,40 @@ module dalotia_c_interface !TODO move to src
         tensor_rank = dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
         ! assert(tensor_rank == 2)
 
-        call dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
+        call dalotia_load_rank_1_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
         ! reshape into 2D tensor
         fixed_tensor_extents = [tensor_extents(1), tensor_extents(2)]
         tensor = reshape(tensor_1d, fixed_tensor_extents)
-    end subroutine dalotia_load_rank_2_tensor_dense
+    end subroutine dalotia_load_rank_2_float_tensor_dense
 
-    subroutine dalotia_load_rank_3_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
+    subroutine dalotia_load_rank_2_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
+        !TODO: is there a way to make this rank agnostic / less code duplication?
+        use,intrinsic::ISO_C_binding
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*),intent(in):: tensor_name
+        real(C_double), dimension(:,:), allocatable, intent(out) :: tensor
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
+        integer(C_int) :: tensor_rank
+        integer(C_int), dimension(:), allocatable:: tensor_extents
+        integer(C_int), dimension(2) :: fixed_tensor_extents
+
+        tensor_rank = dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
+        ! assert(tensor_rank == 2)
+
+        call dalotia_load_rank_1_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
+        ! reshape into 2D tensor
+        fixed_tensor_extents = [tensor_extents(1), tensor_extents(2)]
+        tensor = reshape(tensor_1d, fixed_tensor_extents)
+    end subroutine dalotia_load_rank_2_double_tensor_dense
+
+    subroutine dalotia_load_rank_3_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*),intent(in):: tensor_name
         real(C_float), dimension(:,:,:), allocatable, intent(out) :: tensor
-        real(C_float), dimension(:), allocatable:: tensor_1d
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
         integer(C_int) :: tensor_rank
         integer(C_int), dimension(:), allocatable:: tensor_extents
         integer(C_int), dimension(3) :: fixed_tensor_extents
@@ -218,19 +284,19 @@ module dalotia_c_interface !TODO move to src
         tensor_rank = dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
         ! assert(tensor_rank == 3)
 
-        call dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
+        call dalotia_load_rank_1_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
         ! reshape into 3D tensor
         fixed_tensor_extents = [tensor_extents(1), tensor_extents(2), tensor_extents(3)]
         tensor = reshape(tensor_1d, fixed_tensor_extents)
-    end subroutine dalotia_load_rank_3_tensor_dense
+    end subroutine dalotia_load_rank_3_float_tensor_dense
 
-    subroutine dalotia_load_rank_4_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
+    subroutine dalotia_load_rank_4_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*),intent(in):: tensor_name
         real(C_float), dimension(:,:,:,:), allocatable, intent(out) :: tensor
-        real(C_float), dimension(:), allocatable:: tensor_1d
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
         integer(C_int) :: tensor_rank
         integer(C_int), dimension(:), allocatable:: tensor_extents
         integer(C_int), dimension(4) :: fixed_tensor_extents
@@ -238,11 +304,11 @@ module dalotia_c_interface !TODO move to src
         tensor_rank = dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
         ! assert(tensor_rank == 4)
 
-        call dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
+        call dalotia_load_rank_1_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
         ! reshape into 4D tensor
         fixed_tensor_extents = [tensor_extents(1), tensor_extents(2), tensor_extents(3), tensor_extents(4)]
         tensor = reshape(tensor_1d, fixed_tensor_extents)
-    end subroutine dalotia_load_rank_4_tensor_dense
+    end subroutine dalotia_load_rank_4_float_tensor_dense
 end module dalotia_c_interface
 
 program test_mnist
@@ -251,7 +317,7 @@ program test_mnist
     real :: images(28, 28, 10000)
     character(100) :: filename
     real(C_float), dimension(:,:,:,:), allocatable :: tensor_weight_conv1, tensor_weight_conv2, tensor_weight_4d_unused
-    real(C_float), dimension(:,:), allocatable :: tensor_weight_fc1, tensor_weight_2d_unused
+    real(C_double), dimension(:,:), allocatable :: tensor_weight_fc1, tensor_weight_2d_unused
     real(C_float), dimension(:), allocatable :: tensor_bias_conv1, tensor_bias_conv2, tensor_bias_fc1
 
     filename = "../data/model-mnist.safetensors"
@@ -316,6 +382,15 @@ subroutine assert_close(a, b)
   end if
 end subroutine assert_close
 
+subroutine assert_close_df(a, b)
+  real(kind=C_double), intent(in) :: a
+  real, intent(in)::b
+  if (abs(a - b) > 1e-4) then
+    write (*, *) "Expected ", a, ", got ", b
+    call assert(.false.)
+  end if
+end subroutine assert_close_df
+
 subroutine test_get_tensor_names(filename)
     character(*), intent(in) :: filename
     character(len=:), allocatable :: tensor_name
@@ -361,7 +436,7 @@ subroutine test_load(filename, tensor_name, tensor_weight_4d, tensor_weight_2d, 
     type(C_ptr) :: dalotia_file_pointer
     integer(C_int), dimension(:), allocatable :: tensor_extents_weight, tensor_extents_bias
     real(C_float), dimension(:,:,:,:), allocatable, intent(out) :: tensor_weight_4d
-    real(C_float), dimension(:,:), allocatable, intent(out) :: tensor_weight_2d
+    real(C_double), dimension(:,:), allocatable, intent(out) :: tensor_weight_2d
     real(C_float), dimension(:), allocatable, intent(out) :: tensor_bias
     integer(C_int) :: num_dimensions_weight, num_dimensions_bias, num_elements_weight
     integer :: i
@@ -399,7 +474,7 @@ subroutine test_load(filename, tensor_name, tensor_weight_4d, tensor_weight_2d, 
         call raise_exception("Unknown tensor name")
     end if
 
-    call dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, trim(tensor_name_bias), tensor_bias) 
+    call dalotia_load_tensor_dense(dalotia_file_pointer, trim(tensor_name_bias), tensor_bias) 
 
     ! check if the first, second, and last values are as expected
     if (tensor_name == "conv1") then
@@ -428,9 +503,9 @@ subroutine test_load(filename, tensor_name, tensor_weight_4d, tensor_weight_2d, 
         do i = 1, 2
             call assert_equal_int(ubound(tensor_weight_2d, i), tensor_extents_weight(i))
         end do
-        call assert_close(tensor_weight_2d(1,1), 0.3420)
-        call assert_close(tensor_weight_2d(2,1), 0.7881)
-        call assert_close(tensor_weight_2d(784,10), 0.3264)
+        call assert_close_df(tensor_weight_2d(1,1), 0.3420)
+        call assert_close_df(tensor_weight_2d(2,1), 0.7881)
+        call assert_close_df(tensor_weight_2d(784,10), 0.3264)
         call assert_close(tensor_bias(1), 0.3484)
         call assert_close(tensor_bias(10), -0.2224)
     else 

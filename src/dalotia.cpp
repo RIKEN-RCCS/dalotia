@@ -43,6 +43,10 @@ void dalotia_close_file(DalotiaTensorFile *file) {
     delete reinterpret_cast<dalotia::TensorFile *>(file);
 }
 
+int dalotia_sizeof_weight_format(dalotia_WeightFormat format) {
+    return dalotia::sizeof_weight_format(format);
+}
+
 bool dalotia_is_sparse(DalotiaTensorFile *file, const char *tensor_name) {
     return reinterpret_cast<dalotia::TensorFile *>(file)->is_sparse(
         tensor_name);

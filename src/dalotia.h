@@ -19,6 +19,8 @@ EXTERNC DalotiaTensorFile *dalotia_open_file(const char *filename);
 
 EXTERNC void dalotia_close_file(DalotiaTensorFile *file);
 
+EXTERNC int dalotia_sizeof_weight_format(dalotia_WeightFormat format);
+
 EXTERNC bool dalotia_is_sparse(DalotiaTensorFile *file, const char *tensor_name);
 
 EXTERNC int dalotia_get_num_tensors(DalotiaTensorFile *file);
