@@ -152,6 +152,18 @@ void assign_linearly(std::byte *__restrict__ dest,
 }
 
 template <>
+void assign_permuted<1>(std::byte *__restrict__ dest,
+                        dalotia_WeightFormat weight_output_format,
+                        const size_t *const input_shape,
+                        const std::byte *__restrict__ tensor_start,
+                        dalotia_WeightFormat weight_input_format,
+                        const int *permutation) {
+    assert(permutation[0] == 0);
+    assign_linearly(dest, weight_output_format, input_shape[0], tensor_start,
+                    weight_input_format);
+}
+
+template <>
 void assign_permuted<2>(std::byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
                         const size_t *const input_shape,

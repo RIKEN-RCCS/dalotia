@@ -54,6 +54,15 @@ void assign_permuted(std::byte *__restrict__ dest,
                              std::to_string(num_dimensions) + " dimensions");
 }
 
+// specialization for 1d
+template <>
+void assign_permuted<1>(std::byte *__restrict__ dest,
+                        dalotia_WeightFormat weight_output_format,
+                        const size_t *const input_shape,
+                        const std::byte *__restrict__ tensor_start,
+                        dalotia_WeightFormat weight_input_format,
+                        const int *permutation);
+
 // specialization for 2d
 template <>
 void assign_permuted<2>(std::byte *__restrict__ dest,
@@ -80,7 +89,9 @@ void assign_permuted<3>(std::byte *__restrict__ dest,
 
 template <typename... Args>
 void assign_permuted(uint8_t num_dimensions, Args &&...args) {
-    if (num_dimensions == 2) {
+    if (num_dimensions == 1) {
+        return assign_permuted<1>(std::forward<Args>(args)...);
+    } else if (num_dimensions == 2) {
         return assign_permuted<2>(std::forward<Args>(args)...);
     } else if (num_dimensions == 3) {
         return assign_permuted<3>(std::forward<Args>(args)...);

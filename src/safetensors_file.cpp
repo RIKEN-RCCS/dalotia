@@ -19,7 +19,7 @@ safetensors::tensor_t get_only_tensor(const safetensors::safetensors_t &st) {
 
 safetensors::tensor_t get_tensor_from_name(
     std::string tensor_name, const safetensors::safetensors_t &st) {
-    if (tensor_name == "") {
+    if (tensor_name.empty()) {
         return get_only_tensor(st);
     }
     for (size_t i = 0; i < st.tensors.size(); i++) {
