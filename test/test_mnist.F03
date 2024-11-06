@@ -96,6 +96,14 @@ module dalotia_c_interface !TODO move to src
         integer(C_int),intent(in), value:: dalotia_ordering
     end subroutine dalotia_load_tensor_dense_c
   end interface
+
+  interface dalotia_load_tensor_dense
+    module procedure dalotia_load_rank_1_tensor_dense
+    module procedure dalotia_load_rank_2_tensor_dense
+    module procedure dalotia_load_rank_3_tensor_dense
+    module procedure dalotia_load_rank_4_tensor_dense
+  end interface
+  
   contains
     integer function dalotia_get_tensor_name(dalotia_file_pointer, tensor_index_fortran, tensor_name)
         use,intrinsic::ISO_C_binding
@@ -174,6 +182,47 @@ module dalotia_c_interface !TODO move to src
         ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
         tensor = transfer(tensor_bytes, tensor, product(tensor_extents))
     end subroutine dalotia_load_rank_1_tensor_dense
+
+    subroutine dalotia_load_rank_2_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
+        !TODO: is there a way to make this rank agnostic / less code duplication?
+        use,intrinsic::ISO_C_binding
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*),intent(in):: tensor_name
+        real(C_float), dimension(:,:), allocatable, intent(out) :: tensor
+        real(C_float), dimension(:), allocatable:: tensor_1d
+        integer(C_int) :: tensor_rank
+        integer(C_int), dimension(:), allocatable:: tensor_extents
+        integer(C_int), dimension(2) :: fixed_tensor_extents
+
+        tensor_rank = dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
+        ! assert(tensor_rank == 2)
+
+        call dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
+        ! reshape into 2D tensor
+        fixed_tensor_extents = [tensor_extents(1), tensor_extents(2)]
+        tensor = reshape(tensor_1d, fixed_tensor_extents)
+    end subroutine dalotia_load_rank_2_tensor_dense
+
+    subroutine dalotia_load_rank_3_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
+        use,intrinsic::ISO_C_binding
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*),intent(in):: tensor_name
+        real(C_float), dimension(:,:,:), allocatable, intent(out) :: tensor
+        real(C_float), dimension(:), allocatable:: tensor_1d
+        integer(C_int) :: tensor_rank
+        integer(C_int), dimension(:), allocatable:: tensor_extents
+        integer(C_int), dimension(3) :: fixed_tensor_extents
+
+        tensor_rank = dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
+        ! assert(tensor_rank == 3)
+
+        call dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
+        ! reshape into 3D tensor
+        fixed_tensor_extents = [tensor_extents(1), tensor_extents(2), tensor_extents(3)]
+        tensor = reshape(tensor_1d, fixed_tensor_extents)
+    end subroutine dalotia_load_rank_3_tensor_dense
 
     subroutine dalotia_load_rank_4_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
         use,intrinsic::ISO_C_binding
