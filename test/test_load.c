@@ -6,12 +6,12 @@
 #include "dalotia.h"
 
 void test_get_tensor_names(const char* filename) {
-    DalotiaTensorFile* dalotia_file = open_file(filename);
-    int num_tensors = get_num_tensors(dalotia_file);
+    DalotiaTensorFile* dalotia_file = dalotia_open_file(filename);
+    int num_tensors = dalotia_get_num_tensors(dalotia_file);
     assert(num_tensors == 6);
     for (int i = 0; i < num_tensors; i++) {
         char name[100];
-        get_tensor_name(dalotia_file, i, name);
+        dalotia_get_tensor_name(dalotia_file, i, name);
         // fprintf(stderr, "name: %s , %d \n", name, i);
         if (i == 0) {
             assert(strcmp(name, "conv1.bias") == 0);
@@ -27,7 +27,7 @@ void test_get_tensor_names(const char* filename) {
             assert(strcmp(name, "fc1.weight") == 0);
         }
     }
-    close_file(dalotia_file);
+    dalotia_close_file(dalotia_file);
 }
 
 void assert_close(volatile float a, volatile float b) {
@@ -35,7 +35,7 @@ void assert_close(volatile float a, volatile float b) {
 }
 
 void test_load(const char* filename, const char* tensor_name) {
-    DalotiaTensorFile* dalotia_file = open_file(filename);
+    DalotiaTensorFile* dalotia_file = dalotia_open_file(filename);
     {
         const dalotia_Ordering ordering = dalotia_C_ordering;
         const dalotia_WeightFormat weightFormat = dalotia_float_32;
@@ -49,14 +49,14 @@ void test_load(const char* filename, const char* tensor_name) {
             extents_weight[i] = -1;
             extents_bias[i] = -1;
         }
-        int num_dimensions_weight = get_tensor_extents(
+        int num_dimensions_weight = dalotia_get_tensor_extents(
             dalotia_file, tensor_name_weight, extents_weight);
         int num_elements_weight =
-            get_num_tensor_elements(dalotia_file, tensor_name_weight);
+            dalotia_get_num_tensor_elements(dalotia_file, tensor_name_weight);
         int num_dimensions_bias =
-            get_tensor_extents(dalotia_file, tensor_name_bias, extents_bias);
+            dalotia_get_tensor_extents(dalotia_file, tensor_name_bias, extents_bias);
         int num_elements_bias =
-            get_num_tensor_elements(dalotia_file, tensor_name_bias);
+            dalotia_get_num_tensor_elements(dalotia_file, tensor_name_bias);
 
         if (strcmp(tensor_name, "conv1") == 0) {
             assert(num_dimensions_weight == 4);
@@ -92,11 +92,11 @@ void test_load(const char* filename, const char* tensor_name) {
 
         float *tensor_weight, *tensor_bias;
         tensor_weight = (float*)malloc(num_elements_weight * sizeof(float));
-        load_tensor_dense(dalotia_file, tensor_name_weight,
+        dalotia_load_tensor_dense(dalotia_file, tensor_name_weight,
                           (char*)tensor_weight, weightFormat, ordering);
 
         tensor_bias = (float*)malloc(num_elements_bias * sizeof(float));
-        load_tensor_dense(dalotia_file, tensor_name_bias, (char*)tensor_bias,
+        dalotia_load_tensor_dense(dalotia_file, tensor_name_bias, (char*)tensor_bias,
                           weightFormat, ordering);
 
         // check if the first, second, and last values are as expected
@@ -119,7 +119,7 @@ void test_load(const char* filename, const char* tensor_name) {
         free(tensor_weight);
         free(tensor_bias);
     }
-    close_file(dalotia_file);
+    dalotia_close_file(dalotia_file);
 }
 
 int main(int, char**) {

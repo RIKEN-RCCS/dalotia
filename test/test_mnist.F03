@@ -27,32 +27,33 @@ module dalotia_c_interface !TODO move to src
     end enum
 
   interface
-    type(C_ptr) function dalotia_open_file(file_name) bind(C,name="open_file")
+    type(C_ptr) function dalotia_open_file(file_name) bind(C,name="dalotia_open_file")
         use,intrinsic::ISO_C_BINDING
         implicit none
         character(kind=c_char),intent(in), value:: file_name
     end function dalotia_open_file
 
-    subroutine dalotia_close_file(dalotia_file_pointer) bind(C,name="close_file")
+    subroutine dalotia_close_file(dalotia_file_pointer) bind(C,name="dalotia_close_file")
         use,intrinsic::ISO_C_BINDING
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
     end subroutine dalotia_close_file
 
-    logical function dalotia_is_sparse(dalotia_file_pointer, tensor_name) bind(C,name="is_sparse")
+    logical function dalotia_is_sparse(dalotia_file_pointer, tensor_name) bind(C,name="dalotia_is_sparse")
         use,intrinsic::ISO_C_BINDING
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
         character(kind=c_char),intent(in), value:: tensor_name
     end function dalotia_is_sparse
 
-    integer function dalotia_get_num_tensors(dalotia_file_pointer) bind(C,name="get_num_tensors")
+    integer function dalotia_get_num_tensors(dalotia_file_pointer) bind(C,name="dalotia_get_num_tensors")
         use,intrinsic::ISO_C_BINDING
         implicit none
         type(C_ptr),intent(in), value :: dalotia_file_pointer
     end function dalotia_get_num_tensors
 
-    integer function dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index_c, tensor_name) bind(C,name="get_tensor_name")
+    integer function dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index_c, tensor_name) &
+          bind(C,name="dalotia_get_tensor_name")
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
@@ -60,14 +61,15 @@ module dalotia_c_interface !TODO move to src
         character(kind=c_char), dimension(*), intent(inout):: tensor_name
     end function dalotia_get_tensor_name_c
 
-    integer function dalotia_get_num_dimensions(dalotia_file_pointer, tensor_name) bind(C,name="get_num_dimensions")
+    integer function dalotia_get_num_dimensions(dalotia_file_pointer, tensor_name) bind(C,name="dalotia_get_num_dimensions")
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
         character(kind=c_char), dimension(*), intent(in):: tensor_name
     end function dalotia_get_num_dimensions
 
-    integer function dalotia_get_num_tensor_elements(dalotia_file_pointer, tensor_name) bind(C,name="get_num_tensor_elements")
+    integer function dalotia_get_num_tensor_elements(dalotia_file_pointer, tensor_name) &
+           bind(C,name="dalotia_get_num_tensor_elements")
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
@@ -75,7 +77,7 @@ module dalotia_c_interface !TODO move to src
     end function dalotia_get_num_tensor_elements
 
     integer function dalotia_get_tensor_extents_c(dalotia_file_pointer, &
-            tensor_name, tensor_extents) bind(C,name="get_tensor_extents")
+            tensor_name, tensor_extents) bind(C,name="dalotia_get_tensor_extents")
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer
@@ -84,7 +86,7 @@ module dalotia_c_interface !TODO move to src
     end function dalotia_get_tensor_extents_c
 
     subroutine dalotia_load_tensor_dense_c(dalotia_file_pointer, &
-           tensor_name, tensor, dalotia_weight_format, dalotia_ordering) bind(C,name="load_tensor_dense")
+           tensor_name, tensor, dalotia_weight_format, dalotia_ordering) bind(C,name="dalotia_load_tensor_dense")
         use,intrinsic::ISO_C_binding
         implicit none
         type(C_ptr),intent(in), value:: dalotia_file_pointer

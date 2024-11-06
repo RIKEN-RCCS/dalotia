@@ -34,27 +34,27 @@ TensorFile *make_tensor_file(std::string filename) {
 
 }  // namespace dalotia
 
-DalotiaTensorFile *open_file(const char *filename) {
+DalotiaTensorFile *dalotia_open_file(const char *filename) {
     return reinterpret_cast<DalotiaTensorFile *>(
         dalotia::make_tensor_file(std::string(filename)));
 }
 
-void close_file(DalotiaTensorFile *file) {
+void dalotia_close_file(DalotiaTensorFile *file) {
     delete reinterpret_cast<dalotia::TensorFile *>(file);
 }
 
-bool is_sparse(DalotiaTensorFile *file, const char *tensor_name) {
+bool dalotia_is_sparse(DalotiaTensorFile *file, const char *tensor_name) {
     return reinterpret_cast<dalotia::TensorFile *>(file)->is_sparse(
         tensor_name);
 }
 
-int get_num_tensors(DalotiaTensorFile *file) {
+int dalotia_get_num_tensors(DalotiaTensorFile *file) {
     return static_cast<int>(reinterpret_cast<dalotia::TensorFile *>(file)
                                 ->get_tensor_names()
                                 .size());
 }
 
-int get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
+int dalotia_get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
     auto tensor_names =
         reinterpret_cast<dalotia::TensorFile *>(file)->get_tensor_names();
     const std::string &tensor_name = tensor_names.at(index);
@@ -67,21 +67,21 @@ int get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
     return static_cast<int>(tensor_name.size());
 }
 
-int get_num_dimensions(DalotiaTensorFile *file, const char *tensor_name) {
+int dalotia_get_num_dimensions(DalotiaTensorFile *file, const char *tensor_name) {
     return reinterpret_cast<dalotia::TensorFile *>(file)->get_num_dimensions(
         tensor_name);
 }
 
-int get_num_tensor_elements(DalotiaTensorFile *file, const char *tensor_name) {
+int dalotia_get_num_tensor_elements(DalotiaTensorFile *file, const char *tensor_name) {
     return reinterpret_cast<dalotia::TensorFile *>(file)
         ->get_num_tensor_elements(tensor_name);
 }
 
-int get_nnz(DalotiaTensorFile *file, const char *tensor_name) {
+int dalotia_get_nnz(DalotiaTensorFile *file, const char *tensor_name) {
     return reinterpret_cast<dalotia::TensorFile *>(file)->get_nnz(tensor_name);
 }
 
-int get_tensor_extents(DalotiaTensorFile *file, const char *tensor_name,
+int dalotia_get_tensor_extents(DalotiaTensorFile *file, const char *tensor_name,
                        int *extents) {
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
     int num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
@@ -95,7 +95,7 @@ int get_tensor_extents(DalotiaTensorFile *file, const char *tensor_name,
     return num_dimensions;
 }
 
-int get_sparse_tensor_extents(DalotiaTensorFile *file, const char *tensor_name,
+int dalotia_get_sparse_tensor_extents(DalotiaTensorFile *file, const char *tensor_name,
                               int *extents, dalotia_SparseFormat format) {
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
     int num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
@@ -112,7 +112,7 @@ int get_sparse_tensor_extents(DalotiaTensorFile *file, const char *tensor_name,
     return num_dimensions;
 }
 
-int load_tensor_dense(DalotiaTensorFile *file, const char *tensor_name,
+int dalotia_load_tensor_dense(DalotiaTensorFile *file, const char *tensor_name,
                       char *tensor, dalotia_WeightFormat format,
                       dalotia_Ordering ordering) {
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
@@ -121,7 +121,7 @@ int load_tensor_dense(DalotiaTensorFile *file, const char *tensor_name,
     return 0;
 }
 
-void load_tensor_dense_with_permutation(
+void dalotia_load_tensor_dense_with_permutation(
     DalotiaTensorFile *file, const char *tensor_name, char *tensor,
     dalotia_WeightFormat format, dalotia_Ordering ordering,
     const int
@@ -129,7 +129,7 @@ void load_tensor_dense_with_permutation(
 
 // TODO with named tensors?
 
-void load_tensor_sparse(DalotiaTensorFile *file, const char *tensor_name,
+void dalotia_load_tensor_sparse(DalotiaTensorFile *file, const char *tensor_name,
                         char *values, int *first_indices, int *second_indices,
                         dalotia_SparseFormat format,
                         dalotia_WeightFormat weightFormat,
