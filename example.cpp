@@ -13,8 +13,8 @@
 int main(int argc, char *argv[]) {
     char filename[] = "data/model.safetensors";
     char tensor_name[] = "embedding_firstchanged";
-    DalotiaTensorFile *file = open_file(filename);
-    bool tensor_is_sparse = is_sparse(file, tensor_name);  //...repeat later
+    DalotiaTensorFile *file = dalotia_open_file(filename);
+    bool tensor_is_sparse = dalotia_is_sparse(file, tensor_name);  //...repeat later
     char *tensor;
     int permutation[3] = {0, 1, 2};
     constexpr dalotia_WeightFormat weightFormat =
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
                           // -> look at dnnl, darknet, safetensors-cpp, tinyml?
                           // torch: named dimensions tensor name data format
                           // data shape offsets
-        int num_dimensions = get_tensor_extents(file, tensor_name, extents);
+        int num_dimensions = dalotia_get_tensor_extents(file, tensor_name, extents);
         std::cout << "num_dim: " << num_dimensions << std::endl;
 
         // calculate the total number of elements
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
             total_size *= extents[i];
         }
 
-        assert(total_size == get_num_tensor_elements(file, tensor_name));
+        assert(total_size == dalotia_get_num_tensor_elements(file, tensor_name));
         std::cout << "total size: " << total_size << std::endl;
 
         // I want to store the tensor as a very long array
@@ -54,14 +54,14 @@ int main(int argc, char *argv[]) {
 
         // load the tensor
 
-        load_tensor_dense_with_permutation(file, tensor_name, tensor,
+        dalotia_load_tensor_dense_with_permutation(file, tensor_name, tensor,
                                            weightFormat, ordering, permutation);
         // load_tensor_dense(file, tensor_name, tensor, weightFormat, ordering);
     } else {
         dalotia_SparseFormat format = dalotia_SparseFormat::dalotia_CSR;
         // get the tensor extents
         int extents[10];
-        int num_dimensions = get_tensor_extents(file, tensor_name, extents);
+        int num_dimensions = dalotia_get_tensor_extents(file, tensor_name, extents);
 
         for (int i = 0; i < 10; i++) {
             if (extents[i] == -1) {
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
             std::cout << extents[i] << " ";
         }
         int sparse_extents[10];
-        get_sparse_tensor_extents(file, tensor_name, sparse_extents,
+        dalotia_get_sparse_tensor_extents(file, tensor_name, sparse_extents,
                                   dalotia_CSR);
 
         for (int i = 0; i < 10; i++) {
@@ -87,10 +87,10 @@ int main(int argc, char *argv[]) {
             new float[sparse_extents[0]]);  // blah blah malloc...
         int *first_indices = new int[sparse_extents[1]];
         int *second_indices = new int[sparse_extents[2]];
-        load_tensor_sparse(file, tensor_name, values, first_indices,
+        dalotia_load_tensor_sparse(file, tensor_name, values, first_indices,
                            second_indices, format, weightFormat, ordering);
     }
-    close_file(file);
+    dalotia_close_file(file);
 
     // print
     if (!tensor_is_sparse) {
