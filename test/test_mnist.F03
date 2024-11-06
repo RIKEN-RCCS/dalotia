@@ -150,7 +150,7 @@ module dalotia_c_interface !TODO move to src
 
         allocate( tensor_bytes(num_tensor_elements * 4)) !TODO sizeof
         call dalotia_load_tensor_dense_c(dalotia_file_pointer, tensor_name, tensor_bytes, &
-                 dalotia_float_32, dalotia_F_ordering)
+                 dalotia_float_32, dalotia_C_ordering) !TODO add version that takes permutation and F_ordering
     end subroutine dalotia_load_rank_1_byte_tensor_dense
 
     subroutine dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
@@ -172,6 +172,26 @@ module dalotia_c_interface !TODO move to src
         ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
         tensor = transfer(tensor_bytes, tensor, product(tensor_extents))
     end subroutine dalotia_load_rank_1_tensor_dense
+
+    subroutine dalotia_load_rank_4_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
+        use,intrinsic::ISO_C_binding
+        implicit none
+        type(C_ptr),intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*),intent(in):: tensor_name
+        real(C_float), dimension(:,:,:,:), allocatable, intent(out) :: tensor
+        real(C_float), dimension(:), allocatable:: tensor_1d
+        integer(C_int) :: tensor_rank
+        integer(C_int), dimension(:), allocatable:: tensor_extents
+        integer(C_int), dimension(4) :: fixed_tensor_extents
+
+        tensor_rank = dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
+        ! assert(tensor_rank == 4)
+
+        call dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d)
+        ! reshape into 4D tensor
+        fixed_tensor_extents = [tensor_extents(1), tensor_extents(2), tensor_extents(3), tensor_extents(4)]
+        tensor = reshape(tensor_1d, fixed_tensor_extents)
+    end subroutine dalotia_load_rank_4_tensor_dense
 end module dalotia_c_interface
 
 program test_mnist
@@ -183,9 +203,8 @@ program test_mnist
     filename = "../data/model-mnist.safetensors"
 
     call test_get_tensor_names(trim(filename))
-    call test_load(filename, "conv1"); !TODO
-    ! call test_load(filename, "conv2");
-    ! call test_load(filename, "fc1");
+    call test_load(filename, "conv1");
+    call test_load(filename, "conv2");
 
     stop ! early return for CI, to avoid data handling ;)
 
@@ -217,6 +236,14 @@ subroutine assert_equal(a, b)
     call assert(.false.)
   end if
 end subroutine assert_equal
+
+subroutine assert_equal_int(a, b)
+  integer, intent(in) :: a, b
+  if (a /= b) then
+    write (*, *) "Expected ", a, ", got ", b
+    call assert(.false.)
+  end if
+end subroutine assert_equal_int
 
 subroutine assert_equal_strings(a, b)
   character(len=*), intent(in) :: a, b
@@ -281,6 +308,7 @@ subroutine test_load(filename, tensor_name)
     real(C_float), dimension(:,:,:,:), allocatable :: tensor_weight
     real(C_float), dimension(:), allocatable :: tensor_bias
     integer(C_int) :: num_dimensions_weight, num_dimensions_bias, num_elements_weight
+    integer :: i
 
     tensor_name_weight = trim(tensor_name) // ".weight"
     tensor_name_bias = trim(tensor_name) // ".bias"
@@ -303,9 +331,9 @@ subroutine test_load(filename, tensor_name)
         call assert(num_dimensions_weight == 4)
         call assert(num_dimensions_bias == 1)
         call assert(tensor_extents_weight(4) == 16)
-        call assert(tensor_extents_weight(3) == 6)
-        call assert(tensor_extents_weight(2) == 5)
-        call assert(tensor_extents_weight(1) == 5)
+        call assert(tensor_extents_weight(3) == 8)
+        call assert(tensor_extents_weight(2) == 3)
+        call assert(tensor_extents_weight(1) == 3)
     else if (tensor_name == "fc1") then
         call assert(num_dimensions_weight == 2)
         call assert(num_dimensions_bias == 1)
@@ -315,20 +343,35 @@ subroutine test_load(filename, tensor_name)
         call raise_exception("Unknown tensor name")
     end if
 
-    ! call dalotia_load_tensor_dense(dalotia_file_pointer, trim(tensor_name_weight), tensor_weight) 
+    call dalotia_load_rank_4_tensor_dense(dalotia_file_pointer, trim(tensor_name_weight), tensor_weight) 
     call dalotia_load_rank_1_tensor_dense(dalotia_file_pointer, trim(tensor_name_bias), tensor_bias) 
 
     ! check if the first, second, and last values are as expected
     if (tensor_name == "conv1") then
+        do i = 1, 4
+            call assert_equal_int(ubound(tensor_weight, i), tensor_extents_weight(i))
+        end do
+        call assert_close(tensor_weight(1,1,1,1), 0.944823)
+        call assert_close(tensor_weight(2,1,1,1), 1.25045)
+        ! call assert_close(tensor_weight(8,1,3,3), 0.211111) !beware: no bounds checking
+        call assert_close(tensor_weight(3,3,1,8), 0.211111)
         call assert_close(tensor_bias(1), 0.1796)
-        ! write(*,*) "tensor_bias(8): ", tensor_bias(8)
         call assert_close(tensor_bias(8), 0.6550)
+    else if (tensor_name == "conv2") then
+        do i = 1, 4
+            call assert_equal_int(ubound(tensor_weight, i), tensor_extents_weight(i))
+        end do
+        call assert_close(tensor_weight(1,1,1,1), -0.79839)
+        call assert_close(tensor_weight(2,1,1,1), -1.3640)
+        call assert_close(tensor_weight(3,3,8,16), 0.32985)
+        call assert_close(tensor_bias(1), -0.2460)
+        call assert_close(tensor_bias(16), -0.3158)
     else 
         call raise_exception("Unknown tensor name")
     end if
     
     call dalotia_close_file(dalotia_file_pointer)
-    write(*,*) "All extents are correct "
+    write(*,*) "All loads are correct "
 end subroutine test_load
 
 function read_mnist_scaled(full_path) result (array_of_images)
