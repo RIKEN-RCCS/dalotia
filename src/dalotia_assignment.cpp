@@ -151,6 +151,30 @@ void assign_linearly(std::byte *__restrict__ dest,
     }
 }
 
+/** @brief Get the new strides to permute and total size of the permuted tensor
+ *
+ * local helper function
+ */
+template <int num_dimensions>
+std::pair<std::array<size_t, num_dimensions>, size_t> get_new_stripes_permuted(
+    const size_t *const input_shape, const int *permutation) {
+    auto desired_shape = std::vector<size_t>(num_dimensions);
+    size_t total_size = 1;
+    for (size_t i = 0; i < num_dimensions; ++i) {
+        desired_shape[i] = input_shape[permutation[i]];
+        total_size *= desired_shape[i];
+    }
+    auto new_strides = std::array<size_t, num_dimensions>();
+    // C order -> last dimension is the most contiguous -> rbegin
+    std::exclusive_scan(desired_shape.rbegin(), desired_shape.rend(),
+                        new_strides.rbegin(), 1, std::multiplies<>{});
+    auto new_strides_permuted = new_strides;
+    for (size_t i = 0; i < num_dimensions; ++i) {
+        new_strides_permuted[i] = new_strides[permutation[i]];
+    }
+    return {new_strides_permuted, total_size};
+}
+
 template <>
 void assign_permuted<1>(std::byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
@@ -207,20 +231,8 @@ void assign_permuted<3>(std::byte *__restrict__ dest,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
     constexpr int num_dimensions = 3;
-    auto desired_shape = std::vector<size_t>(num_dimensions);
-    size_t total_size = 1;
-    for (size_t i = 0; i < num_dimensions; ++i) {
-        desired_shape[i] = input_shape[permutation[i]];
-        total_size *= desired_shape[i];
-    }
-    auto new_strides = std::array<size_t, num_dimensions>();
-    // C order -> last dimension is the most contiguous -> rbegin
-    std::exclusive_scan(desired_shape.rbegin(), desired_shape.rend(),
-                        new_strides.rbegin(), 1, std::multiplies<>{});
-    auto new_strides_permuted = new_strides;
-    for (size_t i = 0; i < num_dimensions; ++i) {
-        new_strides_permuted[i] = new_strides[permutation[i]];
-    }
+    auto [new_strides_permuted, total_size] =
+        get_new_stripes_permuted<num_dimensions>(input_shape, permutation);
 
     const size_t load_item_bytes =
         dalotia::sizeof_weight_format(weight_input_format);
@@ -239,6 +251,51 @@ void assign_permuted<3>(std::byte *__restrict__ dest,
                 assign_function(output_pointer, input_pointer);
 
                 input_pointer += load_item_bytes;
+                store_index += new_strides_permuted[2];
+            }
+            store_index -= (input_shape[2] * new_strides_permuted[2]);
+            store_index += new_strides_permuted[1];
+        }
+        store_index -= (input_shape[1] * new_strides_permuted[1]);
+        store_index += new_strides_permuted[0];
+    }
+
+    assert(std::distance(tensor_start, input_pointer) / load_item_bytes ==
+           total_size);
+}
+
+template <>
+void assign_permuted<4>(std::byte *__restrict__ dest,
+                        dalotia_WeightFormat weight_output_format,
+                        const size_t *const input_shape,
+                        const std::byte *__restrict__ tensor_start,
+                        dalotia_WeightFormat weight_input_format,
+                        const int *permutation) {
+    constexpr int num_dimensions = 4;
+    auto [new_strides_permuted, total_size] =
+        get_new_stripes_permuted<num_dimensions>(input_shape, permutation);
+
+    const size_t load_item_bytes =
+        dalotia::sizeof_weight_format(weight_input_format);
+    const size_t store_item_bytes =
+        dalotia::sizeof_weight_format(weight_output_format);
+    auto assign_function =
+        get_assignment_function(weight_output_format, weight_input_format);
+    auto input_pointer = tensor_start;
+    auto output_pointer = dest;
+    size_t store_index = 0;
+    for (size_t i = 0; i < input_shape[0]; ++i) {
+        for (size_t j = 0; j < input_shape[1]; ++j) {
+            for (size_t k = 0; k < input_shape[2]; ++k) {
+                for (size_t l = 0; l < input_shape[3]; ++l) {
+                    assert(store_index < total_size);
+                    auto output_pointer = dest + store_index * store_item_bytes;
+                    assign_function(output_pointer, input_pointer);
+
+                    input_pointer += load_item_bytes;
+                    store_index += new_strides_permuted[3];
+                }
+                store_index -= (input_shape[3] * new_strides_permuted[3]);
                 store_index += new_strides_permuted[2];
             }
             store_index -= (input_shape[2] * new_strides_permuted[2]);

@@ -81,6 +81,15 @@ void assign_permuted<3>(std::byte *__restrict__ dest,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation);
 
+// specialization for 4d
+template <>
+void assign_permuted<4>(std::byte *__restrict__ dest,
+                        dalotia_WeightFormat weight_output_format,
+                        const size_t *const input_shape,
+                        const std::byte *__restrict__ tensor_start,
+                        dalotia_WeightFormat weight_input_format,
+                        const int *permutation);
+
 // TODO use BOOST_PP_* to generate something like Julia @nloops macro for
 // arbitrary dimensions?
 // ->
@@ -95,6 +104,8 @@ void assign_permuted(uint8_t num_dimensions, Args &&...args) {
         return assign_permuted<2>(std::forward<Args>(args)...);
     } else if (num_dimensions == 3) {
         return assign_permuted<3>(std::forward<Args>(args)...);
+    } else if (num_dimensions == 4) {
+        return assign_permuted<4>(std::forward<Args>(args)...);
     } else {
         throw std::runtime_error("assign_permuted not yet implemented for " +
                                  std::to_string(num_dimensions) +
