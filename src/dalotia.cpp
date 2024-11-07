@@ -146,6 +146,7 @@ int dalotia_load_tensor_dense_with_permutation(DalotiaTensorFile *file,
     try {
         dalotia_file->load_tensor_dense(tensor_name, format, ordering,
                                         byte_tensor, permutation);
+        return 0;
     } catch (const std::exception &e) {
         std::cerr << "dalotia_load_tensor_dense_with_permutation: " << e.what()
                   << std::endl;
