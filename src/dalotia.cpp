@@ -161,16 +161,23 @@ int dalotia_load_tensor_sparse(DalotiaTensorFile *file, const char *tensor_name,
                                dalotia_WeightFormat weightFormat,
                                dalotia_Ordering ordering) {
     auto byte_tensor = reinterpret_cast<std::byte *>(values);
-    if (format == dalotia_SparseFormat::dalotia_CSR &&
-        weightFormat == dalotia_WeightFormat::dalotia_float_32 &&
-        ordering == dalotia_Ordering::dalotia_C_ordering) {
-        return reinterpret_cast<dalotia::TensorFile *>(file)
-            ->load_tensor_sparse(tensor_name, dalotia_SparseFormat::dalotia_CSR,
-                                 dalotia_WeightFormat::dalotia_float_32,
-                                 dalotia_Ordering::dalotia_C_ordering,
-                                 byte_tensor, first_indices, second_indices);
-    } else {
-        assert(false);
+    try {
+        if (format == dalotia_SparseFormat::dalotia_CSR &&
+            weightFormat == dalotia_WeightFormat::dalotia_float_32 &&
+            ordering == dalotia_Ordering::dalotia_C_ordering) {
+            reinterpret_cast<dalotia::TensorFile *>(file)->load_tensor_sparse(
+                tensor_name, dalotia_SparseFormat::dalotia_CSR,
+                dalotia_WeightFormat::dalotia_float_32,
+                dalotia_Ordering::dalotia_C_ordering, byte_tensor,
+                first_indices, second_indices);
+        } else {
+            throw std::runtime_error(
+                "dalotia_load_tensor_sparse: unsupported format combination");
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "dalotia_load_tensor_sparse: " << e.what() << std::endl;
+        return -1;
     }
+    return 0;
 }
 // TODO ...also with permutation and named tensors...
