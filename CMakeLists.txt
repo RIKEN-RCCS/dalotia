@@ -8,12 +8,14 @@ option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
 option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)
 if (DALOTIA_WITH_FORTRAN)
     enable_language(Fortran)
+    set( CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 endif (DALOTIA_WITH_FORTRAN)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MAKE_PROGRAM "make")
 
-add_subdirectory(src)
+add_subdirectory(src) # target dalotia_cpp is generated here
 
 # external dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
