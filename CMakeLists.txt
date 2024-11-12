@@ -20,26 +20,14 @@ add_subdirectory(src) # target dalotia_cpp is generated here
 # external dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
-# boost::multi instead of mdspan
-include(FetchContent)
-FetchContent_Declare(
-  multi
-  GIT_REPOSITORY https://github.com/correaa/boost-multi.git
-  GIT_TAG f549688718345435aabaa1ac49c392965ca082a5
-  FIND_PACKAGE_ARGS
-)
-FetchContent_MakeAvailable(multi)
-FetchContent_GetProperties(multi SOURCE_DIR MULTI_CPP_INCLUDE_DIR BINARY_DIR MULTI_CPP_LIBRARY)
-
-target_include_directories(dalotia_cpp PUBLIC ${MULTI_CPP_INCLUDE_DIR} ${MULTI_DIR})
-target_link_libraries(dalotia_cpp multi)
-
-find_package(BLAS REQUIRED BLA_STATIC)
-target_link_libraries(dalotia_cpp ${BLAS_LIBRARIES})
-message(STATUS "BLAS_LIBRARIES: ${BLAS_LIBRARIES}") #TODO only link necessary
+find_package(OpenMP)
+if (OpenMP_CXX_FOUND)
+  target_link_libraries(dalotia_cpp OpenMP::OpenMP_CXX)
+endif ()
 
 # safetensors-cpp
 if (DALOTIA_WITH_SAFETENSORS_CPP)
+  include(FetchContent)
   FetchContent_Declare(
     safetensors-cpp
     GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
