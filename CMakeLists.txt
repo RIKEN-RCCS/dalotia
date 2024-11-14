@@ -15,6 +15,12 @@ endif (DALOTIA_WITH_FORTRAN)
 set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_MAKE_PROGRAM "make")
 
+if(NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+        "Choose the build type, options are: Debug Release RelWithDebInfo")
+endif()
+message(STATUS "CMAKE BUILD TYPE: ${CMAKE_BUILD_TYPE}")
+
 add_subdirectory(src) # target dalotia_cpp is generated here
 
 find_package(OpenMP)
