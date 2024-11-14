@@ -1,5 +1,6 @@
 #include <assert.h>
-#include <stdio.h> //TODO remove
+#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -31,7 +32,10 @@ void test_get_tensor_names(const char* filename) {
 }
 
 void assert_close(volatile float a, volatile float b) {
-    assert(abs(a - b) < 1e-5);
+    if (fabsf(a - b) > 1e-4) {
+        fprintf(stderr, "assert_close: expected %f but got %f\n", b, a);
+        assert(false);
+    }
 }
 
 void test_load(const char* filename, const char* tensor_name) {
@@ -53,8 +57,8 @@ void test_load(const char* filename, const char* tensor_name) {
             dalotia_file, tensor_name_weight, extents_weight);
         int num_elements_weight =
             dalotia_get_num_tensor_elements(dalotia_file, tensor_name_weight);
-        int num_dimensions_bias =
-            dalotia_get_tensor_extents(dalotia_file, tensor_name_bias, extents_bias);
+        int num_dimensions_bias = dalotia_get_tensor_extents(
+            dalotia_file, tensor_name_bias, extents_bias);
         int num_elements_bias =
             dalotia_get_num_tensor_elements(dalotia_file, tensor_name_bias);
 
@@ -93,25 +97,31 @@ void test_load(const char* filename, const char* tensor_name) {
         float *tensor_weight, *tensor_bias;
         tensor_weight = (float*)malloc(num_elements_weight * sizeof(float));
         dalotia_load_tensor_dense(dalotia_file, tensor_name_weight,
-                          (char*)tensor_weight, weightFormat, ordering);
+                                  (char*)tensor_weight, weightFormat, ordering);
 
         tensor_bias = (float*)malloc(num_elements_bias * sizeof(float));
-        dalotia_load_tensor_dense(dalotia_file, tensor_name_bias, (char*)tensor_bias,
-                          weightFormat, ordering);
+        dalotia_load_tensor_dense(dalotia_file, tensor_name_bias,
+                                  (char*)tensor_bias, weightFormat, ordering);
 
         // check if the first, second, and last values are as expected
         if (strcmp(tensor_name, "conv1") == 0) {
             assert_close(tensor_weight[0], 0.944823);
             assert_close(tensor_weight[1], 1.25045);
             assert_close(tensor_weight[71], 0.211111);
-            assert_close(tensor_weight[0],
-                         0.0);  // TODO why is this not failing?
-            assert_close(tensor_weight[1], 1.0);
-            assert_close(tensor_weight[71], 0.0);
-            fprintf(stderr, "tensor_bias[0]: %f\n", tensor_bias[0]);
-            assert_close(tensor_bias[0], 0.0);
-            fprintf(stderr, "tensor_bias[7]: %f\n", tensor_bias[7]);
-            assert_close(tensor_bias[7], 0.0);
+            assert_close(tensor_bias[0], 0.1796);
+            assert_close(tensor_bias[7], 0.6550);
+        } else if (strcmp(tensor_name, "conv2") == 0) {
+            assert_close(tensor_weight[0], -0.79839);
+            assert_close(tensor_weight[1], -1.3640);
+            assert_close(tensor_weight[1151], 0.32985);
+            assert_close(tensor_bias[0], -0.2460);
+            assert_close(tensor_bias[15], -0.3158);
+        } else if (strcmp(tensor_name, "fc1") == 0) {
+            assert_close(tensor_weight[0], 0.3420);
+            assert_close(tensor_weight[1], 0.7881);
+            assert_close(tensor_weight[7839], 0.3264);
+            assert_close(tensor_bias[0], 0.3484);
+            assert_close(tensor_bias[9], -0.2224);
         } else {
             assert(0);
         }
@@ -122,12 +132,12 @@ void test_load(const char* filename, const char* tensor_name) {
     dalotia_close_file(dalotia_file);
 }
 
-int main(int, char**) {
+int main(int i, char** c) {
     char filename[] = "../data/model-mnist.safetensors";
 
     test_get_tensor_names(filename);
     test_load(filename, "conv1");
-    // test_load(filename, "conv2"); // TODO
-    // test_load(filename, "fc1");
+    test_load(filename, "conv2");  // TODO
+    test_load(filename, "fc1");
     return 0;
 }
