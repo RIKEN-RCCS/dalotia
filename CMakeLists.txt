@@ -13,17 +13,17 @@ if (DALOTIA_WITH_FORTRAN)
 endif (DALOTIA_WITH_FORTRAN)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_MAKE_PROGRAM "make")
+# set(CMAKE_MAKE_PROGRAM "make")
 
 add_subdirectory(src) # target dalotia_cpp is generated here
-
-# external dependencies
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
 find_package(OpenMP)
 if (OpenMP_CXX_FOUND)
   target_link_libraries(dalotia_cpp OpenMP::OpenMP_CXX)
 endif ()
+
+# copy example / test files to build directory
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
 
 # safetensors-cpp
 if (DALOTIA_WITH_SAFETENSORS_CPP)
@@ -50,18 +50,11 @@ endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
 if (DALOTIA_CPP_BUILD_EXAMPLES)
   add_executable(dalotia-example example.cpp)
-  target_compile_definitions(dalotia-example PRIVATE "DALOTIA_CPP_NO_IMPLEMENTATION")
   target_link_libraries(dalotia-example dalotia_cpp)
-  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
-
-  if (DALOTIA_CPP_BUILD_C_API)
-    add_executable(example-c example-c.c)
-    target_compile_definitions(example-c PRIVATE "DALOTIA_C_NO_IMPLEMENTATION")
-    target_link_libraries(example-c dalotia_c)
-  endif (DALOTIA_CPP_BUILD_C_API)
 endif (DALOTIA_CPP_BUILD_EXAMPLES)
 
 if (DALOTIA_BUILD_TESTS)
+  list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
   enable_testing()
   add_subdirectory(test)
 endif (DALOTIA_BUILD_TESTS)
