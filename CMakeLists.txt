@@ -15,10 +15,8 @@ endif (DALOTIA_WITH_FORTRAN)
 set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_MAKE_PROGRAM "make")
 
-if(NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
-        "Choose the build type, options are: Debug Release RelWithDebInfo")
-endif()
+# if this is empty, will be set at config time
+# (build with --config Release or --config Debug etc.)
 message(STATUS "CMAKE BUILD TYPE: ${CMAKE_BUILD_TYPE}")
 
 add_subdirectory(src) # target dalotia_cpp is generated here
@@ -41,6 +39,8 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
     FIND_PACKAGE_ARGS # allow finding system installations
   )
   set(SAFETENSORS_CPP_CXX_EXCEPTIONS true)
+  set(SAFETENSORS_CPP_BUILD_EXAMPLES false)
+  set(SAFETENSORS_CPP_BUILD_C_API false)
   FetchContent_MakeAvailable(safetensors-cpp)
   FetchContent_GetProperties(safetensors-cpp SOURCE_DIR SAFETENSORS_CPP_INCLUDE_DIR BINARY_DIR SAFETENSORS_CPP_LIBRARY)
   # add dependecy from safetensors_cpp to sources 
