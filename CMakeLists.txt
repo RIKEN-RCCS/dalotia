@@ -4,6 +4,7 @@ project(DALOTIA_CPP CXX C)
 
 option(DALOTIA_CPP_BUILD_EXAMPLES "Build examples" ON)
 option(DALOTIA_BUILD_TESTS "Build tests" ON)
+option(DALOTIA_WITH_OPENMP "Build with OpenMP support" ON)
 option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
 option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)
 if (DALOTIA_WITH_FORTRAN)
@@ -25,11 +26,14 @@ set(CMAKE_CXX_STANDARD 17)
 message(STATUS "CMAKE BUILD TYPE: ${CMAKE_BUILD_TYPE}")
 
 add_subdirectory(src) # target dalotia_cpp is generated here
-
-find_package(OpenMP)
-if (OpenMP_CXX_FOUND)
-  target_link_libraries(dalotia_cpp OpenMP::OpenMP_CXX)
-endif ()
+if (DALOTIA_WITH_OPENMP)
+  find_package(OpenMP)
+  if (OpenMP_CXX_FOUND)
+    target_link_libraries(dalotia_cpp PRIVATE OpenMP::OpenMP_CXX)
+  else ()
+    message(WARNING "OpenMP not found")
+  endif()
+endif(DALOTIA_WITH_OPENMP)
 
 # copy example / test files to build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
@@ -50,12 +54,12 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
   FetchContent_GetProperties(safetensors-cpp SOURCE_DIR SAFETENSORS_CPP_INCLUDE_DIR BINARY_DIR SAFETENSORS_CPP_LIBRARY)
   # add dependecy from safetensors_cpp to sources 
   # so that everything that links to safetensors_cpp will also get the headers
-  target_include_directories(safetensors_cpp PUBLIC  
+  target_include_directories(safetensors_cpp PRIVATE  
       $<BUILD_INTERFACE:${SAFETENSORS_CPP_INCLUDE_DIR}>
     )
 
   target_include_directories(dalotia_cpp PUBLIC ${SAFETENSORS_CPP_INCLUDE_DIR} ${safetensors-cpp_DIR})
-  target_link_libraries(dalotia_cpp safetensors_cpp)
+  target_link_libraries(dalotia_cpp PUBLIC safetensors_cpp)
   target_compile_options(dalotia_cpp PUBLIC "-DDALOTIA_WITH_SAFETENSORS_CPP")
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
 

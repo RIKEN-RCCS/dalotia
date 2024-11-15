@@ -125,7 +125,6 @@ void test_load(const char* filename, const char* tensor_name) {
         } else {
             assert(0);
         }
-
         free(tensor_weight);
         free(tensor_bias);
     }
