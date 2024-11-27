@@ -13,3 +13,10 @@ target_sources(dalotia_cpp PUBLIC dalotia.hpp dalotia.h)
 target_include_directories(dalotia_cpp PUBLIC
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> )
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(dalotia_cpp PRIVATE -Wall -Wextra)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(dalotia_cpp PRIVATE -Wall -Wextra)
+else()
+    message( FATAL_ERROR "Unknown compiler, please add matching compiler flags here." )
+endif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

@@ -111,7 +111,8 @@ int dalotia_get_sparse_tensor_extents(DalotiaTensorFile *file,
         std::array<int, 10> extents_array =
             dalotia_file->get_sparse_tensor_extents(
                 tensor_name, dalotia_SparseFormat::dalotia_CSR);
-        assert(extents_array[0] == dalotia_file->get_nnz(tensor_name));
+        assert(static_cast<size_t>(extents_array[0]) ==
+               dalotia_file->get_nnz(tensor_name));
         std::copy(extents_array.begin(), extents_array.end(), extents);
     } else {
         assert(false);

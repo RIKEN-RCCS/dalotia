@@ -17,7 +17,7 @@
 namespace dalotia {
 class TensorFile {
    public:
-    TensorFile(std::string filename) {
+    TensorFile(std::string /* filename */) {
         // bool opened = (this->file_ = fopen(filename.c_str(), "rb"));
         // if (!opened) {
         //     throw std::runtime_error("Could not open file " + filename);
@@ -39,7 +39,7 @@ class TensorFile {
             "get_tensor_names not implemented for this tensor type");
     }
 
-    virtual bool is_sparse(std::string tensor_name) const {
+    virtual bool is_sparse(std::string /*tensor_name*/) const {
         throw std::runtime_error(
             "is_sparse not implemented for this tensor type");
         return false;
@@ -53,8 +53,8 @@ class TensorFile {
     }
 
     virtual std::array<int, 10> get_tensor_extents(
-        std::string tensor_name = "",
-        const int *permutation =
+        std::string /*tensor_name*/ = "",
+        const int * /*permutation */ =
             nullptr) const  //? have the maximum number of dimensions = 10?
     {
         throw std::runtime_error(
@@ -75,7 +75,7 @@ class TensorFile {
             std::multiplies<size_t>());
     }
 
-    virtual size_t get_nnz(std::string tensor_name) const {
+    virtual size_t get_nnz(std::string /* tensor_name*/) const {
         // This function will read the file and return the number of non-zero
         // elements ? may take a while for dense tensors, only allow for sparse?
         throw std::runtime_error(
@@ -84,7 +84,7 @@ class TensorFile {
     }
 
     virtual std::array<int, 10> get_sparse_tensor_extents(
-        std::string tensor_name, dalotia_SparseFormat format) const {
+        std::string /*tensor_name*/, dalotia_SparseFormat /*format*/) const {
         // This function will (lazily) read the file and return the tensor
         // extents
         throw std::runtime_error(
@@ -92,23 +92,24 @@ class TensorFile {
         return std::array<int, 10>();
     }
 
-    virtual void load_tensor_dense(std::string tensor_name,
-                                   dalotia_WeightFormat weightFormat,
-                                   dalotia_Ordering ordering,
-                                   std::byte *__restrict__ tensor,
-                                   const int *permutation = nullptr) {
+    virtual void load_tensor_dense(std::string /*tensor_name */,
+                                   dalotia_WeightFormat /*weightFormat */,
+                                   dalotia_Ordering /* ordering */,
+                                   std::byte *__restrict__ /*tensor */,
+                                   const int * /*permutation*/ = nullptr) {
         // This function will read the whole file and load the tensor,
         // optionally transposing it according to the permutation
         throw std::runtime_error(
             "load_tensor_dense not implemented for this tensor type");
     }
 
-    virtual void load_tensor_sparse(std::string tensor_name,
-                                    dalotia_SparseFormat sparseFormat,
-                                    dalotia_WeightFormat weightFormat,
-                                    dalotia_Ordering ordering,
-                                    std::byte *values, int *first_indices,
-                                    int *second_indices) {
+    virtual void load_tensor_sparse(std::string /*tensor_name */,
+                                    dalotia_SparseFormat /*sparseFormat */,
+                                    dalotia_WeightFormat /* weightFormat*/,
+                                    dalotia_Ordering /* ordering */,
+                                    std::byte * /*values*/,
+                                    int * /* first_indices*/,
+                                    int * /* second_indices*/) {
         // This function will read the whole file and load the tensor into the
         // three arrays
         throw std::runtime_error(

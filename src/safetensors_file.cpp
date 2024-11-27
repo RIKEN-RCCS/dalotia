@@ -63,7 +63,7 @@ SafetensorsFile::~SafetensorsFile() {
     }
 }
 
-bool SafetensorsFile::is_sparse(std::string tensor_name) const {
+bool SafetensorsFile::is_sparse(std::string /*tensor_name*/) const {
     return false;  // TODO figure out how sparsity works / could work
 }
 
@@ -114,8 +114,6 @@ void SafetensorsFile::load_tensor_dense(std::string tensor_name,
                                                        num_dimensions);
 
     const uint8_t *databuffer = st_.databuffer_addr;
-    const size_t file_item_bytes =
-        safetensors::get_dtype_bytes(safetensor.dtype);
     const dalotia_WeightFormat input_weight_format =
         safetensors_type_map.at(safetensor.dtype);
     auto *tensor_start =
@@ -133,12 +131,11 @@ void SafetensorsFile::load_tensor_dense(std::string tensor_name,
     }
 }
 
-void SafetensorsFile::load_tensor_sparse(std::string tensor_name,
-                                         dalotia_SparseFormat sparseFormat,
-                                         dalotia_WeightFormat weightFormat,
-                                         dalotia_Ordering ordering,
-                                         std::byte *values, int *first_indices,
-                                         int *second_indices) {
+void SafetensorsFile::load_tensor_sparse(
+    std::string /* tensor_name */, dalotia_SparseFormat /* sparseFormat */,
+    dalotia_WeightFormat /* weightFormat */, dalotia_Ordering /* ordering */,
+    std::byte * /* values */, int * /* first_indices */,
+    int * /*second_indices */) {
     throw std::runtime_error("Sparse tensors for safetensors not implemented");
 }
 

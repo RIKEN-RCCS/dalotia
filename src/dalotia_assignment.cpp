@@ -27,10 +27,10 @@ std::pmr::vector<int> final_c_permutation_from_permutation_and_order(
         // find out if the permutation ranges from 0 to d-1 or 1 to d
         const auto [min, max] =
             std::minmax_element(permutation, permutation + num_dimensions);
-        if (*min == 0 && *max == num_dimensions - 1) {
+        if (*min == 0 && *max == static_cast<int>(num_dimensions - 1)) {
             final_permutation_in_c_order.assign(permutation,
                                                 permutation + num_dimensions);
-        } else if (*min == 1 && *max == num_dimensions) {
+        } else if (*min == 1 && *max == static_cast<int>(num_dimensions)) {
             final_permutation_in_c_order.resize(num_dimensions);
             std::transform(permutation, permutation + num_dimensions,
                            final_permutation_in_c_order.begin(),
@@ -241,11 +241,14 @@ void assign_permuted<3>(std::byte *__restrict__ dest,
     auto assign_function =
         get_assignment_function(weight_output_format, weight_input_format);
     auto input_pointer = tensor_start;
-    auto output_pointer = dest;
     size_t store_index = 0;
     for (size_t i = 0; i < input_shape[0]; ++i) {
         for (size_t j = 0; j < input_shape[1]; ++j) {
             for (size_t k = 0; k < input_shape[2]; ++k) {
+                assert(static_cast<int>(store_index) ==
+                       std::inner_product(new_strides_permuted.begin(),
+                                          new_strides_permuted.end(),
+                                          std::vector({i, j, k}).begin(), 0));
                 assert(store_index < total_size);
                 auto output_pointer = dest + store_index * store_item_bytes;
                 assign_function(output_pointer, input_pointer);
@@ -282,12 +285,16 @@ void assign_permuted<4>(std::byte *__restrict__ dest,
     auto assign_function =
         get_assignment_function(weight_output_format, weight_input_format);
     auto input_pointer = tensor_start;
-    auto output_pointer = dest;
     size_t store_index = 0;
     for (size_t i = 0; i < input_shape[0]; ++i) {
         for (size_t j = 0; j < input_shape[1]; ++j) {
             for (size_t k = 0; k < input_shape[2]; ++k) {
                 for (size_t l = 0; l < input_shape[3]; ++l) {
+                    assert(static_cast<int>(store_index) ==
+                           std::inner_product(new_strides_permuted.begin(),
+                                              new_strides_permuted.end(),
+                                              std::vector({i, j, k, l}).begin(),
+                                              0));
                     assert(store_index < total_size);
                     auto output_pointer = dest + store_index * store_item_bytes;
                     assign_function(output_pointer, input_pointer);
