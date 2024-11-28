@@ -7,7 +7,7 @@
 #include "dalotia_formats.h"
 
 #if __cpp_lib_byte
-using dalotia_byte = std::dalotia_byte;
+using dalotia_byte = std::byte;
 #else
 using dalotia_byte = unsigned char;
 #endif
