@@ -36,6 +36,9 @@ TensorFile *make_tensor_file(std::string filename) {
 }  // namespace dalotia
 
 DalotiaTensorFile *dalotia_open_file(const char *filename) {
+#ifndef NDEBUG
+    std::cout << "dalotia_open_file opening: " << filename << std::endl;
+#endif
     return reinterpret_cast<DalotiaTensorFile *>(
         dalotia::make_tensor_file(std::string(filename)));
 }
