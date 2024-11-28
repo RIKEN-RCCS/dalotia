@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "dalotia.hpp"
-#include "safetensors_file.hpp"
+#include "dalotia_safetensors_file.hpp"
 
 void test_get_tensor_names(std::string filename) {
     auto dalotia_file = std::unique_ptr<dalotia::TensorFile>(

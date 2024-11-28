@@ -4,7 +4,7 @@
 
 #include "dalotia_formats.hpp"
 #include "safetensors.hh"
-#include "tensor_file.hpp"
+#include "dalotia_tensor_file.hpp"
 
 namespace dalotia {
 

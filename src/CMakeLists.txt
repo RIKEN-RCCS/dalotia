@@ -1,5 +1,5 @@
-set(DALOTIA_CPP_SOURCES dalotia_assignment.cpp dalotia_formats.cpp safetensors_file.cpp dalotia.cpp)
-# set(DALOTIA_CPP_HEADERS dalotia_assignment.hpp dalotia_formats.hpp dalotia_formats.h safetensors_file.hpp dalotia.hpp dalotia.h tensor_file.hpp)
+set(DALOTIA_CPP_SOURCES dalotia_assignment.cpp dalotia_formats.cpp dalotia_safetensors_file.cpp dalotia.cpp)
+# set(DALOTIA_CPP_HEADERS dalotia_assignment.hpp dalotia_formats.hpp dalotia_formats.h dalotia_safetensors_file.hpp dalotia.hpp dalotia.h dalotia_tensor_file.hpp)
 #TODO if DALOTIA_WITH_SAFETENSORS_CPP
 
 add_library(dalotia_cpp ${DALOTIA_CPP_SOURCES})

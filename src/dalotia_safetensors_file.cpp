@@ -1,4 +1,4 @@
-#include "safetensors_file.hpp"
+#include "dalotia_safetensors_file.hpp"
 
 #include <algorithm>
 #include <cassert>

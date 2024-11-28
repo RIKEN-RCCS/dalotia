@@ -12,10 +12,10 @@
 
 #include "dalotia_assignment.hpp"
 #include "dalotia_formats.hpp"
-#include "tensor_file.hpp"
+#include "dalotia_tensor_file.hpp"
 
 #ifdef DALOTIA_WITH_SAFETENSORS_CPP
-#include "safetensors_file.hpp"
+#include "dalotia_safetensors_file.hpp"
 #endif
 
 namespace dalotia {
