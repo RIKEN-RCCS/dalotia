@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
     std::array<double, 300> storage_array;
     std::pmr::monotonic_buffer_resource storage_resource(
         storage_array.data(), storage_array.size() * sizeof(double));
-    std::pmr::polymorphic_allocator<std::byte> storage_allocator(
+    std::pmr::polymorphic_allocator<dalotia_byte> storage_allocator(
         &storage_resource);
     auto [extents2, tensor_cpp2] = dalotia::load_tensor_dense<double>(
         filename, tensor_name, weightFormat, dalotia_C_ordering,

@@ -128,7 +128,7 @@ int dalotia_load_tensor_dense(DalotiaTensorFile *file, const char *tensor_name,
                               char *tensor, dalotia_WeightFormat format,
                               dalotia_Ordering ordering) {
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
-    auto byte_tensor = reinterpret_cast<std::byte *>(tensor);
+    auto byte_tensor = reinterpret_cast<dalotia_byte *>(tensor);
     try {
         dalotia_file->load_tensor_dense(tensor_name, format, ordering,
                                         byte_tensor);
@@ -146,7 +146,7 @@ int dalotia_load_tensor_dense_with_permutation(DalotiaTensorFile *file,
                                                dalotia_Ordering ordering,
                                                const int *permutation) {
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
-    auto byte_tensor = reinterpret_cast<std::byte *>(tensor);
+    auto byte_tensor = reinterpret_cast<dalotia_byte *>(tensor);
     try {
         dalotia_file->load_tensor_dense(tensor_name, format, ordering,
                                         byte_tensor, permutation);
@@ -165,7 +165,7 @@ int dalotia_load_tensor_sparse(DalotiaTensorFile *file, const char *tensor_name,
                                int *second_indices, dalotia_SparseFormat format,
                                dalotia_WeightFormat weightFormat,
                                dalotia_Ordering ordering) {
-    auto byte_tensor = reinterpret_cast<std::byte *>(values);
+    auto byte_tensor = reinterpret_cast<dalotia_byte *>(values);
     try {
         if (format == dalotia_SparseFormat::dalotia_CSR &&
             weightFormat == dalotia_WeightFormat::dalotia_float_32 &&

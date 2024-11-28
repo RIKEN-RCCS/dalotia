@@ -46,13 +46,13 @@ class SafetensorsFile : public TensorFile {
     void load_tensor_dense(std::string tensor_name,
                            dalotia_WeightFormat weightFormat,
                            dalotia_Ordering ordering,
-                           std::byte *__restrict__ tensor,
+                           dalotia_byte *__restrict__ tensor,
                            const int *permutation = nullptr) override;
 
     void load_tensor_sparse(std::string tensor_name,
                             dalotia_SparseFormat sparseFormat,
                             dalotia_WeightFormat weightFormat,
-                            dalotia_Ordering ordering, std::byte *values,
+                            dalotia_Ordering ordering, dalotia_byte *values,
                             int *first_indices, int *second_indices) override;
     safetensors::safetensors_t st_;
 };

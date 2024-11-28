@@ -27,14 +27,15 @@ TensorFile *make_tensor_file(std::string filename);
 // -- pmr vector types can accept different allocators
 //? more memory interface than that? detect if CUDA device pointer through
 // unified access... how about other devices?
-template <typename value_type = std::byte>  //? or have no defaults?
+template <typename value_type = dalotia_byte>  //? or have no defaults?
 [[nodiscard]] std::pair<std::pmr::vector<int>, std::pmr::vector<value_type>>
-load_tensor_dense(std::string filename, std::string tensor_name,
-                  dalotia_WeightFormat weight_format,
-                  dalotia_Ordering ordering = dalotia_C_ordering,
-                  const std::pmr::polymorphic_allocator<std::byte> &allocator =
-                      std::pmr::polymorphic_allocator<std::byte>(),
-                  const std::pmr::vector<int> &permutation = {}) {
+load_tensor_dense(
+    std::string filename, std::string tensor_name,
+    dalotia_WeightFormat weight_format,
+    dalotia_Ordering ordering = dalotia_C_ordering,
+    const std::pmr::polymorphic_allocator<dalotia_byte> &allocator =
+        std::pmr::polymorphic_allocator<dalotia_byte>(),
+    const std::pmr::vector<int> &permutation = {}) {
     auto dalotia_file = std::unique_ptr<TensorFile>(make_tensor_file(filename));
     const int *permutation_ptr = nullptr;
     if (!permutation.empty()) {
@@ -51,14 +52,14 @@ load_tensor_dense(std::string filename, std::string tensor_name,
                                       1, std::multiplies<size_t>());
 
     std::pmr::vector<value_type> tensor(allocator);
-    if constexpr (std::is_same_v<value_type, std::byte>) {
+    if constexpr (std::is_same_v<value_type, dalotia_byte>) {
         tensor.resize(total_size * sizeof_weight_format(weight_format));
     } else {
         tensor.resize(total_size);
     }
     dalotia_file->load_tensor_dense(
         tensor_name, weight_format, ordering,
-        reinterpret_cast<std::byte *>(tensor.data()), permutation_ptr);
+        reinterpret_cast<dalotia_byte *>(tensor.data()), permutation_ptr);
     return std::make_pair(true_extents, tensor);
 }
 

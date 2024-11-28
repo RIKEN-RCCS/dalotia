@@ -4,7 +4,6 @@
 #include <array>
 #include <cassert>
 #include <functional>
-#include <memory_resource>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -67,7 +66,8 @@ std::pmr::vector<int> final_c_permutation_from_permutation_and_order(
     return final_permutation_in_c_order;
 }
 
-std::function<void(std::byte *__restrict__, const std::byte *__restrict__)>
+std::function<void(dalotia_byte *__restrict__,
+                   const dalotia_byte *__restrict__)>
 get_assignment_function(dalotia_WeightFormat weight_output_format,
                         dalotia_WeightFormat weight_input_format) {
     const size_t load_item_bytes =
@@ -75,11 +75,11 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
     const size_t store_item_bytes =
         dalotia::sizeof_weight_format(weight_output_format);
     if (weight_input_format == weight_output_format) {
-        // if they are the same, just assign them byte by byte
+        // if they are the same, just assign them dalotia_byte by dalotia_byte
         assert(load_item_bytes == store_item_bytes);
         auto fcn = [load_item_bytes](
-                       std::byte *__restrict__ output_bytes,
-                       const std::byte *__restrict__ input_bytes) {
+                       dalotia_byte *__restrict__ output_bytes,
+                       const dalotia_byte *__restrict__ input_bytes) {
             for (size_t j = 0; j < load_item_bytes; ++j) {
                 output_bytes[j] = input_bytes[j];
             }
@@ -102,13 +102,13 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
             // bfloat-compatible, assign and add zeros at the end (?)
             assert(2 * load_item_bytes == store_item_bytes);
             auto fcn = [load_item_bytes](
-                           std::byte *__restrict__ output_bytes,
-                           const std::byte *__restrict__ input_bytes) {
+                           dalotia_byte *__restrict__ output_bytes,
+                           const dalotia_byte *__restrict__ input_bytes) {
                 for (size_t j = 0; j < load_item_bytes; ++j) {
                     output_bytes[j] = input_bytes[j];
                 }
                 for (size_t j = 0; j < load_item_bytes; ++j) {
-                    output_bytes[j] = static_cast<std::byte>(0);
+                    output_bytes[j] = static_cast<dalotia_byte>(0);
                 }
             };
             return fcn;
@@ -119,8 +119,8 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
             // rest
             assert(load_item_bytes == 2 * store_item_bytes);
             auto fcn = [store_item_bytes](
-                           std::byte *__restrict__ output_bytes,
-                           const std::byte *__restrict__ input_bytes) {
+                           dalotia_byte *__restrict__ output_bytes,
+                           const dalotia_byte *__restrict__ input_bytes) {
                 for (size_t j = 0; j < store_item_bytes; ++j) {
                     output_bytes[j] = input_bytes[j];
                 }
@@ -133,10 +133,10 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
         "get_assignment_function: unsupported format combination");
 }
 
-void assign_linearly(std::byte *__restrict__ dest,
+void assign_linearly(dalotia_byte *__restrict__ dest,
                      dalotia_WeightFormat weight_output_format,
                      size_t num_items,
-                     const std::byte *const __restrict__ tensor_start,
+                     const dalotia_byte *const __restrict__ tensor_start,
                      dalotia_WeightFormat weight_input_format) {
     const size_t load_item_bytes =
         dalotia::sizeof_weight_format(weight_input_format);
@@ -166,8 +166,14 @@ std::pair<std::array<size_t, num_dimensions>, size_t> get_new_stripes_permuted(
     }
     auto new_strides = std::array<size_t, num_dimensions>();
     // C order -> last dimension is the most contiguous -> rbegin
-    std::exclusive_scan(desired_shape.rbegin(), desired_shape.rend(),
-                        new_strides.rbegin(), 1, std::multiplies<>{});
+    // std::exclusive_scan(desired_shape.rbegin(), desired_shape.rend(),
+    //                     new_strides.rbegin(), 1, std::multiplies<>{});
+    // TODO switch along with c++17 availability
+    new_strides[num_dimensions - 1] = 1;
+    for (size_t i = num_dimensions - 1; i > 0; --i) {
+        new_strides[i - 1] = new_strides[i] * desired_shape[i];
+    }
+
     auto new_strides_permuted = new_strides;
     for (size_t i = 0; i < num_dimensions; ++i) {
         new_strides_permuted[i] = new_strides[permutation[i]];
@@ -176,10 +182,10 @@ std::pair<std::array<size_t, num_dimensions>, size_t> get_new_stripes_permuted(
 }
 
 template <>
-void assign_permuted<1>(std::byte *__restrict__ dest,
+void assign_permuted<1>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
                         const size_t *const input_shape,
-                        const std::byte *__restrict__ tensor_start,
+                        const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
     assert(permutation[0] == 0);
@@ -188,10 +194,10 @@ void assign_permuted<1>(std::byte *__restrict__ dest,
 }
 
 template <>
-void assign_permuted<2>(std::byte *__restrict__ dest,
+void assign_permuted<2>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
                         const size_t *const input_shape,
-                        const std::byte *__restrict__ tensor_start,
+                        const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
     constexpr int num_dimensions = 2;
@@ -224,10 +230,10 @@ void assign_permuted<2>(std::byte *__restrict__ dest,
 }
 
 template <>
-void assign_permuted<3>(std::byte *__restrict__ dest,
+void assign_permuted<3>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
                         const size_t *const input_shape,
-                        const std::byte *__restrict__ tensor_start,
+                        const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
     constexpr int num_dimensions = 3;
@@ -268,10 +274,10 @@ void assign_permuted<3>(std::byte *__restrict__ dest,
 }
 
 template <>
-void assign_permuted<4>(std::byte *__restrict__ dest,
+void assign_permuted<4>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
                         const size_t *const input_shape,
-                        const std::byte *__restrict__ tensor_start,
+                        const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
     constexpr int num_dimensions = 4;

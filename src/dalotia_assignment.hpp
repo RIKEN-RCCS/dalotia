@@ -15,17 +15,17 @@ std::pmr::vector<int> final_c_permutation_from_permutation_and_order(
     const int *permutation, dalotia_Ordering ordering, size_t num_dimensions);
 
 template <typename InType, typename OutType>
-std::function<void(std::byte *__restrict__, const std::byte *__restrict__)>
+std::function<void(dalotia_byte *__restrict__, const dalotia_byte *__restrict__)>
 cpp_type_assignment(size_t store_item_bytes) {
     // if both types are builtins, cast input and assign the resulting bytes
-    auto fcn = [store_item_bytes](std::byte *__restrict__ output_bytes,
-                                  const std::byte *__restrict__ input_bytes) {
+    auto fcn = [store_item_bytes](dalotia_byte *__restrict__ output_bytes,
+                                  const dalotia_byte *__restrict__ input_bytes) {
         auto input_cast =
             reinterpret_cast<const InType *__restrict__>(input_bytes);
         auto output_cast = static_cast<OutType>(*input_cast);
         assert(sizeof(output_cast) == store_item_bytes);
         auto copy_bytes =
-            reinterpret_cast<std::byte *__restrict__>(&output_cast);
+            reinterpret_cast<dalotia_byte *__restrict__>(&output_cast);
         for (size_t j = 0; j < store_item_bytes; ++j) {
             output_bytes[j] = copy_bytes[j];
         }
@@ -33,21 +33,21 @@ cpp_type_assignment(size_t store_item_bytes) {
     return fcn;
 }
 
-std::function<void(std::byte *__restrict__, const std::byte *__restrict__)>
+std::function<void(dalotia_byte *__restrict__, const dalotia_byte *__restrict__)>
 get_assignment_function(dalotia_WeightFormat weight_output_format,
                         dalotia_WeightFormat weight_input_format);
 
-void assign_linearly(std::byte *__restrict__ dest,
+void assign_linearly(dalotia_byte *__restrict__ dest,
                      dalotia_WeightFormat weight_output_format,
                      size_t num_items,
-                     const std::byte *const __restrict__ tensor_start,
+                     const dalotia_byte *const __restrict__ tensor_start,
                      dalotia_WeightFormat weight_input_format);
 
 template <uint8_t num_dimensions>
-void assign_permuted(std::byte *__restrict__ /*dest*/,
+void assign_permuted(dalotia_byte *__restrict__ /*dest*/,
                      dalotia_WeightFormat /*weight_output_format*/,
                      const size_t *const /*input_shape*/,
-                     const std::byte *__restrict__ /*tensor_start*/,
+                     const dalotia_byte *__restrict__ /*tensor_start*/,
                      dalotia_WeightFormat /*weight_input_format*/,
                      const int * /*permutation*/) {
     throw std::runtime_error("assign_permuted not yet implemented for " +
@@ -56,37 +56,37 @@ void assign_permuted(std::byte *__restrict__ /*dest*/,
 
 // specialization for 1d
 template <>
-void assign_permuted<1>(std::byte *__restrict__ dest,
+void assign_permuted<1>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
                         const size_t *const input_shape,
-                        const std::byte *__restrict__ tensor_start,
+                        const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation);
 
 // specialization for 2d
 template <>
-void assign_permuted<2>(std::byte *__restrict__ dest,
+void assign_permuted<2>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
                         const size_t *const input_shape,
-                        const std::byte *__restrict__ tensor_start,
+                        const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation);
 
 // specialization for 3d
 template <>
-void assign_permuted<3>(std::byte *__restrict__ dest,
+void assign_permuted<3>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
                         const size_t *const input_shape,
-                        const std::byte *__restrict__ tensor_start,
+                        const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation);
 
 // specialization for 4d
 template <>
-void assign_permuted<4>(std::byte *__restrict__ dest,
+void assign_permuted<4>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
                         const size_t *const input_shape,
-                        const std::byte *__restrict__ tensor_start,
+                        const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation);
 

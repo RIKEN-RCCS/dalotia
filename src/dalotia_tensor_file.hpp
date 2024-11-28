@@ -6,7 +6,6 @@
 #include <array>
 #include <cassert>
 #include <memory>
-#include <memory_resource>
 #include <numeric>
 #include <stdexcept>
 #include <string>
@@ -95,7 +94,7 @@ class TensorFile {
     virtual void load_tensor_dense(std::string /*tensor_name */,
                                    dalotia_WeightFormat /*weightFormat */,
                                    dalotia_Ordering /* ordering */,
-                                   std::byte *__restrict__ /*tensor */,
+                                   dalotia_byte *__restrict__ /*tensor */,
                                    const int * /*permutation*/ = nullptr) {
         // This function will read the whole file and load the tensor,
         // optionally transposing it according to the permutation
@@ -107,9 +106,9 @@ class TensorFile {
                                     dalotia_SparseFormat /*sparseFormat */,
                                     dalotia_WeightFormat /* weightFormat*/,
                                     dalotia_Ordering /* ordering */,
-                                    std::byte * /*values*/,
-                                    int * /* first_indices*/,
-                                    int * /* second_indices*/) {
+                                    dalotia_byte *__restrict__ /*values*/,
+                                    int *__restrict__ /* first_indices*/,
+                                    int *__restrict__ /* second_indices*/) {
         // This function will read the whole file and load the tensor into the
         // three arrays
         throw std::runtime_error(

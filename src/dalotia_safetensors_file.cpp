@@ -107,7 +107,7 @@ std::array<int, 10> SafetensorsFile::get_tensor_extents(
 void SafetensorsFile::load_tensor_dense(std::string tensor_name,
                                         dalotia_WeightFormat weightFormat,
                                         dalotia_Ordering ordering,
-                                        std::byte *__restrict__ tensor,
+                                        dalotia_byte *__restrict__ tensor,
                                         const int *permutation) {
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
     const auto num_dimensions = safetensor.shape.size();
@@ -120,7 +120,7 @@ void SafetensorsFile::load_tensor_dense(std::string tensor_name,
     const dalotia_WeightFormat input_weight_format =
         safetensors_type_map.at(safetensor.dtype);
     auto *tensor_start =
-        reinterpret_cast<const std::byte *__restrict__>(databuffer) +
+        reinterpret_cast<const dalotia_byte *__restrict__>(databuffer) +
         safetensor.data_offsets[0];
     if (!final_permutation_in_c_order.empty()) {
         assign_permuted(num_dimensions, tensor, weightFormat,
@@ -137,7 +137,7 @@ void SafetensorsFile::load_tensor_dense(std::string tensor_name,
 void SafetensorsFile::load_tensor_sparse(
     std::string /* tensor_name */, dalotia_SparseFormat /* sparseFormat */,
     dalotia_WeightFormat /* weightFormat */, dalotia_Ordering /* ordering */,
-    std::byte * /* values */, int * /* first_indices */,
+    dalotia_byte * /* values */, int * /* first_indices */,
     int * /*second_indices */) {
     throw std::runtime_error("Sparse tensors for safetensors not implemented");
 }

@@ -6,6 +6,12 @@
 
 #include "dalotia_formats.h"
 
+#if __cpp_lib_byte
+using dalotia_byte = std::dalotia_byte;
+#else
+using dalotia_byte = unsigned char;
+#endif
+
 namespace dalotia {
 
 template <dalotia_WeightFormat format>

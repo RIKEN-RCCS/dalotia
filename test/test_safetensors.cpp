@@ -41,7 +41,8 @@ void test_simple_linear_load() {
     auto tensor = (char *)malloc(dalotia::sizeof_weight_format<weightFormat>() *
                                  total_size);
 
-    dalotia_load_tensor_dense(file, tensor_name, tensor, weightFormat, ordering);
+    dalotia_load_tensor_dense(file, tensor_name, tensor, weightFormat,
+                              ordering);
 
     auto double_tensor = reinterpret_cast<double *>(tensor);
     for (int i = 0; i < total_size; i++) {
@@ -104,7 +105,7 @@ void test_permuted_load() {
 
         auto [extents, tensor_cpp] = dalotia::load_tensor_dense<double>(
             filename, tensor_name, weightFormat, ordering,
-            std::pmr::polymorphic_allocator<std::byte>(), permutation);
+            std::pmr::polymorphic_allocator<dalotia_byte>(), permutation);
         assert(extents.size() == 3);
         assert(extents[0] == 3);
         assert(extents[1] == 4);
@@ -128,7 +129,7 @@ void test_load_other_float_format() {
         // test loading to float
         auto [extents, tensor_cpp] = dalotia::load_tensor_dense<float>(
             filename, tensor_name, weightFormat, ordering,
-            std::pmr::polymorphic_allocator<std::byte>(), permutation);
+            std::pmr::polymorphic_allocator<dalotia_byte>(), permutation);
         for (int i = 0; i < tensor_cpp.size(); i++) {
             assert(tensor_cpp[i] == i);
         }
@@ -140,7 +141,7 @@ void test_load_other_float_format() {
         // TODO needs other input or multicasting
         // auto [extents, tensor_cpp] = dalotia::load_tensor_dense(
         //     filename, tensor_name, weightFormat, ordering,
-        //     std::pmr::polymorphic_allocator<std::byte>(), permutation);
+        //     std::pmr::polymorphic_allocator<dalotia_byte>(), permutation);
         // TODO how to check values?
     }
 }
