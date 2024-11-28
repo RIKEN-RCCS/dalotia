@@ -38,6 +38,9 @@ const std::vector<std::string> &SafetensorsFile::get_tensor_names() const {
 }
 
 SafetensorsFile::SafetensorsFile(std::string filename) : TensorFile(filename) {
+#ifndef NDEBUG
+    std::cout << "Loading safetensors file: " << filename << "\n";
+#endif
     // as far as I can tell, safetensors are saved in C order
     std::string warn, err;
     bool ret = safetensors::mmap_from_file(filename, &st_, &warn, &err);
