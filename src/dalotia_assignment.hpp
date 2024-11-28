@@ -44,12 +44,12 @@ void assign_linearly(std::byte *__restrict__ dest,
                      dalotia_WeightFormat weight_input_format);
 
 template <uint8_t num_dimensions>
-void assign_permuted(std::byte *__restrict__ dest,
-                     dalotia_WeightFormat weight_output_format,
-                     const size_t *const input_shape,
-                     const std::byte *__restrict__ tensor_start,
-                     dalotia_WeightFormat weight_input_format,
-                     const int *permutation) {
+void assign_permuted(std::byte *__restrict__ /*dest*/,
+                     dalotia_WeightFormat /*weight_output_format*/,
+                     const size_t *const /*input_shape*/,
+                     const std::byte *__restrict__ /*tensor_start*/,
+                     dalotia_WeightFormat /*weight_input_format*/,
+                     const int * /*permutation*/) {
     throw std::runtime_error("assign_permuted not yet implemented for " +
                              std::to_string(num_dimensions) + " dimensions");
 }
