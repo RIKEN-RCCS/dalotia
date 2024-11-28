@@ -8,6 +8,7 @@ if (DALOTIA_WITH_FORTRAN)
     set(DALOTIA_FORTRAN_HEADERS dalotia.f03)
     add_library(dalotia_fortran ${DALOTIA_FORTRAN_HEADERS})
     set_target_properties(dalotia_fortran PROPERTIES LINKER_LANGUAGE Fortran)
+    target_link_libraries(dalotia_fortran INTERFACE dalotia_cpp)
 endif (DALOTIA_WITH_FORTRAN)
 target_sources(dalotia_cpp PUBLIC dalotia.hpp dalotia.h)
 target_include_directories(dalotia_cpp PUBLIC
