@@ -6,11 +6,11 @@
 
 #include "dalotia_formats.h"
 
-#if __cpp_lib_byte
-using dalotia_byte = std::byte;
-#else
+// #if __cpp_lib_byte //TODO why is github actions unhappy with this?
+// using dalotia_byte = std::byte;
+// #else
 using dalotia_byte = unsigned char;
-#endif
+// #endif
 
 namespace dalotia {
 
@@ -36,10 +36,11 @@ constexpr int8_t sizeof_weight_format() {
 // runtime version
 int8_t sizeof_weight_format(dalotia_WeightFormat format);
 
-const std::map<dalotia_WeightFormat, dalotia_WeightFormat> bfloat_compatible_float{
-    //   {dalotia_bfloat_8, dalotia_float_16},
-    {dalotia_bfloat_16, dalotia_float_32},
-    //   {dalotia_bfloat_32, dalotia_float_64},
-};
+const std::map<dalotia_WeightFormat, dalotia_WeightFormat>
+    bfloat_compatible_float{
+        //   {dalotia_bfloat_8, dalotia_float_16},
+        {dalotia_bfloat_16, dalotia_float_32},
+        //   {dalotia_bfloat_32, dalotia_float_64},
+    };
 
 }  // namespace dalotia
