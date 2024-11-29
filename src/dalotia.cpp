@@ -1,5 +1,21 @@
 #include "dalotia.hpp"
-
+#if __cpp_lib_filesystem
+#include <filesystem>
+namespace dalotia {
+using file_exists = std::filesystem::exists;
+}
+#else   // __cpp_lib_filesystem
+namespace dalotia {
+bool file_exists(const std::string &name) {
+    if (FILE *file = fopen(name.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
+}
+}  // namespace dalotia
+#endif  // __cpp_lib_filesystem
 #include <iostream>
 
 #include "dalotia.h"
@@ -10,7 +26,7 @@ namespace dalotia {
 // available implementations
 TensorFile *make_tensor_file(std::string filename) {
     // make sure the file exists
-    if (!std::filesystem::exists(filename)) {
+    if (!dalotia::file_exists(filename)) {
         throw std::runtime_error("dalotia make_tensor_file: File " + filename +
                                  " does not exist");
     }

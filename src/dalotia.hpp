@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <filesystem>
 #include <memory>
 #ifdef DALOTIA_WITH_CPP_PMR
 #include <memory_resource>
