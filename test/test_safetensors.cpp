@@ -89,6 +89,8 @@ void test_permuted_load() {
     constexpr dalotia_WeightFormat weightFormat =
         dalotia_WeightFormat::dalotia_float_64;
     dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
+
+#ifdef DALOTIA_WITH_CPP_PMR
     {
         // first test linear load
         auto [extents, tensor_cpp] = dalotia::load_tensor_dense<double>(
@@ -101,11 +103,11 @@ void test_permuted_load() {
     }
     {
         // then with permutation
-        auto permutation = std::pmr::vector<int>{1, 0, 2};
+        auto permutation = dalotia::vector<int>{1, 0, 2};
 
         auto [extents, tensor_cpp] = dalotia::load_tensor_dense<double>(
-            filename, tensor_name, weightFormat, ordering,
-            std::pmr::polymorphic_allocator<dalotia_byte>(), permutation);
+            filename, tensor_name, weightFormat, ordering, permutation,
+            std::pmr::polymorphic_allocator<dalotia_byte>());
         assert(extents.size() == 3);
         assert(extents[0] == 3);
         assert(extents[1] == 4);
@@ -115,6 +117,7 @@ void test_permuted_load() {
             assert(tensor_cpp[i] == i);
         }
     }
+#endif  // DALOTIA_WITH_CPP_PMR
 }
 
 void test_load_other_float_format() {
@@ -122,22 +125,24 @@ void test_load_other_float_format() {
     std::string filename = "../data/model.safetensors";
     std::string tensor_name = "embedding_firstchanged";
     const dalotia_Ordering ordering = dalotia_Ordering::dalotia_C_ordering;
+#ifdef DALOTIA_WITH_CPP_PMR
     {
         constexpr dalotia_WeightFormat weightFormat =
             dalotia_WeightFormat::dalotia_float_32;
-        auto permutation = std::pmr::vector<int>{1, 0, 2};
+        auto permutation = dalotia::vector<int>{1, 0, 2};
         // test loading to float
         auto [extents, tensor_cpp] = dalotia::load_tensor_dense<float>(
-            filename, tensor_name, weightFormat, ordering,
-            std::pmr::polymorphic_allocator<dalotia_byte>(), permutation);
+            filename, tensor_name, weightFormat, ordering, permutation,
+            std::pmr::polymorphic_allocator<dalotia_byte>());
         for (int i = 0; i < tensor_cpp.size(); i++) {
             assert(tensor_cpp[i] == i);
         }
     }
+#endif  // DALOTIA_WITH_CPP_PMR
     {
         constexpr dalotia_WeightFormat weightFormat =
             dalotia_WeightFormat::dalotia_bfloat_16;
-        auto permutation = std::pmr::vector<int>{1, 0, 2};
+        auto permutation = dalotia::vector<int>{1, 0, 2};
         // TODO needs other input or multicasting
         // auto [extents, tensor_cpp] = dalotia::load_tensor_dense(
         //     filename, tensor_name, weightFormat, ordering,

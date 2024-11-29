@@ -12,9 +12,9 @@
 
 namespace dalotia {
 
-std::pmr::vector<int> final_c_permutation_from_permutation_and_order(
+dalotia::vector<int> final_c_permutation_from_permutation_and_order(
     const int *permutation, dalotia_Ordering ordering, size_t num_dimensions) {
-    std::pmr::vector<int> final_permutation_in_c_order;
+    dalotia::vector<int> final_permutation_in_c_order;
     if (permutation == nullptr) {
         if (ordering == dalotia_Ordering::dalotia_F_ordering) {
             final_permutation_in_c_order.resize(num_dimensions);

@@ -10,6 +10,12 @@ if (DALOTIA_WITH_FORTRAN)
     set_target_properties(dalotia_fortran PROPERTIES LINKER_LANGUAGE Fortran)
     target_link_libraries(dalotia_fortran INTERFACE dalotia_cpp)
 endif (DALOTIA_WITH_FORTRAN)
+
+if (DALOTIA_WITH_CPP_PMR)
+    # pass DALOTIA_WITH_CPP_PMR to all targets
+    target_compile_definitions(dalotia_cpp PUBLIC "-DDALOTIA_WITH_CPP_PMR")
+endif (DALOTIA_WITH_CPP_PMR)
+
 target_sources(dalotia_cpp PUBLIC dalotia.hpp dalotia.h)
 target_include_directories(dalotia_cpp PUBLIC
         $<INSTALL_INTERFACE:include>

@@ -26,7 +26,7 @@ void assert_close(float a, float b) {
     }
 }
 
-std::pair<std::pmr::vector<float>, std::pmr::vector<float>> test_load(
+std::pair<dalotia::vector<float>, dalotia::vector<float>> test_load(
     std::string filename, std::string layer_name) {
     std::string tensor_name_weight = layer_name + ".weight";
     std::string tensor_name_bias = layer_name + ".bias";

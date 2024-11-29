@@ -2,24 +2,40 @@
 #include <algorithm>
 #include <cassert>
 #include <functional>
-#include <memory_resource>
 #include <numeric>
 #include <stdexcept>
+
+#ifdef DALOTIA_WITH_CPP_PMR
+#include <memory_resource>
+// define dalotia::vector as std::pmr::vector
+namespace dalotia {
+template <typename T>
+using vector = std::pmr::vector<T>;
+}  // namespace dalotia
+#else
 #include <vector>
+// define dalotia::vector as std::vector
+namespace dalotia {
+template <typename T>
+using vector = std::vector<T>;
+}  // namespace dalotia
+#endif
 
 #include "dalotia_formats.hpp"
 
 namespace dalotia {
 
-std::pmr::vector<int> final_c_permutation_from_permutation_and_order(
+dalotia::vector<int> final_c_permutation_from_permutation_and_order(
     const int *permutation, dalotia_Ordering ordering, size_t num_dimensions);
 
 template <typename InType, typename OutType>
-std::function<void(dalotia_byte *__restrict__, const dalotia_byte *__restrict__)>
+std::function<void(dalotia_byte *__restrict__,
+                   const dalotia_byte *__restrict__)>
 cpp_type_assignment(size_t store_item_bytes) {
     // if both types are builtins, cast input and assign the resulting bytes
-    auto fcn = [store_item_bytes](dalotia_byte *__restrict__ output_bytes,
-                                  const dalotia_byte *__restrict__ input_bytes) {
+    auto fcn = [store_item_bytes](
+                   dalotia_byte *__restrict__ output_bytes,
+                   const dalotia_byte *__restrict__ input_bytes) {
         auto input_cast =
             reinterpret_cast<const InType *__restrict__>(input_bytes);
         auto output_cast = static_cast<OutType>(*input_cast);
@@ -33,7 +49,8 @@ cpp_type_assignment(size_t store_item_bytes) {
     return fcn;
 }
 
-std::function<void(dalotia_byte *__restrict__, const dalotia_byte *__restrict__)>
+std::function<void(dalotia_byte *__restrict__,
+                   const dalotia_byte *__restrict__)>
 get_assignment_function(dalotia_WeightFormat weight_output_format,
                         dalotia_WeightFormat weight_input_format);
 

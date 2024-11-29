@@ -4,6 +4,7 @@ project(DALOTIA_CPP CXX C)
 
 option(DALOTIA_CPP_BUILD_EXAMPLES "Build examples" ON)
 option(DALOTIA_BUILD_TESTS "Build tests" ON)
+option(DALOTIA_WITH_CPP_PMR "use polymorphic memory resources (pmr) C++17 feature for dalotia" ON)
 option(DALOTIA_WITH_OPENMP "Build with OpenMP support" ON)
 option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
 option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)

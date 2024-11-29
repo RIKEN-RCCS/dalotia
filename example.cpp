@@ -1,7 +1,6 @@
 #include <array>
 #include <cassert>
 #include <iostream>  //TODO remove
-#include <memory_resource>
 #include <string>
 #include <vector>
 
@@ -107,12 +106,14 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl;
     std::cout << std::endl;
 
-    // alternative: the C++17 version
+    // alternative: the C++ version
     auto [extents, tensor_cpp] =
         dalotia::load_tensor_dense(filename, tensor_name, weightFormat);
 
-    // small tensors can even live on the stack!
-    auto vector_permutation = std::pmr::vector<int>{1, 2, 0};
+    // typed return values and permutations!
+    auto vector_permutation = dalotia::vector<int>{1, 2, 0};
+#ifdef DALOTIA_WITH_CPP_PMR
+    // C++17 pmr -> small tensors can even live on the stack
     std::array<double, 300> storage_array;
     std::pmr::monotonic_buffer_resource storage_resource(
         storage_array.data(), storage_array.size() * sizeof(double));
@@ -120,12 +121,16 @@ int main(int argc, char *argv[]) {
         &storage_resource);
     auto [extents2, tensor_cpp2] = dalotia::load_tensor_dense<double>(
         filename, tensor_name, weightFormat, dalotia_C_ordering,
-        storage_allocator, vector_permutation);
+        vector_permutation, storage_allocator);
 
     for (int i = 0; i < storage_array.size(); ++i) {
         std::cout << storage_array[i] << " ";
     }
     std::cout << std::endl;
+#else   // DALOTIA_WITH_CPP_PMR
+    auto [extents2, tensor_cpp2] = dalotia::load_tensor_dense<double>(
+        filename, tensor_name, weightFormat, ordering, vector_permutation);
+#endif  // DALOTIA_WITH_CPP_PMR
 
     for (int i = 0; i < extents2.size(); ++i) {
         std::cout << extents2[i] << " ";

@@ -5,10 +5,11 @@
 #include <cassert>
 #include <filesystem>
 #include <memory>
+#ifdef DALOTIA_WITH_CPP_PMR
 #include <memory_resource>
+#endif  // DALOTIA_WITH_CPP_PMR
 #include <numeric>
 #include <string>
-#include <vector>
 
 #include "dalotia_assignment.hpp"
 #include "dalotia_formats.hpp"
@@ -28,14 +29,18 @@ TensorFile *make_tensor_file(std::string filename);
 //? more memory interface than that? detect if CUDA device pointer through
 // unified access... how about other devices?
 template <typename value_type = dalotia_byte>  //? or have no defaults?
-[[nodiscard]] std::pair<std::pmr::vector<int>, std::pmr::vector<value_type>>
+[[nodiscard]] std::pair<dalotia::vector<int>, dalotia::vector<value_type>>
 load_tensor_dense(
     std::string filename, std::string tensor_name,
     dalotia_WeightFormat weight_format,
     dalotia_Ordering ordering = dalotia_C_ordering,
+    const dalotia::vector<int> &permutation = {}
+#ifdef DALOTIA_WITH_CPP_PMR
+    ,
     const std::pmr::polymorphic_allocator<dalotia_byte> &allocator =
-        std::pmr::polymorphic_allocator<dalotia_byte>(),
-    const std::pmr::vector<int> &permutation = {}) {
+        std::pmr::polymorphic_allocator<dalotia_byte>()
+#endif  // DALOTIA_WITH_CPP_PMR
+) {
     auto dalotia_file = std::unique_ptr<TensorFile>(make_tensor_file(filename));
     const int *permutation_ptr = nullptr;
     if (!permutation.empty()) {
@@ -46,12 +51,21 @@ load_tensor_dense(
     // shorten extents to nonzeros
     auto num_nonzero = long_extents.size() -
                        std::count(long_extents.begin(), long_extents.end(), -1);
-    std::pmr::vector<int> true_extents(
+
+#ifdef DALOTIA_WITH_CPP_PMR
+    dalotia::vector<int> true_extents(
         long_extents.begin(), long_extents.begin() + num_nonzero, allocator);
+#else
+    dalotia::vector<int> true_extents(long_extents.begin(),
+                                      long_extents.begin() + num_nonzero);
+#endif  // DALOTIA_WITH_CPP_PMR
     auto total_size = std::accumulate(true_extents.begin(), true_extents.end(),
                                       1, std::multiplies<size_t>());
-
-    std::pmr::vector<value_type> tensor(allocator);
+#ifdef DALOTIA_WITH_CPP_PMR
+    dalotia::vector<value_type> tensor(allocator);
+#else
+    dalotia::vector<value_type> tensor;
+#endif  // DALOTIA_WITH_CPP_PMR
     if constexpr (std::is_same_v<value_type, dalotia_byte>) {
         tensor.resize(total_size * sizeof_weight_format(weight_format));
     } else {
