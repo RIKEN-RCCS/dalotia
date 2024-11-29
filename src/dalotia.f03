@@ -28,75 +28,75 @@ module dalotia_c_interface
 
   interface
     type(C_ptr) function dalotia_open_file_c(file_name) bind(C,name="dalotia_open_file")
-        use, intrinsic::ISO_C_BINDING
+        use, intrinsic::ISO_C_BINDING, only: C_ptr, C_char
         implicit none
-        character(kind=c_char), dimension(*), intent(in):: file_name
+        character(kind=C_char), dimension(*), intent(in):: file_name
     end function dalotia_open_file_c
 
     subroutine dalotia_close_file(dalotia_file_pointer) bind(C,name="dalotia_close_file")
-        use, intrinsic::ISO_C_BINDING
+        use, intrinsic::ISO_C_BINDING, only: C_ptr
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
     end subroutine dalotia_close_file
 
     pure integer function dalotia_sizeof_weight_format(dalotia_weight_format) bind(C,name="dalotia_sizeof_weight_format")
-        use, intrinsic::ISO_C_BINDING
+        use, intrinsic::ISO_C_BINDING, only: C_int
         implicit none
         integer(C_int), intent(in), value:: dalotia_weight_format
     end function dalotia_sizeof_weight_format
 
     pure logical function dalotia_is_sparse_c(dalotia_file_pointer, tensor_name) bind(C,name="dalotia_is_sparse")
-        use, intrinsic::ISO_C_BINDING
+        use, intrinsic::ISO_C_BINDING, only: C_ptr, C_char
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
-        character(kind=c_char), dimension(*), intent(in) :: tensor_name
+        character(kind=C_char), dimension(*), intent(in) :: tensor_name
     end function dalotia_is_sparse_c
 
     pure integer function dalotia_get_num_tensors(dalotia_file_pointer) bind(C,name="dalotia_get_num_tensors")
-        use, intrinsic::ISO_C_BINDING
+        use, intrinsic::ISO_C_BINDING, only: C_ptr
         implicit none
         type(C_ptr), intent(in), value :: dalotia_file_pointer
     end function dalotia_get_num_tensors
 
     integer function dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index_c, tensor_name) &
           bind(C,name="dalotia_get_tensor_name")
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_ptr, C_int, C_char
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         integer(C_int), intent(in), value:: tensor_index_c
-        character(kind=c_char), dimension(*), intent(out):: tensor_name
+        character(kind=C_char), dimension(*), intent(out):: tensor_name
     end function dalotia_get_tensor_name_c
 
     pure integer function dalotia_get_num_dimensions_c(dalotia_file_pointer, tensor_name) bind(C,name="dalotia_get_num_dimensions")
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_ptr, C_char
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
-        character(kind=c_char), dimension(*), intent(in) :: tensor_name
+        character(kind=C_char), dimension(*), intent(in) :: tensor_name
     end function dalotia_get_num_dimensions_c
 
     pure integer function dalotia_get_num_tensor_elements_c(dalotia_file_pointer, tensor_name) &
            bind(C,name="dalotia_get_num_tensor_elements")
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_ptr, C_char
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
-        character(kind=c_char), dimension(*), intent(in):: tensor_name
+        character(kind=C_char), dimension(*), intent(in):: tensor_name
     end function dalotia_get_num_tensor_elements_c
 
     integer function dalotia_get_tensor_extents_c(dalotia_file_pointer, &
             tensor_name, tensor_extents) bind(C,name="dalotia_get_tensor_extents")
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_ptr, C_char, C_int
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
-        character(kind=c_char), dimension(*), intent(in):: tensor_name
+        character(kind=C_char), dimension(*), intent(in):: tensor_name
         integer(C_int), dimension(*), intent(inout):: tensor_extents
     end function dalotia_get_tensor_extents_c
 
     subroutine dalotia_load_tensor_dense_c(dalotia_file_pointer, &
            tensor_name, tensor, dalotia_weight_format, dalotia_ordering) bind(C,name="dalotia_load_tensor_dense")
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_ptr, C_char, C_int
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
-        character(kind=c_char), dimension(*), intent(in):: tensor_name
+        character(kind=C_char), dimension(*), intent(in):: tensor_name
         character(kind=C_char), dimension(*), intent(inout):: tensor
         integer(C_int), intent(in), value:: dalotia_weight_format
         integer(C_int), intent(in), value:: dalotia_ordering
@@ -124,40 +124,40 @@ module dalotia_c_interface
 
     type(C_ptr) function dalotia_open_file(file_name)
         ! delegate to C function with trimmed name
-        use, intrinsic::ISO_C_BINDING
+        use, intrinsic::ISO_C_BINDING, only: C_ptr, C_char
         implicit none
-        character(kind=c_char, len=*), intent(in):: file_name
+        character(kind=C_char, len=*), intent(in):: file_name
         dalotia_open_file = dalotia_open_file_c(trim(file_name))
     end function dalotia_open_file
 
     pure logical function dalotia_is_sparse(dalotia_file_pointer, tensor_name)
         ! delegate to C function with trimmed name
-        use, intrinsic::ISO_C_BINDING
+        use, intrinsic::ISO_C_BINDING, only: C_ptr, C_char
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
-        character(kind=c_char,len=*), intent(in) :: tensor_name
+        character(kind=C_char,len=*), intent(in) :: tensor_name
         dalotia_is_sparse = dalotia_is_sparse_c(dalotia_file_pointer, trim(tensor_name))
     end function dalotia_is_sparse
 
     integer function dalotia_get_tensor_name(dalotia_file_pointer, tensor_index_fortran, tensor_name)
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_ptr, C_char, C_int
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         integer, intent(in), value:: tensor_index_fortran
-        integer(C_INT):: tensor_index_c
-        character(:,kind=c_char), allocatable, intent(out):: tensor_name
-        character(:,kind=c_char), allocatable :: tensor_name_c
+        integer(C_int):: tensor_index_c
+        character(:,kind=C_char), allocatable, intent(out):: tensor_name
+        character(:,kind=C_char), allocatable :: tensor_name_c
         integer :: tensor_name_length
         
         ! use C indexing
         tensor_index_c = tensor_index_fortran - 1
-        allocate(character(kind=c_char,len=256) :: tensor_name_c)
+        allocate(character(kind=C_char,len=256) :: tensor_name_c)
         tensor_name_length = dalotia_get_tensor_name_c(dalotia_file_pointer, tensor_index_c, tensor_name_c)
         if (tensor_name_c(tensor_name_length + 1:tensor_name_length + 1) .ne. NUL) then
             !should not happen
             write (*, *) "not nul '", tensor_name_c(tensor_name_length + 1:tensor_name_length + 1)
         end if
-        allocate(character(kind=c_char,len=tensor_name_length) :: tensor_name)
+        allocate(character(kind=C_char,len=tensor_name_length) :: tensor_name)
         tensor_name = tensor_name_c(1:tensor_name_length)
 
         ! set return value
@@ -169,7 +169,7 @@ module dalotia_c_interface
         use, intrinsic::ISO_C_binding, only: C_ptr, C_char
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
-        character(kind=c_char,len=*), intent(in) :: tensor_name
+        character(kind=C_char,len=*), intent(in) :: tensor_name
         dalotia_get_num_dimensions = dalotia_get_num_dimensions_c(dalotia_file_pointer, trim(tensor_name))
     end function dalotia_get_num_dimensions
 
@@ -178,18 +178,18 @@ module dalotia_c_interface
         use, intrinsic::ISO_C_binding, only: C_ptr, C_char
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
-        character(kind=c_char,len=*), intent(in):: tensor_name
+        character(kind=C_char,len=*), intent(in):: tensor_name
         dalotia_get_num_tensor_elements = dalotia_get_num_tensor_elements_c(dalotia_file_pointer, trim(tensor_name))
     end function dalotia_get_num_tensor_elements
 
     subroutine dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents)
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_ptr, C_char, C_int
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
         integer(C_int), allocatable, intent(out):: tensor_extents(:)
         integer(C_int) :: tensor_rank
-        ! character(kind=c_char, len=:), allocatable :: tensor_name_c
+        ! character(kind=C_char, len=:), allocatable :: tensor_name_c
         ! tensor_name_c = trim(tensor_name) // NUL !Appending null appears to be unnecessary
         
         tensor_rank = dalotia_get_num_dimensions(dalotia_file_pointer, tensor_name)
@@ -202,7 +202,7 @@ module dalotia_c_interface
     end subroutine dalotia_get_tensor_extents
 
     subroutine dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, tensor_bytes, weight_format)
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_ptr, C_char, C_int
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
@@ -219,8 +219,8 @@ module dalotia_c_interface
     end subroutine dalotia_load_rank_1_byte_tensor_dense
 
     integer(kind=C_int) function get_dalotia_weight_format_from_kind(tensor_kind)
-        use, intrinsic::ISO_C_binding
-        use, intrinsic::ISO_Fortran_env
+        use, intrinsic::ISO_C_binding, only: C_float, C_double, C_int
+        use, intrinsic::ISO_Fortran_env, only: REAL32, REAL64
         implicit none
         integer, intent(in) :: tensor_kind
         if (tensor_kind == C_float .or. tensor_kind == REAL32) then
@@ -234,7 +234,7 @@ module dalotia_c_interface
     end function get_dalotia_weight_format_from_kind
 
     subroutine dalotia_load_rank_1_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_float
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
@@ -253,7 +253,7 @@ module dalotia_c_interface
     end subroutine dalotia_load_rank_1_float_tensor_dense
 
     subroutine dalotia_load_rank_1_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_double
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
@@ -273,7 +273,7 @@ module dalotia_c_interface
 
     subroutine dalotia_load_rank_2_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
         !TODO: is there a way to make this rank agnostic / less code duplication?
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_float
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
@@ -291,7 +291,7 @@ module dalotia_c_interface
     end subroutine dalotia_load_rank_2_float_tensor_dense
 
     subroutine dalotia_load_rank_2_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_double
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
@@ -309,7 +309,7 @@ module dalotia_c_interface
     end subroutine dalotia_load_rank_2_double_tensor_dense
 
     subroutine dalotia_load_rank_3_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_float
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
@@ -327,7 +327,7 @@ module dalotia_c_interface
     end subroutine dalotia_load_rank_3_float_tensor_dense
 
     subroutine dalotia_load_rank_4_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor)
-        use, intrinsic::ISO_C_binding
+        use, intrinsic::ISO_C_binding, only: C_float
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
