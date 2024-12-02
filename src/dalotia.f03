@@ -117,8 +117,10 @@ module dalotia_c_interface
         implicit none
         integer, intent(in):: tensor_rank, expected_rank
         if (tensor_rank /= expected_rank) then
-            write (*, *) "expected rank ", expected_rank, " but got ", tensor_rank
-            stop
+            write (*, *) "dalotia warning: expected rank ", expected_rank, " but got ", tensor_rank
+            ! stop "unexpected rank" 
+            ! disabling STOP, because apparently some compilers don't properly dispatch by rank
+            ! in the interface block above, so the rank-1 is always called
         end if
     end subroutine assert_expected_rank
 
