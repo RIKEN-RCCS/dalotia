@@ -14,12 +14,6 @@ program test_mnist
     call test_load(filename, "conv1", tensor_weight_conv1, tensor_weight_2d_unused, tensor_bias_conv1)
     call test_load(filename, "conv2", tensor_weight_conv2, tensor_weight_2d_unused, tensor_bias_conv2)
     call test_load(filename, "fc1" , tensor_weight_4d_unused, tensor_weight_fc1, tensor_bias_fc1)
-
-    stop ! early return for CI, to avoid data handling ;)
-
-    images = read_mnist_scaled(trim("../../python-fiddling/dataset/MNIST/raw/t10k-images-idx3-ubyte"))
-
-    ! write (*, *) images(:, :, 1)
 contains
 
 !cf. https://stackoverflow.com/a/55376595
@@ -205,30 +199,5 @@ subroutine test_load(filename, tensor_name, tensor_weight_4d, tensor_weight_2d, 
     call dalotia_close_file(dalotia_file_pointer)
     write(*,*) "All loads are correct "
 end subroutine test_load
-
-function read_mnist_scaled(full_path) result (array_of_images)
-    use, intrinsic :: iso_fortran_env, only: INT32, INT8
-    implicit none
-
-    character(*), intent(in) :: full_path
-    real, dimension(28, 28, 10000) :: array_of_images
-    
-    integer(INT32) :: magic_number
-    integer(INT32) :: number_of_images
-    integer(INT32) :: n_rows
-    integer(INT32) :: n_columns
-    integer(INT8)  :: images_int8(28, 28, 10000)
-    integer :: file_handle
-    
-    open (newunit = file_handle, file = full_path, action = 'read', form = 'unformatted', &
-    &     access = 'stream', status = 'old', convert = 'big_endian')
-    
-    read (file_handle) magic_number, number_of_images, n_rows, n_columns, images_int8
-    close (file_handle)
-    ! call assert_equal(magic_number, 2051) !TODO
-    
-    array_of_images = real(iand(int(images_int8), 255)) / 255.0  ! unsigned 8-bit integer -> default integer -> real
-end function read_mnist_scaled
-
 
 end program test_mnist
