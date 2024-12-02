@@ -4,6 +4,7 @@ program test_mnist
   implicit none
     real :: images(28, 28, 10000)
     character(100) :: filename
+    type(C_ptr) :: dalotia_file_pointer
     real(C_float), dimension(:,:,:,:), allocatable :: tensor_weight_conv1, tensor_weight_conv2, tensor_weight_4d_unused
     real(C_double), dimension(:,:), allocatable :: tensor_weight_fc1, tensor_weight_2d_unused
     real(C_float), dimension(:), allocatable :: tensor_bias_conv1, tensor_bias_conv2, tensor_bias_fc1
@@ -14,6 +15,12 @@ program test_mnist
     call test_load(filename, "conv1", tensor_weight_conv1, tensor_weight_2d_unused, tensor_bias_conv1)
     call test_load(filename, "conv2", tensor_weight_conv2, tensor_weight_2d_unused, tensor_bias_conv2)
     call test_load(filename, "fc1" , tensor_weight_4d_unused, tensor_weight_fc1, tensor_bias_fc1)
+
+    ! test permutations
+    dalotia_file_pointer = dalotia_open_file(filename)
+    call dalotia_load_tensor_dense(dalotia_file_pointer, "conv1.weight", tensor_weight_4d_unused, permutation=[1, 2, 3, 4])
+    call assert( all( tensor_weight_4d_unused .eq. tensor_weight_conv1))
+    call dalotia_close_file(dalotia_file_pointer)
 contains
 
 !cf. https://stackoverflow.com/a/55376595
