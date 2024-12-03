@@ -39,6 +39,12 @@ dalotia::vector<int> final_c_permutation_from_permutation_and_order(
         }
 
         if (ordering == dalotia_Ordering::dalotia_F_ordering) {
+            // invert both the numbers and the order
+            std::transform(
+                final_permutation_in_c_order.begin(),
+                final_permutation_in_c_order.end(),
+                final_permutation_in_c_order.begin(),
+                [&num_dimensions](int x) { return num_dimensions - x - 1; });
             std::reverse(final_permutation_in_c_order.begin(),
                          final_permutation_in_c_order.end());
         } else {  // assume that 1-indexed permutations are only requested w/

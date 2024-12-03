@@ -231,22 +231,16 @@ module dalotia_c_interface
         integer(C_int), intent(in) :: weight_format
         character(C_char), dimension(:), allocatable, target, intent(out):: tensor_bytes
         integer(C_int), dimension(:), optional, intent(in):: permutation
-        integer(C_int), allocatable, dimension(:) :: c_permutation
 
         num_tensor_elements = dalotia_get_num_tensor_elements(dalotia_file_pointer, tensor_name)
 
-        ordering = dalotia_C_ordering
         allocate( tensor_bytes(num_tensor_elements * dalotia_sizeof_weight_format(weight_format)))
         if (present(permutation)) then
-            allocate( c_permutation(ubound(permutation, dim=1)))
-            ! invert every element of the permutation to get the C array contents
-            do i = 1, ubound(permutation, dim=1)
-                c_permutation(i) = ubound(permutation, dim=1) - permutation(i)
-            end do
             ordering = dalotia_F_ordering
             call dalotia_load_tensor_dense_with_permutation_c(dalotia_file_pointer, trim(tensor_name), tensor_bytes, &
-                weight_format, ordering, c_permutation)
+                weight_format, ordering, permutation)
         else
+            ordering = dalotia_C_ordering
             call dalotia_load_tensor_dense_c(dalotia_file_pointer, trim(tensor_name), tensor_bytes, &
                  weight_format, ordering) !TODO add version that takes F_ordering?
         end if
