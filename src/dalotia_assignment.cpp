@@ -144,7 +144,8 @@ void assign_linearly(dalotia_byte *__restrict__ dest,
         dalotia::sizeof_weight_format(weight_output_format);
     auto assign_function =
         get_assignment_function(weight_output_format, weight_input_format);
-    for (size_t i = 0; i < num_items; i++) {
+#pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < num_items; ++i) {
         auto input_pointer = tensor_start + i * load_item_bytes;
         auto output_pointer = dest + i * store_item_bytes;
         assign_function(output_pointer, input_pointer);
@@ -156,7 +157,7 @@ void assign_linearly(dalotia_byte *__restrict__ dest,
  * local helper function
  */
 template <int num_dimensions>
-std::pair<std::array<size_t, num_dimensions>, size_t> get_new_stripes_permuted(
+std::pair<std::array<size_t, num_dimensions>, size_t> get_new_strides_permuted(
     const size_t *const input_shape, const int *permutation) {
     auto desired_shape = std::vector<size_t>(num_dimensions);
     size_t total_size = 1;
@@ -176,7 +177,7 @@ std::pair<std::array<size_t, num_dimensions>, size_t> get_new_stripes_permuted(
 
     auto new_strides_permuted = new_strides;
     for (size_t i = 0; i < num_dimensions; ++i) {
-        new_strides_permuted[i] = new_strides[permutation[i]];
+        new_strides_permuted[permutation[i]] = new_strides[i];
     }
     return {new_strides_permuted, total_size};
 }
@@ -238,7 +239,7 @@ void assign_permuted<3>(dalotia_byte *__restrict__ dest,
                         const int *permutation) {
     constexpr int num_dimensions = 3;
     auto [new_strides_permuted, total_size] =
-        get_new_stripes_permuted<num_dimensions>(input_shape, permutation);
+        get_new_strides_permuted<num_dimensions>(input_shape, permutation);
 
     const size_t load_item_bytes =
         dalotia::sizeof_weight_format(weight_input_format);
@@ -282,7 +283,7 @@ void assign_permuted<4>(dalotia_byte *__restrict__ dest,
                         const int *permutation) {
     constexpr int num_dimensions = 4;
     auto [new_strides_permuted, total_size] =
-        get_new_stripes_permuted<num_dimensions>(input_shape, permutation);
+        get_new_strides_permuted<num_dimensions>(input_shape, permutation);
 
     const size_t load_item_bytes =
         dalotia::sizeof_weight_format(weight_input_format);
