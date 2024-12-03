@@ -243,11 +243,14 @@ module dalotia_c_interface
             do i = 1, ubound(permutation, dim=1)
                 c_permutation(i) = permutation(i) - 1
             end do
+            ! ordering = dalotia_F_ordering !???
+            ! reverse the order of the dimensions; Fortran is column-major
+            ! c_permutation = c_permutation(ubound(c_permutation, dim=1):1:-1)
             call dalotia_load_tensor_dense_with_permutation_c(dalotia_file_pointer, trim(tensor_name), tensor_bytes, &
                 weight_format, ordering, c_permutation)
         else
             call dalotia_load_tensor_dense_c(dalotia_file_pointer, trim(tensor_name), tensor_bytes, &
-                 weight_format, ordering) !TODO add version that takes permutation and F_ordering
+                 weight_format, ordering) !TODO add version that takes F_ordering?
         end if
     end subroutine dalotia_load_rank_1_byte_tensor_dense
 
