@@ -26,7 +26,7 @@ program test_mnist
     call assert_equal_int(ubound(tensor_weight_4d_unused, 2), ubound(tensor_weight_conv1, 2))
     call assert_equal_int(ubound(tensor_weight_4d_unused, 3), ubound(tensor_weight_conv1, 1))
     call assert_equal_int(ubound(tensor_weight_4d_unused, 4), ubound(tensor_weight_conv1, 3))
-    tensor_weight_4d_unused = reshape(tensor_weight_4d_unused, shape=shape(tensor_weight_conv1), order=[3, 2, 4, 1])
+    tensor_weight_4d_unused = reshape(tensor_weight_4d_unused, shape=shape(tensor_weight_conv1), order=[4, 2, 1, 3])
     call assert( all( tensor_weight_4d_unused .eq. tensor_weight_conv1))
 
     call dalotia_load_tensor_dense(dalotia_file_pointer, "conv1.weight", tensor_weight_4d_unused, permutation=[3, 1, 4, 2])
@@ -34,10 +34,8 @@ program test_mnist
     call assert_equal_int(ubound(tensor_weight_4d_unused, 2), ubound(tensor_weight_conv1, 1))
     call assert_equal_int(ubound(tensor_weight_4d_unused, 3), ubound(tensor_weight_conv1, 4))
     call assert_equal_int(ubound(tensor_weight_4d_unused, 4), ubound(tensor_weight_conv1, 2))
-    tensor_weight_4d_unused = reshape(tensor_weight_4d_unused, shape=shape(tensor_weight_conv1), order=[2, 4, 1, 3])
-    write(*,*) "tensor_weight_4d_unused", tensor_weight_4d_unused
-    write(*,*) "tensor_weight_conv1", tensor_weight_conv1
-    ! call assert( all( tensor_weight_4d_unused .eq. tensor_weight_conv1)) !TODO: fix this! why oh why?
+    tensor_weight_4d_unused = reshape(tensor_weight_4d_unused, shape=shape(tensor_weight_conv1), order=[3, 1, 4, 2])
+    call assert( all( tensor_weight_4d_unused .eq. tensor_weight_conv1))
 
     call dalotia_close_file(dalotia_file_pointer)
 contains

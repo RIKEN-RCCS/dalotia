@@ -239,13 +239,11 @@ module dalotia_c_interface
         allocate( tensor_bytes(num_tensor_elements * dalotia_sizeof_weight_format(weight_format)))
         if (present(permutation)) then
             allocate( c_permutation(ubound(permutation, dim=1)))
-            ! decrease every entry in permutation by 1 to account for 0/1 based indexing
+            ! invert every element of the permutation to get the C array contents
             do i = 1, ubound(permutation, dim=1)
-                c_permutation(i) = permutation(i) - 1
+                c_permutation(i) = ubound(permutation, dim=1) - permutation(i)
             end do
-            ! ordering = dalotia_F_ordering !???
-            ! reverse the order of the dimensions; Fortran is column-major
-            ! c_permutation = c_permutation(ubound(c_permutation, dim=1):1:-1)
+            ordering = dalotia_F_ordering
             call dalotia_load_tensor_dense_with_permutation_c(dalotia_file_pointer, trim(tensor_name), tensor_bytes, &
                 weight_format, ordering, c_permutation)
         else
