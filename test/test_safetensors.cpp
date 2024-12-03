@@ -60,22 +60,28 @@ void test_permutation() {
             permutation, dalotia_Ordering::dalotia_C_ordering, 3);
     assert(final_permutation.empty());
 
-    permutation[0] = 2;
-    permutation[2] = 0;
     final_permutation = dalotia::final_c_permutation_from_permutation_and_order(
         permutation, dalotia_Ordering::dalotia_F_ordering, 3);
     assert(final_permutation.empty());
 
-    int permutation2[3] = {1, 0, 2};
+    int permutation2[3] = {2, 1, 3};
     final_permutation = dalotia::final_c_permutation_from_permutation_and_order(
         permutation2, dalotia_Ordering::dalotia_F_ordering, 3);
     assert(final_permutation.size() == 3);
-    assert(final_permutation[0] == 2);
-    assert(final_permutation[1] == 0);
+    assert(final_permutation[0] == 0);
+    assert(final_permutation[1] == 2);
+    assert(final_permutation[2] == 1);
+
+    int permutation3[3] = {1, 0, 2};
+    final_permutation = dalotia::final_c_permutation_from_permutation_and_order(
+        permutation3, dalotia_Ordering::dalotia_F_ordering, 3);
+    assert(final_permutation.size() == 3);
+    assert(final_permutation[0] == 0);
+    assert(final_permutation[1] == 2);
     assert(final_permutation[2] == 1);
 
     final_permutation = dalotia::final_c_permutation_from_permutation_and_order(
-        permutation2, dalotia_Ordering::dalotia_C_ordering, 3);
+        permutation3, dalotia_Ordering::dalotia_C_ordering, 3);
     assert(final_permutation.size() == 3);
     assert(final_permutation[0] == 1);
     assert(final_permutation[1] == 0);
