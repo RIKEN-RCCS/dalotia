@@ -1,25 +1,28 @@
-set(DALOTIA_CPP_SOURCES dalotia_assignment.cpp dalotia_formats.cpp dalotia_safetensors_file.cpp dalotia.cpp)
-# set(DALOTIA_CPP_HEADERS dalotia_assignment.hpp dalotia_formats.hpp dalotia_formats.h dalotia_safetensors_file.hpp dalotia.hpp dalotia.h dalotia_tensor_file.hpp)
-#TODO if DALOTIA_WITH_SAFETENSORS_CPP
-
-add_library(dalotia_cpp ${DALOTIA_CPP_SOURCES})
+add_library(dalotia_cpp dalotia.cpp) # Daniel Pfeifer says: no variables
+target_sources(dalotia_cpp PRIVATE dalotia_assignment.cpp dalotia_formats.cpp dalotia_safetensors_file.cpp )
 
 if (DALOTIA_WITH_FORTRAN)
-    set(DALOTIA_FORTRAN_HEADERS dalotia.f03)
-    add_library(dalotia_fortran ${DALOTIA_FORTRAN_HEADERS})
+    add_library(dalotia_fortran dalotia.f03)
     set_target_properties(dalotia_fortran PROPERTIES LINKER_LANGUAGE Fortran)
     target_link_libraries(dalotia_fortran INTERFACE dalotia_cpp)
 endif (DALOTIA_WITH_FORTRAN)
 
 if (DALOTIA_WITH_CPP_PMR)
-    # pass DALOTIA_WITH_CPP_PMR to all targets
+    # pass DALOTIA_WITH_CPP_PMR to target
     target_compile_definitions(dalotia_cpp PUBLIC "-DDALOTIA_WITH_CPP_PMR")
 endif (DALOTIA_WITH_CPP_PMR)
 
-target_sources(dalotia_cpp PUBLIC dalotia.hpp dalotia.h)
+if (DALOTIA_WITH_SAFETENSORS_CPP)
+    target_link_libraries(dalotia_cpp PUBLIC safetensors_cpp)
+    target_compile_options(dalotia_cpp PUBLIC "-DDALOTIA_WITH_SAFETENSORS_CPP")
+endif (DALOTIA_WITH_SAFETENSORS_CPP)
+
+# not sure if this is elegant, but helps to make this compatible to all languages
+target_sources(dalotia_cpp PRIVATE dalotia.hpp dalotia.h)
 target_include_directories(dalotia_cpp PUBLIC
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> )
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(dalotia_cpp PRIVATE -Wall -Wextra)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

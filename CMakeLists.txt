@@ -48,20 +48,16 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
     GIT_TAG 82571c11c2dc47a6663fc9ec0251241baf339c16
     FIND_PACKAGE_ARGS # allow finding system installations
   )
-  set(SAFETENSORS_CPP_CXX_EXCEPTIONS true)
+  set(SAFETENSORS_CPP_CXX_EXCEPTIONS true) #TODO maybe depend on language?
   set(SAFETENSORS_CPP_BUILD_EXAMPLES false)
   set(SAFETENSORS_CPP_BUILD_C_API false)
   FetchContent_MakeAvailable(safetensors-cpp)
   FetchContent_GetProperties(safetensors-cpp SOURCE_DIR SAFETENSORS_CPP_INCLUDE_DIR BINARY_DIR SAFETENSORS_CPP_LIBRARY)
-  # add dependecy from safetensors_cpp to sources 
+  # add dependecy from safetensors_cpp library to its sources 
   # so that everything that links to safetensors_cpp will also get the headers
-  target_include_directories(safetensors_cpp PRIVATE  
+  target_include_directories(safetensors_cpp PUBLIC  
       $<BUILD_INTERFACE:${SAFETENSORS_CPP_INCLUDE_DIR}>
     )
-
-  target_include_directories(dalotia_cpp PUBLIC ${SAFETENSORS_CPP_INCLUDE_DIR} ${safetensors-cpp_DIR})
-  target_link_libraries(dalotia_cpp PUBLIC safetensors_cpp)
-  target_compile_options(dalotia_cpp PUBLIC "-DDALOTIA_WITH_SAFETENSORS_CPP")
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
 if (DALOTIA_CPP_BUILD_EXAMPLES)
