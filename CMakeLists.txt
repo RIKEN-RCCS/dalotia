@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(DALOTIA_CPP CXX C)
+project(DALOTIA CXX C)
 
 option(DALOTIA_CPP_BUILD_EXAMPLES "Build examples" ON)
 option(DALOTIA_BUILD_TESTS "Build tests" ON)
@@ -58,6 +58,12 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
   target_include_directories(safetensors_cpp PUBLIC  
       $<BUILD_INTERFACE:${SAFETENSORS_CPP_INCLUDE_DIR}>
     )
+  install(TARGETS safetensors_cpp EXPORT dalotia
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
+  )
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
 if (DALOTIA_CPP_BUILD_EXAMPLES)
@@ -70,3 +76,14 @@ if (DALOTIA_BUILD_TESTS)
   enable_testing()
   add_subdirectory(test)
 endif (DALOTIA_BUILD_TESTS)
+
+# install version info etc.
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  "dalotia-config-version.cmake"
+  VERSION 0.0.1
+  COMPATIBILITY SameMajorVersion
+)
+install(FILES "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>/dalotia-config-version.cmake" # "dalotia-config.cmake"
+  DESTINATION lib/cmake/dalotia
+)
