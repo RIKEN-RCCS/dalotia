@@ -1,6 +1,6 @@
 # dalotia -- a data loader library for tensors in AI
 
-[![CTest CI Badge](https://github.com/RIKEN-RCCS/dalotia/actions/workflows/ctest.yml/badge.svg)]
+![CTest CI Badge](https://github.com/RIKEN-RCCS/dalotia/actions/workflows/ctest.yml/badge.svg)
 
 ## Features
 
