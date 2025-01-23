@@ -142,7 +142,7 @@ module dalotia_c_interface
         use, intrinsic::ISO_C_BINDING, only: C_ptr, C_char
         implicit none
         character(kind=C_char, len=*), intent(in):: file_name
-        dalotia_open_file = dalotia_open_file_c(trim(file_name))
+        dalotia_open_file = dalotia_open_file_c(trim(file_name) // NUL)
     end function dalotia_open_file
 
     pure logical function dalotia_is_sparse(dalotia_file_pointer, tensor_name)
@@ -205,12 +205,14 @@ module dalotia_c_interface
         integer(C_int), allocatable, intent(out):: tensor_extents(:)
         integer(C_int) :: tensor_rank
         integer(C_int), dimension(:), optional, intent(in):: permutation
-        ! character(kind=C_char, len=:), allocatable :: tensor_name_c
-        ! tensor_name_c = trim(tensor_name) // NUL !Appending null appears to be unnecessary
+        character(kind=C_char, len=:), allocatable :: tensor_name_c
+
+        allocate(character(kind=C_char, len=len(tensor_name) + 1) :: tensor_name_c)
+        tensor_name_c = trim(tensor_name) // NUL !Appending null appears to be unnecessary in some cases
         
-        tensor_rank = dalotia_get_num_dimensions(dalotia_file_pointer, tensor_name)
+        tensor_rank = dalotia_get_num_dimensions(dalotia_file_pointer, tensor_name_c)
         allocate(tensor_extents(tensor_rank))
-        tensor_rank = dalotia_get_tensor_extents_c(dalotia_file_pointer, trim(tensor_name), tensor_extents)
+        tensor_rank = dalotia_get_tensor_extents_c(dalotia_file_pointer, trim(tensor_name_c), tensor_extents)
         call assert_expected_rank(ubound(tensor_extents, dim=1), tensor_rank)
 
         ! reverse the order of the dimensions; Fortran is column-major
@@ -242,7 +244,7 @@ module dalotia_c_interface
         else
             ordering = dalotia_C_ordering
             call dalotia_load_tensor_dense_c(dalotia_file_pointer, trim(tensor_name), tensor_bytes, &
-                 weight_format, ordering) !TODO add version that takes F_ordering?
+                 weight_format, ordering)
         end if
     end subroutine dalotia_load_rank_1_byte_tensor_dense
 
