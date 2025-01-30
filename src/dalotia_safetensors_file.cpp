@@ -30,7 +30,19 @@ safetensors::tensor_t get_tensor_from_name(
             return tensor;
         }
     }
-    throw std::runtime_error("Tensor " + tensor_name + " not found");
+
+    const std::string joined_keys =
+            std::accumulate(st.tensors.keys().begin(),
+                            st.tensors.keys().end(),
+                            std::string(),
+                            [](const std::string& a, const std::string& b)
+                                    -> std::string {
+                                    return a + (a.length() > 0 ? "," : "") + b;
+                                }
+                            );
+
+    throw std::runtime_error("Tensor " + tensor_name + " not found; available: " +
+                             joined_keys);
 }
 
 const std::vector<std::string> &SafetensorsFile::get_tensor_names() const {
