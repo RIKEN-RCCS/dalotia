@@ -124,6 +124,10 @@ module dalotia_c_interface
     module procedure dalotia_load_rank_3_float_tensor_dense
     module procedure dalotia_load_rank_4_float_tensor_dense
   end interface
+  interface dalotia_load_tensor
+    module procedure dalotia_load_rank_2_fixed_dim_float_tensor_dense
+    module procedure dalotia_load_rank_4_fixed_dim_float_tensor_dense
+  end interface
   
   contains
     subroutine assert_expected_rank(tensor_rank, expected_rank)
@@ -131,11 +135,23 @@ module dalotia_c_interface
         integer, intent(in):: tensor_rank, expected_rank
         if (tensor_rank /= expected_rank) then
             write (*, *) "dalotia warning: expected rank ", expected_rank, " but got ", tensor_rank
-            ! stop "unexpected rank" 
+            ! error stop "unexpected rank" 
             ! disabling STOP, because apparently some compilers don't properly dispatch by rank
             ! in the interface block above, so the rank-1 is always called
         end if
     end subroutine assert_expected_rank
+
+    subroutine assert_expected_extents(tensor_rank, tensor_extents, expected_extents)
+        implicit none
+        integer, intent(in):: tensor_rank
+        integer, dimension(tensor_rank), intent(in):: tensor_extents
+        integer, dimension(tensor_rank), intent(in):: expected_extents
+        if (any(tensor_extents /= expected_extents)) then
+            write (*, *) "dalotia warning: expected extents (", expected_extents, &
+                         ") but got (", tensor_extents, ")"
+            error stop "unexpected dalotia tensor extents" 
+        end if
+    end subroutine assert_expected_extents
 
     type(C_ptr) function dalotia_open_file(file_name)
         ! delegate to C function with trimmed name
@@ -304,7 +320,8 @@ module dalotia_c_interface
     end subroutine dalotia_load_rank_1_double_tensor_dense
 
     subroutine dalotia_load_rank_2_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
-        !TODO: is there a way to make this rank agnostic / less code duplication?
+        !TODO: is there a way to make this rank or type or assumed/allocatable agnostic / less code duplication?
+        ! ranks: assumed-rank + select rank in fortran 2018? type: select type?
         use, intrinsic::ISO_C_binding, only: C_float
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
@@ -322,6 +339,22 @@ module dalotia_c_interface
         fixed_tensor_extents = [tensor_extents(1), tensor_extents(2)]
         tensor = reshape(tensor_1d, fixed_tensor_extents)
     end subroutine dalotia_load_rank_2_float_tensor_dense
+
+    subroutine dalotia_load_rank_2_fixed_dim_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
+        use, intrinsic::ISO_C_binding, only: C_float
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        real(C_float), dimension(:, :), intent(out) :: tensor
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
+        integer(C_int), dimension(:), allocatable:: tensor_extents
+        integer(C_int), dimension(2), optional, intent(in):: permutation
+
+        call dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents, permutation)
+        call assert_expected_extents(2, tensor_extents, shape(tensor))
+        call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+        tensor = reshape(tensor_1d, shape(tensor))
+    end subroutine dalotia_load_rank_2_fixed_dim_float_tensor_dense
 
     subroutine dalotia_load_rank_2_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
         use, intrinsic::ISO_C_binding, only: C_double
@@ -379,4 +412,21 @@ module dalotia_c_interface
         fixed_tensor_extents = [tensor_extents(1), tensor_extents(2), tensor_extents(3), tensor_extents(4)]
         tensor = reshape(tensor_1d, fixed_tensor_extents)
     end subroutine dalotia_load_rank_4_float_tensor_dense
+
+    subroutine dalotia_load_rank_4_fixed_dim_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
+        use, intrinsic::ISO_C_binding, only: C_float
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        real(C_float), dimension(:, :, :, :), intent(out) :: tensor
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
+        integer(C_int), dimension(:), allocatable:: tensor_extents
+        integer(C_int), dimension(4), optional, intent(in):: permutation
+
+        call dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents, permutation)
+        call assert_expected_extents(4, tensor_extents, shape(tensor))
+        call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+        tensor = reshape(tensor_1d, shape(tensor))
+    end subroutine dalotia_load_rank_4_fixed_dim_float_tensor_dense
+
 end module dalotia_c_interface
