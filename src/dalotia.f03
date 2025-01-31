@@ -116,7 +116,7 @@ module dalotia_c_interface
     end subroutine dalotia_load_tensor_dense_with_permutation_c
   end interface
 
-  interface dalotia_load_tensor_dense
+  interface dalotia_load_tensor_dense !TODO how many do we want in this interface? Codegen?
     module procedure dalotia_load_rank_1_float_tensor_dense
     module procedure dalotia_load_rank_1_double_tensor_dense
     module procedure dalotia_load_rank_2_float_tensor_dense
@@ -343,13 +343,15 @@ module dalotia_c_interface
             ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
             tensor = transfer(tensor_bytes, tensor, num_tensor_elements)
             end block
-        type is (real(C_double))!TODO avoid exact duplication in blocks?
+        type is (real(C_double))!TODO avoid exact duplication in blocks? https://stackoverflow.com/a/50550440
             block
             num_tensor_elements = dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, tensor_bytes, &
                             get_dalotia_weight_format_from_kind(kind(tensor)), permutation)
             call assert_expected_extents(1, [num_tensor_elements], shape(tensor))
             tensor = transfer(tensor_bytes, tensor, num_tensor_elements)
             end block
+        class default
+            error stop "dalotia fortran interface: unsupported tensor type"
         end select
     end subroutine dalotia_load_rank_1_fixed_dim_tensor_dense
 
@@ -394,6 +396,8 @@ module dalotia_c_interface
                 call assert_expected_extents(2, tensor_extents, shape(tensor))
                 tensor = reshape(tensor_1d, shape(tensor))
             end block
+        class default
+            error stop "dalotia fortran interface: unsupported tensor type"
         end select
     end subroutine dalotia_load_rank_2_fixed_dim_tensor_dense
 
@@ -453,6 +457,8 @@ module dalotia_c_interface
                 call assert_expected_extents(3, tensor_extents, shape(tensor))
                 tensor = reshape(tensor_1d, shape(tensor))
             end block
+        class default
+            error stop "dalotia fortran interface: unsupported tensor type"
         end select
     end subroutine dalotia_load_rank_3_fixed_dim_tensor_dense
 
@@ -496,6 +502,8 @@ module dalotia_c_interface
                 call assert_expected_extents(4, tensor_extents, shape(tensor))
                 tensor = reshape(tensor_1d, shape(tensor))
             end block
+        class default
+            error stop "dalotia fortran interface: unsupported tensor type"
         end select
     end subroutine dalotia_load_rank_4_fixed_dim_tensor_dense
 
