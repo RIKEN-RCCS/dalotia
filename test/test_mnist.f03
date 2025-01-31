@@ -7,9 +7,10 @@ program test_mnist
     type(C_ptr) :: dalotia_file_pointer
     real(C_float), dimension(:,:,:,:), allocatable :: tensor_weight_conv1, tensor_weight_conv2, tensor_weight_4d_unused
     real(C_double), dimension(:,:), allocatable :: tensor_weight_fc1, tensor_weight_2d_unused
-    real(C_float) :: tensor_fixed_weight_fc1_transposed(10, 784), tensor_fixed_weight_conv1_transposed(8, 3, 3, 1)
     real(C_float), dimension(:), allocatable :: tensor_bias_conv1, tensor_bias_conv2, tensor_bias_fc1
-
+    real(C_float) :: tensor_fixed_weight_fc1_transposed(10, 784), tensor_fixed_weight_conv1_transposed(8, 3, 3, 1)
+    real(C_float) :: tensor_fixed_bias_fc1(10)
+    
     filename = "../data/model-mnist.safetensors"
 
     call test_get_tensor_names(trim(filename))
@@ -41,6 +42,7 @@ program test_mnist
     ! test fixed-size arrays
     call dalotia_load_tensor(dalotia_file_pointer, "fc1.weight", tensor_fixed_weight_fc1_transposed, permutation=[2, 1])
     call dalotia_load_tensor(dalotia_file_pointer, "conv1.weight", tensor_fixed_weight_conv1_transposed, permutation=[4, 2, 1, 3])
+    call dalotia_load_tensor(dalotia_file_pointer, "fc1.bias", tensor_fixed_bias_fc1)
 
     call dalotia_close_file(dalotia_file_pointer)
 contains

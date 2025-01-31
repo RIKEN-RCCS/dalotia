@@ -125,6 +125,7 @@ module dalotia_c_interface
     module procedure dalotia_load_rank_4_float_tensor_dense
   end interface
   interface dalotia_load_tensor
+    module procedure dalotia_load_rank_1_fixed_dim_float_tensor_dense
     module procedure dalotia_load_rank_2_fixed_dim_float_tensor_dense
     module procedure dalotia_load_rank_4_fixed_dim_float_tensor_dense
   end interface
@@ -311,7 +312,7 @@ module dalotia_c_interface
 
         num_tensor_elements = dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, tensor_bytes, &
                         get_dalotia_weight_format_from_kind(kind(tensor)), permutation)
-
+        
         ! transfer into the real tensor
         ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
         tensor = transfer(tensor_bytes, tensor, num_tensor_elements)
@@ -334,6 +335,25 @@ module dalotia_c_interface
         ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
         tensor = transfer(tensor_bytes, tensor, num_tensor_elements)
     end subroutine dalotia_load_rank_1_double_tensor_dense
+
+    subroutine dalotia_load_rank_1_fixed_dim_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
+        use, intrinsic::ISO_C_binding, only: C_float
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        real(C_float), dimension(:), intent(out):: tensor
+        character(C_char), dimension(:), allocatable:: tensor_bytes
+        integer(C_int), dimension(:), optional, intent(in):: permutation
+        integer(C_int) :: num_tensor_elements
+
+        num_tensor_elements = dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, tensor_bytes, &
+                        get_dalotia_weight_format_from_kind(kind(tensor)), permutation)
+        call assert_expected_extents(1, [num_tensor_elements], shape(tensor))
+
+        ! transfer into the real tensor
+        ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
+        tensor = transfer(tensor_bytes, tensor, num_tensor_elements)
+    end subroutine dalotia_load_rank_1_fixed_dim_float_tensor_dense
 
     subroutine dalotia_load_rank_2_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
         !TODO: is there a way to make this rank or type or assumed/allocatable agnostic / less code duplication?
@@ -364,6 +384,7 @@ module dalotia_c_interface
 
         call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, 2, tensor_extents, permutation)
         call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+        call assert_expected_extents(2, tensor_extents, shape(tensor))
         tensor = reshape(tensor_1d, shape(tensor))
     end subroutine dalotia_load_rank_2_fixed_dim_float_tensor_dense
 
