@@ -213,6 +213,31 @@ module dalotia_c_interface
         dalotia_get_num_tensor_elements = dalotia_get_num_tensor_elements_c(dalotia_file_pointer, trim(tensor_name))
     end function dalotia_get_num_tensor_elements
 
+    subroutine dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, &
+                                                tensor_rank, tensor_extents, permutation)
+        use, intrinsic::ISO_C_binding, only: C_ptr, C_char, C_int
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        integer(C_int), intent(in) :: tensor_rank !TODO deduce rank from tensor_extents
+        integer(C_int), intent(out):: tensor_extents(tensor_rank)
+        integer(C_int), optional, intent(in):: permutation(tensor_rank)
+        character(kind=C_char, len=:), allocatable :: tensor_name_c
+        integer(C_int) :: tensor_rank_returned
+
+        allocate(character(kind=C_char, len=len(tensor_name) + 1) :: tensor_name_c)
+        tensor_name_c = trim(tensor_name) // NUL !Appending null appears to be unnecessary in some cases
+        
+        tensor_rank_returned = dalotia_get_tensor_extents_c(dalotia_file_pointer, trim(tensor_name_c), tensor_extents)
+        call assert_expected_rank(tensor_rank_returned, tensor_rank)
+        ! reverse the order of the dimensions; Fortran is column-major
+        tensor_extents = tensor_extents(tensor_rank:1:-1)
+
+        if (present(permutation)) then
+            tensor_extents(:) = tensor_extents(permutation(:))
+        end if
+    end subroutine dalotia_get_tensor_extents_fixed
+
     subroutine dalotia_get_tensor_extents(dalotia_file_pointer, tensor_name, tensor_extents, permutation)
         use, intrinsic::ISO_C_binding, only: C_ptr, C_char, C_int
         implicit none
@@ -228,15 +253,8 @@ module dalotia_c_interface
         
         tensor_rank = dalotia_get_num_dimensions(dalotia_file_pointer, tensor_name_c)
         allocate(tensor_extents(tensor_rank))
-        tensor_rank = dalotia_get_tensor_extents_c(dalotia_file_pointer, trim(tensor_name_c), tensor_extents)
-        call assert_expected_rank(ubound(tensor_extents, dim=1), tensor_rank)
-
-        ! reverse the order of the dimensions; Fortran is column-major
-        tensor_extents = tensor_extents(tensor_rank:1:-1)
-
-        if (present(permutation)) then
-            tensor_extents(:) = tensor_extents(permutation(:))
-        end if
+        call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, &
+                    trim(tensor_name_c), tensor_rank, tensor_extents, permutation)
     end subroutine dalotia_get_tensor_extents
 
     subroutine dalotia_load_rank_1_byte_tensor_dense(dalotia_file_pointer, tensor_name, &
