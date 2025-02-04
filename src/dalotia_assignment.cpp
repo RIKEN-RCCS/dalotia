@@ -329,4 +329,57 @@ void assign_permuted<4>(dalotia_byte *__restrict__ dest,
            total_size);
 }
 
+template <>
+void assign_permuted<5>(dalotia_byte *__restrict__ dest,
+                        dalotia_WeightFormat weight_output_format,
+                        const size_t *const input_shape,
+                        const dalotia_byte *__restrict__ tensor_start,
+                        dalotia_WeightFormat weight_input_format,
+                        const int *permutation) {
+    constexpr int num_dimensions = 5;
+    auto [new_strides_permuted, total_size] =
+        get_new_strides_permuted<num_dimensions>(input_shape, permutation);
+
+    const size_t load_item_bytes =
+        dalotia::sizeof_weight_format(weight_input_format);
+    const size_t store_item_bytes =
+        dalotia::sizeof_weight_format(weight_output_format);
+    auto assign_function =
+        get_assignment_function(weight_output_format, weight_input_format);
+    auto input_pointer = tensor_start;
+    size_t store_index = 0;
+    for (size_t i = 0; i < input_shape[0]; ++i) {
+        for (size_t j = 0; j < input_shape[1]; ++j) {
+            for (size_t k = 0; k < input_shape[2]; ++k) {
+                for (size_t l = 0; l < input_shape[3]; ++l) {
+                    for (size_t m = 0; m < input_shape[4]; ++m) {
+                        assert(static_cast<int>(store_index) ==
+                            std::inner_product(new_strides_permuted.begin(),
+                                                new_strides_permuted.end(),
+                                                std::vector({i, j, k, l, m}).begin(),
+                                                0));
+                        assert(store_index < total_size);
+                        auto output_pointer = dest + store_index * store_item_bytes;
+                        assign_function(output_pointer, input_pointer);
+
+                        input_pointer += load_item_bytes;
+                        store_index += new_strides_permuted[4];
+                    }
+                    store_index -= (input_shape[4] * new_strides_permuted[4]);
+                    store_index += new_strides_permuted[3];
+                }
+                store_index -= (input_shape[3] * new_strides_permuted[3]);
+                store_index += new_strides_permuted[2];
+            }
+            store_index -= (input_shape[2] * new_strides_permuted[2]);
+            store_index += new_strides_permuted[1];
+        }
+        store_index -= (input_shape[1] * new_strides_permuted[1]);
+        store_index += new_strides_permuted[0];
+    }
+
+    assert(std::distance(tensor_start, input_pointer) / load_item_bytes ==
+           total_size);
+}
+
 }  // namespace dalotia
