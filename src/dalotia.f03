@@ -122,13 +122,18 @@ module dalotia_c_interface
     module procedure dalotia_load_rank_2_float_tensor_dense
     module procedure dalotia_load_rank_2_double_tensor_dense
     module procedure dalotia_load_rank_3_float_tensor_dense
+    module procedure dalotia_load_rank_3_double_tensor_dense
     module procedure dalotia_load_rank_4_float_tensor_dense
+    module procedure dalotia_load_rank_4_double_tensor_dense
+    module procedure dalotia_load_rank_5_float_tensor_dense
+    module procedure dalotia_load_rank_5_double_tensor_dense
   end interface
   interface dalotia_load_tensor
     module procedure dalotia_load_rank_1_fixed_dim_tensor_dense
     module procedure dalotia_load_rank_2_fixed_dim_tensor_dense
     module procedure dalotia_load_rank_3_fixed_dim_tensor_dense
     module procedure dalotia_load_rank_4_fixed_dim_tensor_dense
+    module procedure dalotia_load_rank_5_fixed_dim_tensor_dense
   end interface
   
   contains
@@ -371,6 +376,21 @@ module dalotia_c_interface
         tensor = reshape(tensor_1d, tensor_extents)
     end subroutine dalotia_load_rank_2_float_tensor_dense
 
+    subroutine dalotia_load_rank_2_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        real(C_double), dimension(:,:), allocatable, intent(out) :: tensor ! pointer,
+        integer(C_int), optional, intent(in):: permutation(2)
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d !, target
+        integer(C_int) :: tensor_extents(2)
+
+        call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, 2, tensor_extents, permutation)
+        call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+        ! reshape into 2D tensor
+        tensor = reshape(tensor_1d, tensor_extents)
+    end subroutine dalotia_load_rank_2_double_tensor_dense
+
     subroutine dalotia_load_rank_2_fixed_dim_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
@@ -401,22 +421,6 @@ module dalotia_c_interface
         end select
     end subroutine dalotia_load_rank_2_fixed_dim_tensor_dense
 
-    subroutine dalotia_load_rank_2_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
-        implicit none
-        type(C_ptr), intent(in), value:: dalotia_file_pointer
-        character(kind=C_char, len=*), intent(in):: tensor_name
-        real(C_double), dimension(:,:), allocatable, intent(out) :: tensor
-        integer(C_int), optional, intent(in):: permutation(2)
-        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
-        integer(C_int) :: tensor_extents(2)
-
-        call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, 2, tensor_extents, permutation)
-        call assert_expected_rank(ubound(tensor_extents, dim=1), 2)
-        call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
-        ! reshape into 2D tensor
-        tensor = reshape(tensor_1d, tensor_extents)
-    end subroutine dalotia_load_rank_2_double_tensor_dense
-
     subroutine dalotia_load_rank_3_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
@@ -431,6 +435,21 @@ module dalotia_c_interface
         ! reshape into 3D tensor
         tensor = reshape(tensor_1d, tensor_extents)
     end subroutine dalotia_load_rank_3_float_tensor_dense
+
+    subroutine dalotia_load_rank_3_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        real(C_double), dimension(:,:,:), allocatable, intent(out) :: tensor
+        integer(C_int), optional, intent(in):: permutation(3)
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
+        integer(C_int) :: tensor_extents(3)
+
+        call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, 3, tensor_extents, permutation)
+        call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+        ! reshape into 3D tensor
+        tensor = reshape(tensor_1d, tensor_extents)
+    end subroutine dalotia_load_rank_3_double_tensor_dense
 
     subroutine dalotia_load_rank_3_fixed_dim_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
         implicit none
@@ -477,6 +496,21 @@ module dalotia_c_interface
         tensor = reshape(tensor_1d, tensor_extents)
     end subroutine dalotia_load_rank_4_float_tensor_dense
 
+    subroutine dalotia_load_rank_4_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        real(C_double), dimension(:,:,:,:), allocatable, intent(out) :: tensor
+        integer(C_int), optional, intent(in):: permutation(4)
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
+        integer(C_int) :: tensor_extents(4)
+
+        call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, 4, tensor_extents, permutation)
+        call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+        ! reshape into 4D tensor
+        tensor = reshape(tensor_1d, tensor_extents)
+    end subroutine dalotia_load_rank_4_double_tensor_dense
+
     subroutine dalotia_load_rank_4_fixed_dim_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
@@ -506,5 +540,66 @@ module dalotia_c_interface
             error stop "dalotia fortran interface: unsupported tensor type"
         end select
     end subroutine dalotia_load_rank_4_fixed_dim_tensor_dense
+
+
+    subroutine dalotia_load_rank_5_float_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        real(C_float), dimension(:,:,:,:,:), allocatable, intent(out) :: tensor
+        integer(C_int), optional, intent(in):: permutation(5)
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
+        integer(C_int) :: tensor_extents(5)
+
+        call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, 5, tensor_extents, permutation)
+        call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+        ! reshape into 5D tensor
+        tensor = reshape(tensor_1d, tensor_extents)
+    end subroutine dalotia_load_rank_5_float_tensor_dense
+
+    subroutine dalotia_load_rank_5_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        real(C_double), dimension(:,:,:,:,:), allocatable, intent(out) :: tensor
+        integer(C_int), optional, intent(in):: permutation(5)
+        real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
+        integer(C_int) :: tensor_extents(5)
+
+        call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, 5, tensor_extents, permutation)
+        call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+        ! reshape into 5D tensor
+        tensor = reshape(tensor_1d, tensor_extents)
+    end subroutine dalotia_load_rank_5_double_tensor_dense
+
+    subroutine dalotia_load_rank_5_fixed_dim_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
+        implicit none
+        type(C_ptr), intent(in), value:: dalotia_file_pointer
+        character(kind=C_char, len=*), intent(in):: tensor_name
+        class(*), dimension(:, :, :, :, :), intent(out) :: tensor
+        integer(C_int), optional, intent(in):: permutation(5)
+        integer(C_int) :: tensor_extents(5)
+
+        call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, 5, tensor_extents, permutation)
+        
+        select type (tensor)
+        type is (real(C_float))
+            block
+            real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
+                call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+                call assert_expected_extents(5, tensor_extents, shape(tensor))
+                tensor = reshape(tensor_1d, shape(tensor))
+            end block
+        type is (real(C_double))
+            block
+            real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
+                call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
+                call assert_expected_extents(5, tensor_extents, shape(tensor))
+                tensor = reshape(tensor_1d, shape(tensor))
+            end block
+        class default
+            error stop "dalotia fortran interface: unsupported tensor type"
+        end select
+    end subroutine dalotia_load_rank_5_fixed_dim_tensor_dense
 
 end module dalotia_c_interface
