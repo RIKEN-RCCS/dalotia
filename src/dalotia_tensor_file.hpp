@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "dalotia_formats.hpp"
+#include "dalotia_assignment.hpp"
 
 namespace dalotia {
 class TensorFile {
@@ -113,6 +114,14 @@ class TensorFile {
         // three arrays
         throw std::runtime_error(
             "load_tensor_sparse not implemented for this tensor type");
+    }
+
+    virtual dalotia::vector<const dalotia_byte*> get_mmap_tensor_pointers(
+        std::string /*tensor_name*/) const {
+        // This function will return the pointer(s) to the mmaped tensor
+        // (single for a dense, potentially multiple for a sparse tensor);
+        // empty if not implemented or not available (e.g. if not mmapped)
+        return dalotia::vector<const dalotia_byte*>();
     }
 
     // no private section to allow visibility from C
