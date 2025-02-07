@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "dalotia_assignment.hpp"
-// #include "dalotia_formats.hpp"
+#include "dalotia_formats.hpp"
 #include "safetensors.hh"
 
 namespace dalotia {
@@ -151,4 +151,12 @@ void SafetensorsFile::load_tensor_sparse(
     throw std::runtime_error("Sparse tensors for safetensors not implemented");
 }
 
+dalotia::vector<const dalotia_byte*> SafetensorsFile::get_mmap_tensor_pointers(
+    std::string tensor_name) const {
+    safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
+    auto *tensor_start =
+        reinterpret_cast<const dalotia_byte *__restrict__>(st_.databuffer_addr) +
+        safetensor.data_offsets[0];
+    return dalotia::vector<const dalotia_byte*>(1, tensor_start);
+}
 }  // namespace dalotia

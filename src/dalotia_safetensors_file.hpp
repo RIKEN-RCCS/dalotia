@@ -54,6 +54,11 @@ class SafetensorsFile : public TensorFile {
                             dalotia_WeightFormat weightFormat,
                             dalotia_Ordering ordering, dalotia_byte *values,
                             int *first_indices, int *second_indices) override;
+    
+    dalotia::vector<const dalotia_byte*> get_mmap_tensor_pointers(
+        std::string tensor_name) const override;
+    
+    // cf. https://github.com/syoyo/safetensors-cpp/blob/main/safetensors.hh
     safetensors::safetensors_t st_;
 };
 
