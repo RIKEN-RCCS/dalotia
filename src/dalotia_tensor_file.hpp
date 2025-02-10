@@ -92,6 +92,37 @@ class TensorFile {
             "load_tensor_dense not implemented for this tensor type");
     }
 
+    template <typename value_type = dalotia_byte>  //? or have no defaults?
+    [[nodiscard]] std::pair<std::vector<int>, dalotia::vector<value_type>>
+    load_tensor_dense(const std::string &tensor_name,
+        dalotia_WeightFormat weight_format,
+        dalotia_Ordering ordering = dalotia_C_ordering,
+        const std::vector<int>& permutation = {}
+#ifdef DALOTIA_WITH_CPP_PMR
+        ,
+        const std::pmr::polymorphic_allocator<dalotia_byte> &allocator =
+            std::pmr::polymorphic_allocator<dalotia_byte>()
+#endif  // DALOTIA_WITH_CPP_PMR
+    ) {
+        auto extents = this->get_tensor_extents(tensor_name, permutation);
+        auto total_size = std::accumulate(extents.begin(), extents.end(),
+                                          1, std::multiplies<size_t>());
+#ifdef DALOTIA_WITH_CPP_PMR
+        dalotia::vector<value_type> tensor(allocator);
+#else
+        dalotia::vector<value_type> tensor;
+#endif  // DALOTIA_WITH_CPP_PMR
+
+        if constexpr (std::is_same_v<value_type, dalotia_byte>) {
+            tensor.resize(total_size * sizeof_weight_format(weight_format));
+        } else {
+            tensor.resize(total_size);
+        }
+        this->load_tensor_dense(tensor_name, weight_format, ordering,
+            reinterpret_cast<dalotia_byte *>(tensor.data()), permutation);
+        return std::make_pair(extents, tensor);
+    }
+
     virtual void load_tensor_sparse(const std::string &/*tensor_name */,
                                     dalotia_SparseFormat /*sparseFormat */,
                                     dalotia_WeightFormat /* weightFormat*/,

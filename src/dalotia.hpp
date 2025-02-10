@@ -27,36 +27,13 @@ namespace dalotia {
 // -- pmr vector types can accept different allocators
 //? more memory interface than that? detect if CUDA device pointer through
 // unified access... how about other devices?
-template <typename value_type = dalotia_byte>  //? or have no defaults?
+template <typename value_type = dalotia_byte, typename... Ts>
 [[nodiscard]] std::pair<std::vector<int>, dalotia::vector<value_type>>
 load_tensor_dense(
-    const std::string &filename, const std::string &tensor_name,
-    dalotia_WeightFormat weight_format,
-    dalotia_Ordering ordering = dalotia_C_ordering,
-    const std::vector<int> &permutation = {}
-#ifdef DALOTIA_WITH_CPP_PMR
-    ,
-    const std::pmr::polymorphic_allocator<dalotia_byte> &allocator =
-        std::pmr::polymorphic_allocator<dalotia_byte>()
-#endif  // DALOTIA_WITH_CPP_PMR
+    const std::string &filename, const std::string &tensor_name, Ts&&... params
 ) {
     auto dalotia_file = std::unique_ptr<TensorFile>(make_tensor_file(filename));
-    auto extents = dalotia_file->get_tensor_extents(tensor_name, permutation);
-    auto total_size = std::accumulate(extents.begin(), extents.end(),
-                                      1, std::multiplies<size_t>());
-#ifdef DALOTIA_WITH_CPP_PMR
-    dalotia::vector<value_type> tensor(allocator);
-#else
-    dalotia::vector<value_type> tensor;
-#endif  // DALOTIA_WITH_CPP_PMR
-    if constexpr (std::is_same_v<value_type, dalotia_byte>) {
-        tensor.resize(total_size * sizeof_weight_format(weight_format));
-    } else {
-        tensor.resize(total_size);
-    }
-    dalotia_file->load_tensor_dense(tensor_name, weight_format, ordering,
-        reinterpret_cast<dalotia_byte *>(tensor.data()), permutation);
-    return std::make_pair(extents, tensor);
+    return dalotia_file->load_tensor_dense<value_type>(tensor_name, std::forward<Ts>(params)...);
 }
 
 // TODO same for sparse
