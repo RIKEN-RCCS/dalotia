@@ -21,7 +21,7 @@
 namespace dalotia {
 // factory function for the file, selected by file extension and
 // available implementations
-TensorFile *make_tensor_file(const std::string & filename);
+[[nodiscard]] TensorFile *make_tensor_file(const std::string & filename);
 
 // C++17 version -> will not compile on Fugaku...
 // -- pmr vector types can accept different allocators

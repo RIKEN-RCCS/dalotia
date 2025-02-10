@@ -34,25 +34,25 @@ class TensorFile {
         // fclose(this->file_);
     }
 
-    virtual const std::vector<std::string> &get_tensor_names() const {
+    [[nodiscard]] virtual const std::vector<std::string> &get_tensor_names() const {
         throw std::runtime_error(
             "get_tensor_names not implemented for this tensor type");
     }
 
-    virtual bool is_sparse(const std::string &/*tensor_name*/) const {
+    [[nodiscard]] virtual bool is_sparse(const std::string &/*tensor_name*/) const {
         throw std::runtime_error(
             "is_sparse not implemented for this tensor type");
         return false;
     }
 
-    virtual size_t get_num_dimensions(const std::string &tensor_name) const {
+    [[nodiscard]] virtual size_t get_num_dimensions(const std::string &tensor_name) const {
         auto extents = this->get_tensor_extents(tensor_name);
         auto num_not_dimensions =
             std::count(extents.begin(), extents.end(), -1);
         return extents.size() - num_not_dimensions;
     }
 
-    virtual std::array<int, 10> get_tensor_extents(
+    [[nodiscard]] virtual std::array<int, 10> get_tensor_extents(
         const std::string &/*tensor_name*/,
         const std::vector<int>& /*permutation*/ = {}) const
     {
@@ -61,7 +61,7 @@ class TensorFile {
         return std::array<int, 10>();
     }
 
-    virtual size_t get_num_tensor_elements(const std::string &tensor_name) const {
+    [[nodiscard]] virtual size_t get_num_tensor_elements(const std::string &tensor_name) const {
         // ?
 
         auto long_extents = this->get_tensor_extents(tensor_name);
@@ -74,7 +74,7 @@ class TensorFile {
             std::multiplies<size_t>());
     }
 
-    virtual size_t get_nnz(const std::string &/* tensor_name*/) const {
+    [[nodiscard]] virtual size_t get_nnz(const std::string &/* tensor_name*/) const {
         // This function will read the file and return the number of non-zero
         // elements ? may take a while for dense tensors, only allow for sparse?
         throw std::runtime_error(
@@ -82,7 +82,7 @@ class TensorFile {
         return 0;
     }
 
-    virtual std::array<int, 10> get_sparse_tensor_extents(
+    [[nodiscard]] virtual std::array<int, 10> get_sparse_tensor_extents(
         const std::string &/*tensor_name*/, dalotia_SparseFormat /*format*/) const {
         // This function will (lazily) read the file and return the tensor
         // extents
