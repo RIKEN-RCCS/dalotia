@@ -39,7 +39,7 @@ class SafetensorsFile : public TensorFile {
 
     size_t get_num_tensor_elements(const std::string &tensor_name) const override;
 
-    std::array<int, 10> get_tensor_extents(
+    std::vector<int> get_tensor_extents(
         const std::string &tensor_name = "",
         const std::vector<int>& permutation = {}) const override;
 

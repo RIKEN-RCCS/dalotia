@@ -107,15 +107,9 @@ int dalotia_get_nnz(DalotiaTensorFile *file, const char *tensor_name) {
 int dalotia_get_tensor_extents(DalotiaTensorFile *file, const char *tensor_name,
                                int *extents) {
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
-    int num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
-    {
-        auto extents_array = dalotia_file->get_tensor_extents(
-            tensor_name);  // TODO make this a vector?
-
-        std::copy(extents_array.begin(), extents_array.begin() + num_dimensions,
-                  extents);
-    }
-    return num_dimensions;
+    auto extents_vector = dalotia_file->get_tensor_extents(tensor_name);
+    std::copy(extents_vector.begin(), extents_vector.end(), extents);
+    return extents_vector.size();
 }
 
 int dalotia_get_sparse_tensor_extents(DalotiaTensorFile *file,
@@ -124,12 +118,11 @@ int dalotia_get_sparse_tensor_extents(DalotiaTensorFile *file,
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
     int num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
     if (format == dalotia_SparseFormat::dalotia_CSR) {
-        std::array<int, 10> extents_array =
-            dalotia_file->get_sparse_tensor_extents(
+        auto read_extents = dalotia_file->get_sparse_tensor_extents(
                 tensor_name, dalotia_SparseFormat::dalotia_CSR);
-        assert(static_cast<size_t>(extents_array[0]) ==
+        assert(static_cast<size_t>(read_extents[0]) ==
                dalotia_file->get_nnz(tensor_name));
-        std::copy(extents_array.begin(), extents_array.end(), extents);
+        std::copy(read_extents.begin(), read_extents.end(), extents);
     } else {
         assert(false);
         return -1;

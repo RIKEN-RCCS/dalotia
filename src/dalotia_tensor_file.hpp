@@ -46,32 +46,22 @@ class TensorFile {
     }
 
     [[nodiscard]] virtual size_t get_num_dimensions(const std::string &tensor_name) const {
-        auto extents = this->get_tensor_extents(tensor_name);
-        auto num_not_dimensions =
-            std::count(extents.begin(), extents.end(), -1);
-        return extents.size() - num_not_dimensions;
+        return this->get_tensor_extents(tensor_name).size();
     }
 
-    [[nodiscard]] virtual std::array<int, 10> get_tensor_extents(
+    [[nodiscard]] virtual std::vector<int> get_tensor_extents(
         const std::string &/*tensor_name*/,
         const std::vector<int>& /*permutation*/ = {}) const
     {
         throw std::runtime_error(
             "get_tensor_extents not implemented for this tensor type");
-        return std::array<int, 10>();
+        return {};
     }
 
     [[nodiscard]] virtual size_t get_num_tensor_elements(const std::string &tensor_name) const {
         // ?
-
-        auto long_extents = this->get_tensor_extents(tensor_name);
-        auto num_zero =
-            long_extents.size() -
-            std::count(long_extents.begin(), long_extents.end(), -1);
-        return std::accumulate(
-            long_extents.begin(),
-            long_extents.begin() + (long_extents.size() - num_zero), 1,
-            std::multiplies<size_t>());
+        auto extents = this->get_tensor_extents(tensor_name);
+        return std::accumulate(extents.begin(), extents.end(), 1, std::multiplies<size_t>());
     }
 
     [[nodiscard]] virtual size_t get_nnz(const std::string &/* tensor_name*/) const {
@@ -82,13 +72,13 @@ class TensorFile {
         return 0;
     }
 
-    [[nodiscard]] virtual std::array<int, 10> get_sparse_tensor_extents(
+    [[nodiscard]] virtual std::vector<int> get_sparse_tensor_extents(
         const std::string &/*tensor_name*/, dalotia_SparseFormat /*format*/) const {
         // This function will (lazily) read the file and return the tensor
         // extents
         throw std::runtime_error(
             "get_sparse_tensor_extents not implemented for this tensor type");
-        return std::array<int, 10>();
+        return {};
     }
 
     virtual void load_tensor_dense(const std::string &/*tensor_name */,

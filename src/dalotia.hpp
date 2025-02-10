@@ -41,15 +41,8 @@ load_tensor_dense(
 #endif  // DALOTIA_WITH_CPP_PMR
 ) {
     auto dalotia_file = std::unique_ptr<TensorFile>(make_tensor_file(filename));
-    auto long_extents =
-        dalotia_file->get_tensor_extents(tensor_name, permutation);
-    // shorten extents to nonzeros
-    auto num_nonzero = long_extents.size() -
-                       std::count(long_extents.begin(), long_extents.end(), -1);
-
-    std::vector<int> true_extents(long_extents.begin(),
-                                      long_extents.begin() + num_nonzero);
-    auto total_size = std::accumulate(true_extents.begin(), true_extents.end(),
+    auto extents = dalotia_file->get_tensor_extents(tensor_name, permutation);
+    auto total_size = std::accumulate(extents.begin(), extents.end(),
                                       1, std::multiplies<size_t>());
 #ifdef DALOTIA_WITH_CPP_PMR
     dalotia::vector<value_type> tensor(allocator);
@@ -61,10 +54,9 @@ load_tensor_dense(
     } else {
         tensor.resize(total_size);
     }
-    dalotia_file->load_tensor_dense(
-        tensor_name, weight_format, ordering,
+    dalotia_file->load_tensor_dense(tensor_name, weight_format, ordering,
         reinterpret_cast<dalotia_byte *>(tensor.data()), permutation);
-    return std::make_pair(true_extents, tensor);
+    return std::make_pair(extents, tensor);
 }
 
 // TODO same for sparse
