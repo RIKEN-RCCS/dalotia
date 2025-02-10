@@ -90,7 +90,7 @@ size_t SafetensorsFile::get_num_tensor_elements(std::string tensor_name) const {
 }
 
 std::array<int, 10> SafetensorsFile::get_tensor_extents(
-    std::string tensor_name, const int *permutation) const {
+    std::string tensor_name, const std::vector<int> &permutation) const {
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
     std::array<int, 10> extents;
     for (size_t i = 0; i < safetensor.shape.size(); i++) {
@@ -99,7 +99,7 @@ std::array<int, 10> SafetensorsFile::get_tensor_extents(
     for (size_t i = safetensor.shape.size(); i < 10; i++) {
         extents[i] = -1;
     }
-    if (permutation != nullptr) {
+    if (!permutation.empty()) {
         auto final_permutation_in_c_order =
             final_c_permutation_from_permutation_and_order(
                 permutation, dalotia_Ordering::dalotia_C_ordering,
@@ -117,7 +117,7 @@ void SafetensorsFile::load_tensor_dense(std::string tensor_name,
                                         dalotia_WeightFormat weightFormat,
                                         dalotia_Ordering ordering,
                                         dalotia_byte *__restrict__ tensor,
-                                        const int *permutation) {
+                                        const std::vector<int> &permutation) {
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
     const auto num_dimensions = safetensor.shape.size();
 

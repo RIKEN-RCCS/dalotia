@@ -41,13 +41,13 @@ class SafetensorsFile : public TensorFile {
 
     std::array<int, 10> get_tensor_extents(
         std::string tensor_name = "",
-        const int *permutation = nullptr) const override;
+        const std::vector<int>& permutation = {}) const override;
 
     void load_tensor_dense(std::string tensor_name,
                            dalotia_WeightFormat weightFormat,
                            dalotia_Ordering ordering,
                            dalotia_byte *__restrict__ tensor,
-                           const int *permutation = nullptr) override;
+                           const std::vector<int>& permutation = {}) override;
 
     void load_tensor_sparse(std::string tensor_name,
                             dalotia_SparseFormat sparseFormat,

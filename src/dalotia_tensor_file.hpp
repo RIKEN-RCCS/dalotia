@@ -54,8 +54,7 @@ class TensorFile {
 
     virtual std::array<int, 10> get_tensor_extents(
         std::string /*tensor_name*/ = "",
-        const int * /*permutation */ =
-            nullptr) const  //? have the maximum number of dimensions = 10?
+        const std::vector<int>& /*permutation*/ = {}) const
     {
         throw std::runtime_error(
             "get_tensor_extents not implemented for this tensor type");
@@ -96,7 +95,7 @@ class TensorFile {
                                    dalotia_WeightFormat /*weightFormat */,
                                    dalotia_Ordering /* ordering */,
                                    dalotia_byte *__restrict__ /*tensor */,
-                                   const int * /*permutation*/ = nullptr) {
+                                   const std::vector<int>& /* permutation */ = {}) {
         // This function will read the whole file and load the tensor,
         // optionally transposing it according to the permutation
         throw std::runtime_error(

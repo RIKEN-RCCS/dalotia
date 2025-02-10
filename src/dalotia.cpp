@@ -161,8 +161,12 @@ int dalotia_load_tensor_dense_with_permutation(DalotiaTensorFile *file,
     auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
     auto byte_tensor = reinterpret_cast<dalotia_byte *>(tensor);
     try {
+        // copy permutation to vector
+        auto num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
+        std::vector<int> permutation_vector(permutation,
+                                            permutation + num_dimensions);
         dalotia_file->load_tensor_dense(tensor_name, format, ordering,
-                                        byte_tensor, permutation);
+                                        byte_tensor, permutation_vector);
         return 0;
     } catch (const std::exception &e) {
         std::cerr << "dalotia_load_tensor_dense_with_permutation: " << e.what()

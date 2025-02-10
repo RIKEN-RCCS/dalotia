@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
         dalotia::load_tensor_dense(filename, tensor_name, weightFormat);
 
     // typed return values and permutations!
-    auto vector_permutation = dalotia::vector<int>{1, 2, 0};
+    auto vector_permutation = std::vector<int>{1, 2, 0};
 #ifdef DALOTIA_WITH_CPP_PMR
     // C++17 pmr -> small tensors can even live on the stack
     std::array<double, 300> storage_array;

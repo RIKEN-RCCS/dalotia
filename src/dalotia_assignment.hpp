@@ -25,8 +25,8 @@ using vector = std::vector<T>;
 
 namespace dalotia {
 
-dalotia::vector<int> final_c_permutation_from_permutation_and_order(
-    const int *permutation, dalotia_Ordering ordering, size_t num_dimensions);
+std::vector<int> final_c_permutation_from_permutation_and_order(
+    const std::vector<int> &permutation, dalotia_Ordering ordering, size_t num_dimensions);
 
 template <typename InType, typename OutType>
 std::function<void(dalotia_byte *__restrict__,
