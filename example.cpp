@@ -106,12 +106,27 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl;
     std::cout << std::endl;
 
-    // alternative: the C++ version
+    // alternative: the C++ version (implicitly creates a file object)
     auto [extents, tensor_cpp] =
         dalotia::load_tensor_dense(filename, tensor_name, weightFormat);
 
     // typed return values and permutations!
     auto vector_permutation = std::vector<int>{1, 2, 0};
+
+    auto file_cpp = std::unique_ptr<dalotia::TensorFile>(dalotia::make_tensor_file(filename));
+    auto [extents_file_obj, tensor_cpp_file_obj] = file_cpp->load_tensor_dense(tensor_name, weightFormat,
+                                                 ordering, vector_permutation);
+    
+    // if we create a derived file on the stack, we have less template magic available
+    auto stack_file = dalotia::SafetensorsFile(filename);
+    // for instance, this will call the non-template overload and fail:
+    // auto [extents_stack, tensor_cpp_stack] = stack_file.load_tensor_dense(tensor_name, weightFormat,
+    //                                             ordering, vector_permutation);
+    // but we can call the base-class' method directly
+    auto [extents_stack, tensor_cpp_stack] = stack_file.dalotia::TensorFile::load_tensor_dense(
+                                                                    tensor_name, weightFormat,
+                                                                    ordering, vector_permutation);
+
 #ifdef DALOTIA_WITH_CPP_PMR
     // C++17 pmr -> small tensors can even live on the stack
     std::array<double, 300> storage_array;
@@ -144,9 +159,6 @@ int main(int argc, char *argv[]) {
 
     //... // do something with the tensor
     // everything alex calls a runtime = possibly jit compiled
-
-    // example: nicam ai, genesis, ...reconstruct?
-    // run here with cuDNN, or BLIS, or...
 
     return 0;
 }
