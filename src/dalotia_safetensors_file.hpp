@@ -48,8 +48,7 @@ class SafetensorsFile : public TensorFile {
                            dalotia_Ordering ordering,
                            dalotia_byte *__restrict__ tensor,
                            const std::vector<int>& permutation = {}) override;
-
-        std::vector<const dalotia_byte*> get_mmap_tensor_pointers(
+    std::vector<const dalotia_byte*> get_mmap_tensor_pointers(
         const std::string &tensor_name) const override;
     
     // cf. https://github.com/syoyo/safetensors-cpp/blob/main/safetensors.hh
