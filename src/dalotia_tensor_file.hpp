@@ -17,7 +17,7 @@
 namespace dalotia {
 class TensorFile {
    public:
-    TensorFile(std::string /* filename */) {
+    explicit TensorFile(const std::string &/* filename */) {
         // bool opened = (this->file_ = fopen(filename.c_str(), "rb"));
         // if (!opened) {
         //     throw std::runtime_error("Could not open file " + filename);
@@ -39,13 +39,13 @@ class TensorFile {
             "get_tensor_names not implemented for this tensor type");
     }
 
-    virtual bool is_sparse(std::string /*tensor_name*/) const {
+    virtual bool is_sparse(const std::string &/*tensor_name*/) const {
         throw std::runtime_error(
             "is_sparse not implemented for this tensor type");
         return false;
     }
 
-    virtual size_t get_num_dimensions(std::string tensor_name) const {
+    virtual size_t get_num_dimensions(const std::string &tensor_name) const {
         auto extents = this->get_tensor_extents(tensor_name);
         auto num_not_dimensions =
             std::count(extents.begin(), extents.end(), -1);
@@ -53,7 +53,7 @@ class TensorFile {
     }
 
     virtual std::array<int, 10> get_tensor_extents(
-        std::string /*tensor_name*/ = "",
+        const std::string &/*tensor_name*/,
         const std::vector<int>& /*permutation*/ = {}) const
     {
         throw std::runtime_error(
@@ -61,7 +61,7 @@ class TensorFile {
         return std::array<int, 10>();
     }
 
-    virtual size_t get_num_tensor_elements(std::string tensor_name) const {
+    virtual size_t get_num_tensor_elements(const std::string &tensor_name) const {
         // ?
 
         auto long_extents = this->get_tensor_extents(tensor_name);
@@ -74,7 +74,7 @@ class TensorFile {
             std::multiplies<size_t>());
     }
 
-    virtual size_t get_nnz(std::string /* tensor_name*/) const {
+    virtual size_t get_nnz(const std::string &/* tensor_name*/) const {
         // This function will read the file and return the number of non-zero
         // elements ? may take a while for dense tensors, only allow for sparse?
         throw std::runtime_error(
@@ -83,7 +83,7 @@ class TensorFile {
     }
 
     virtual std::array<int, 10> get_sparse_tensor_extents(
-        std::string /*tensor_name*/, dalotia_SparseFormat /*format*/) const {
+        const std::string &/*tensor_name*/, dalotia_SparseFormat /*format*/) const {
         // This function will (lazily) read the file and return the tensor
         // extents
         throw std::runtime_error(
@@ -91,7 +91,7 @@ class TensorFile {
         return std::array<int, 10>();
     }
 
-    virtual void load_tensor_dense(std::string /*tensor_name */,
+    virtual void load_tensor_dense(const std::string &/*tensor_name */,
                                    dalotia_WeightFormat /*weightFormat */,
                                    dalotia_Ordering /* ordering */,
                                    dalotia_byte *__restrict__ /*tensor */,
@@ -102,7 +102,7 @@ class TensorFile {
             "load_tensor_dense not implemented for this tensor type");
     }
 
-    virtual void load_tensor_sparse(std::string /*tensor_name */,
+    virtual void load_tensor_sparse(const std::string &/*tensor_name */,
                                     dalotia_SparseFormat /*sparseFormat */,
                                     dalotia_WeightFormat /* weightFormat*/,
                                     dalotia_Ordering /* ordering */,
@@ -115,12 +115,12 @@ class TensorFile {
             "load_tensor_sparse not implemented for this tensor type");
     }
 
-    virtual dalotia::vector<const dalotia_byte*> get_mmap_tensor_pointers(
-        std::string /*tensor_name*/) const {
+    virtual std::vector<const dalotia_byte*> get_mmap_tensor_pointers(
+        const std::string &/*tensor_name*/) const {
         // This function will return the pointer(s) to the mmaped tensor
         // (single for a dense, potentially multiple for a sparse tensor);
         // empty if not implemented or not available (e.g. if not mmapped)
-        return dalotia::vector<const dalotia_byte*>();
+        return std::vector<const dalotia_byte*>();
     }
 
     // no private section to allow visibility from C

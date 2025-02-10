@@ -18,7 +18,7 @@ safetensors::tensor_t get_only_tensor(const safetensors::safetensors_t &st) {
 }
 
 safetensors::tensor_t get_tensor_from_name(
-    std::string tensor_name, const safetensors::safetensors_t &st) {
+    const std::string &tensor_name, const safetensors::safetensors_t &st) {
     if (tensor_name.empty()) {
         return get_only_tensor(st);
     }
@@ -49,7 +49,7 @@ const std::vector<std::string> &SafetensorsFile::get_tensor_names() const {
     return st_.tensors.keys();
 }
 
-SafetensorsFile::SafetensorsFile(std::string filename) : TensorFile(filename) {
+SafetensorsFile::SafetensorsFile(const std::string &filename) : TensorFile(filename) {
     // as far as I can tell, safetensors are saved in C order
     std::string warn, err;
     bool ret = safetensors::mmap_from_file(filename, &st_, &warn, &err);
@@ -75,22 +75,22 @@ SafetensorsFile::~SafetensorsFile() {
     }
 }
 
-bool SafetensorsFile::is_sparse(std::string /*tensor_name*/) const {
+bool SafetensorsFile::is_sparse(const std::string &/*tensor_name*/) const {
     return false;  // TODO figure out how sparsity works / could work
 }
 
-size_t SafetensorsFile::get_num_dimensions(std::string tensor_name) const {
+size_t SafetensorsFile::get_num_dimensions(const std::string &tensor_name) const {
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
     return safetensor.shape.size();
 }
 
-size_t SafetensorsFile::get_num_tensor_elements(std::string tensor_name) const {
+size_t SafetensorsFile::get_num_tensor_elements(const std::string &tensor_name) const {
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
     return safetensors::get_shape_size(safetensor);
 }
 
 std::array<int, 10> SafetensorsFile::get_tensor_extents(
-    std::string tensor_name, const std::vector<int> &permutation) const {
+    const std::string &tensor_name, const std::vector<int> &permutation) const {
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
     std::array<int, 10> extents;
     for (size_t i = 0; i < safetensor.shape.size(); i++) {
@@ -113,7 +113,7 @@ std::array<int, 10> SafetensorsFile::get_tensor_extents(
     return extents;
 }
 
-void SafetensorsFile::load_tensor_dense(std::string tensor_name,
+void SafetensorsFile::load_tensor_dense(const std::string &tensor_name,
                                         dalotia_WeightFormat weightFormat,
                                         dalotia_Ordering ordering,
                                         dalotia_byte *__restrict__ tensor,
@@ -143,20 +143,12 @@ void SafetensorsFile::load_tensor_dense(std::string tensor_name,
     }
 }
 
-void SafetensorsFile::load_tensor_sparse(
-    std::string /* tensor_name */, dalotia_SparseFormat /* sparseFormat */,
-    dalotia_WeightFormat /* weightFormat */, dalotia_Ordering /* ordering */,
-    dalotia_byte * /* values */, int * /* first_indices */,
-    int * /*second_indices */) {
-    throw std::runtime_error("Sparse tensors for safetensors not implemented");
-}
-
-dalotia::vector<const dalotia_byte*> SafetensorsFile::get_mmap_tensor_pointers(
-    std::string tensor_name) const {
+std::vector<const dalotia_byte*> SafetensorsFile::get_mmap_tensor_pointers(
+    const std::string &tensor_name) const {
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
     auto *tensor_start =
         reinterpret_cast<const dalotia_byte *__restrict__>(st_.databuffer_addr) +
         safetensor.data_offsets[0];
-    return dalotia::vector<const dalotia_byte*>(1, tensor_start);
+    return std::vector<const dalotia_byte*>(1, tensor_start);
 }
 }  // namespace dalotia

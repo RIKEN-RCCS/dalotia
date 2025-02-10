@@ -24,7 +24,7 @@ namespace dalotia {
 
 // factory function for the file, selected by file extension and
 // available implementations
-TensorFile *make_tensor_file(std::string filename) {
+TensorFile *make_tensor_file(const std::string &filename) {
     // make sure the file exists
     if (!dalotia::file_exists(filename)) {
         throw std::runtime_error("dalotia make_tensor_file: File " + filename +

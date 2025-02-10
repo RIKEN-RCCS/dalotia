@@ -21,7 +21,7 @@
 namespace dalotia {
 // factory function for the file, selected by file extension and
 // available implementations
-TensorFile *make_tensor_file(std::string filename);
+TensorFile *make_tensor_file(const std::string & filename);
 
 // C++17 version -> will not compile on Fugaku...
 // -- pmr vector types can accept different allocators
@@ -30,7 +30,7 @@ TensorFile *make_tensor_file(std::string filename);
 template <typename value_type = dalotia_byte>  //? or have no defaults?
 [[nodiscard]] std::pair<std::vector<int>, dalotia::vector<value_type>>
 load_tensor_dense(
-    std::string filename, std::string tensor_name,
+    const std::string &filename, const std::string &tensor_name,
     dalotia_WeightFormat weight_format,
     dalotia_Ordering ordering = dalotia_C_ordering,
     const std::vector<int> &permutation = {}
