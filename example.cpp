@@ -120,13 +120,17 @@ int main(int argc, char *argv[]) {
     // if we create a derived file on the stack, we have less template magic available
     auto stack_file = dalotia::SafetensorsFile(filename);
     // for instance, this will call the non-template overload and fail:
-    // auto [extents_stack, tensor_cpp_stack] = stack_file.load_tensor_dense(tensor_name, weightFormat,
+    // auto [extents_safetensors, tensor_cpp_safetensors] = stack_file.load_tensor_dense(tensor_name, weightFormat,
     //                                             ordering, vector_permutation);
     // but we can call the base-class' method directly
-    auto [extents_stack, tensor_cpp_stack] = stack_file.dalotia::TensorFile::load_tensor_dense(
-                                                                    tensor_name, weightFormat,
-                                                                    ordering, vector_permutation);
+    auto [extents_safetensors, tensor_cpp_safetensors] = 
+        stack_file.dalotia::TensorFile::load_tensor_dense(
+                                        tensor_name, weightFormat,
+                                        ordering, vector_permutation);
 
+    auto [extents_derived_float, tensor_cpp_derived_float] =
+        file_cpp->load_tensor_dense<float>(tensor_name, ordering, vector_permutation);
+    
 #ifdef DALOTIA_WITH_CPP_PMR
     // C++17 pmr -> small tensors can even live on the stack
     std::array<double, 300> storage_array;

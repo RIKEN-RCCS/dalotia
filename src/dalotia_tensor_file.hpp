@@ -123,6 +123,40 @@ class TensorFile {
         return std::make_pair(extents, tensor);
     }
 
+    template <typename value_type>
+    [[nodiscard]] std::pair<std::vector<int>, dalotia::vector<value_type>>
+    load_tensor_dense(const std::string &tensor_name,
+        dalotia_Ordering ordering = dalotia_C_ordering,
+        const std::vector<int>& permutation = {}
+#ifdef DALOTIA_WITH_CPP_PMR
+        ,
+        const std::pmr::polymorphic_allocator<dalotia_byte> &allocator =
+            std::pmr::polymorphic_allocator<dalotia_byte>()
+#endif  // DALOTIA_WITH_CPP_PMR
+    ) {
+        // TODO is there an elegant way to map types to values?
+        if constexpr (std::is_same_v<value_type, float>) {
+            return this->load_tensor_dense<float>(tensor_name, dalotia_float_32,
+                ordering, permutation
+#ifdef DALOTIA_WITH_CPP_PMR
+                , allocator
+#endif  // DALOTIA_WITH_CPP_PMR
+            );
+        } else if constexpr (std::is_same_v<value_type, double>) {
+            return this->load_tensor_dense<double>(tensor_name, dalotia_float_64,
+                ordering, permutation
+#ifdef DALOTIA_WITH_CPP_PMR
+                    , allocator
+#endif  // DALOTIA_WITH_CPP_PMR
+                );
+        } else {
+            throw std::runtime_error(
+                "load_tensor_dense cannot derive the weight format \
+                    from the value type");
+        }
+
+    }
+
     virtual void load_tensor_sparse(const std::string &/*tensor_name */,
                                     dalotia_SparseFormat /*sparseFormat */,
                                     dalotia_WeightFormat /* weightFormat*/,
