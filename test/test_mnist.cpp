@@ -87,7 +87,7 @@ std::pair<dalotia::vector<float>, dalotia::vector<float>> test_load(
         const auto plain_indexer = get_tensor_indexer<4>(extents_weight_array);
 
         // check permutations
-        dalotia::vector<int> permutation = {0, 1, 2, 3};
+        std::vector<int> permutation = {0, 1, 2, 3};
         do {
             auto [extents_weight_perm, tensor_weight_cpp_perm] =
                 dalotia::load_tensor_dense<float>(filename, tensor_name_weight,

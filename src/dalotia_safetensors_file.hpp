@@ -27,36 +27,29 @@ const std::map<safetensors::dtype, dalotia_WeightFormat> safetensors_type_map{
 
 class SafetensorsFile : public TensorFile {
    public:
-    SafetensorsFile(std::string filename);
+    explicit SafetensorsFile(const std::string &filename);
 
     ~SafetensorsFile();
 
     const std::vector<std::string> &get_tensor_names() const override;
 
-    bool is_sparse(std::string tensor_name) const override;
+    bool is_sparse(const std::string &tensor_name) const override;
 
-    size_t get_num_dimensions(std::string tensor_name) const override;
+    size_t get_num_dimensions(const std::string &tensor_name) const override;
 
-    size_t get_num_tensor_elements(std::string tensor_name) const override;
+    size_t get_num_tensor_elements(const std::string &tensor_name) const override;
 
-    std::array<int, 10> get_tensor_extents(
-        std::string tensor_name = "",
-        const int *permutation = nullptr) const override;
+    std::vector<int> get_tensor_extents(
+        const std::string &tensor_name = "",
+        const std::vector<int>& permutation = {}) const override;
 
-    void load_tensor_dense(std::string tensor_name,
+    void load_tensor_dense(const std::string &tensor_name,
                            dalotia_WeightFormat weightFormat,
                            dalotia_Ordering ordering,
                            dalotia_byte *__restrict__ tensor,
-                           const int *permutation = nullptr) override;
-
-    void load_tensor_sparse(std::string tensor_name,
-                            dalotia_SparseFormat sparseFormat,
-                            dalotia_WeightFormat weightFormat,
-                            dalotia_Ordering ordering, dalotia_byte *values,
-                            int *first_indices, int *second_indices) override;
-    
-    dalotia::vector<const dalotia_byte*> get_mmap_tensor_pointers(
-        std::string tensor_name) const override;
+                           const std::vector<int>& permutation = {}) override;
+    std::vector<const dalotia_byte*> get_mmap_tensor_pointers(
+        const std::string &tensor_name) const override;
     
     // cf. https://github.com/syoyo/safetensors-cpp/blob/main/safetensors.hh
     safetensors::safetensors_t st_;

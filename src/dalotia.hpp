@@ -21,59 +21,19 @@
 namespace dalotia {
 // factory function for the file, selected by file extension and
 // available implementations
-TensorFile *make_tensor_file(std::string filename);
+[[nodiscard]] TensorFile *make_tensor_file(const std::string & filename);
 
 // C++17 version -> will not compile on Fugaku...
 // -- pmr vector types can accept different allocators
 //? more memory interface than that? detect if CUDA device pointer through
 // unified access... how about other devices?
-template <typename value_type = dalotia_byte>  //? or have no defaults?
-[[nodiscard]] std::pair<dalotia::vector<int>, dalotia::vector<value_type>>
+template <typename value_type = dalotia_byte, typename... Ts>
+[[nodiscard]] std::pair<std::vector<int>, dalotia::vector<value_type>>
 load_tensor_dense(
-    std::string filename, std::string tensor_name,
-    dalotia_WeightFormat weight_format,
-    dalotia_Ordering ordering = dalotia_C_ordering,
-    const dalotia::vector<int> &permutation = {}
-#ifdef DALOTIA_WITH_CPP_PMR
-    ,
-    const std::pmr::polymorphic_allocator<dalotia_byte> &allocator =
-        std::pmr::polymorphic_allocator<dalotia_byte>()
-#endif  // DALOTIA_WITH_CPP_PMR
+    const std::string &filename, const std::string &tensor_name, Ts&&... params
 ) {
     auto dalotia_file = std::unique_ptr<TensorFile>(make_tensor_file(filename));
-    const int *permutation_ptr = nullptr;
-    if (!permutation.empty()) {
-        permutation_ptr = permutation.data();
-    }
-    auto long_extents =
-        dalotia_file->get_tensor_extents(tensor_name, permutation_ptr);
-    // shorten extents to nonzeros
-    auto num_nonzero = long_extents.size() -
-                       std::count(long_extents.begin(), long_extents.end(), -1);
-
-#ifdef DALOTIA_WITH_CPP_PMR
-    dalotia::vector<int> true_extents(
-        long_extents.begin(), long_extents.begin() + num_nonzero, allocator);
-#else
-    dalotia::vector<int> true_extents(long_extents.begin(),
-                                      long_extents.begin() + num_nonzero);
-#endif  // DALOTIA_WITH_CPP_PMR
-    auto total_size = std::accumulate(true_extents.begin(), true_extents.end(),
-                                      1, std::multiplies<size_t>());
-#ifdef DALOTIA_WITH_CPP_PMR
-    dalotia::vector<value_type> tensor(allocator);
-#else
-    dalotia::vector<value_type> tensor;
-#endif  // DALOTIA_WITH_CPP_PMR
-    if constexpr (std::is_same_v<value_type, dalotia_byte>) {
-        tensor.resize(total_size * sizeof_weight_format(weight_format));
-    } else {
-        tensor.resize(total_size);
-    }
-    dalotia_file->load_tensor_dense(
-        tensor_name, weight_format, ordering,
-        reinterpret_cast<dalotia_byte *>(tensor.data()), permutation_ptr);
-    return std::make_pair(true_extents, tensor);
+    return dalotia_file->load_tensor_dense<value_type>(tensor_name, std::forward<Ts>(params)...);
 }
 
 // TODO same for sparse

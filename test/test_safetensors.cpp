@@ -54,7 +54,7 @@ void test_simple_linear_load() {
 }
 
 void test_permutation() {
-    int permutation[3] = {0, 1, 2};
+    std::vector<int> permutation = {0, 1, 2};
     auto final_permutation =
         dalotia::final_c_permutation_from_permutation_and_order(
             permutation, dalotia_Ordering::dalotia_C_ordering, 3);
@@ -64,7 +64,7 @@ void test_permutation() {
         permutation, dalotia_Ordering::dalotia_F_ordering, 3);
     assert(final_permutation.empty());
 
-    int permutation2[3] = {2, 1, 3};
+    std::vector<int> permutation2 = {2, 1, 3};
     final_permutation = dalotia::final_c_permutation_from_permutation_and_order(
         permutation2, dalotia_Ordering::dalotia_F_ordering, 3);
     assert(final_permutation.size() == 3);
@@ -72,7 +72,7 @@ void test_permutation() {
     assert(final_permutation[1] == 2);
     assert(final_permutation[2] == 1);
 
-    int permutation3[3] = {1, 0, 2};
+    std::vector<int> permutation3 = {1, 0, 2};
     final_permutation = dalotia::final_c_permutation_from_permutation_and_order(
         permutation3, dalotia_Ordering::dalotia_F_ordering, 3);
     assert(final_permutation.size() == 3);
@@ -109,7 +109,7 @@ void test_permuted_load() {
     }
     {
         // then with permutation
-        auto permutation = dalotia::vector<int>{1, 0, 2};
+        auto permutation = std::vector<int>{1, 0, 2};
 
         auto [extents, tensor_cpp] = dalotia::load_tensor_dense<double>(
             filename, tensor_name, weightFormat, ordering, permutation,
@@ -135,7 +135,7 @@ void test_load_other_float_format() {
     {
         constexpr dalotia_WeightFormat weightFormat =
             dalotia_WeightFormat::dalotia_float_32;
-        auto permutation = dalotia::vector<int>{1, 0, 2};
+        auto permutation = std::vector<int>{1, 0, 2};
         // test loading to float
         auto [extents, tensor_cpp] = dalotia::load_tensor_dense<float>(
             filename, tensor_name, weightFormat, ordering, permutation,
@@ -148,7 +148,7 @@ void test_load_other_float_format() {
     {
         constexpr dalotia_WeightFormat weightFormat =
             dalotia_WeightFormat::dalotia_bfloat_16;
-        auto permutation = dalotia::vector<int>{1, 0, 2};
+        auto permutation = std::vector<int>{1, 0, 2};
         // TODO needs other input or multicasting
         // auto [extents, tensor_cpp] = dalotia::load_tensor_dense(
         //     filename, tensor_name, weightFormat, ordering,
