@@ -11,7 +11,6 @@ option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)
 if (DALOTIA_WITH_FORTRAN)
     enable_language(Fortran)
     set( CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    # install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
     # cf. https://enccs.github.io/cmake-workshop/cxx-fortran/
     include(FortranCInterface)
@@ -26,6 +25,44 @@ set(CMAKE_CXX_STANDARD 17)
 # (build with --config Release or --config Debug etc.)
 message(STATUS "CMAKE BUILD TYPE: ${CMAKE_BUILD_TYPE}")
 
+
+# copy example / test files to build directory
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
+
+# safetensors-cpp
+if (DALOTIA_WITH_SAFETENSORS_CPP)
+  if (NOT DEFINED safetensors-cpp_DIR OR safetensors-cpp_DIR MATCHES "fetch")
+    include(FetchContent)
+    FetchContent_Declare(
+      safetensors-cpp
+      GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
+      GIT_TAG 82571c11c2dc47a6663fc9ec0251241baf339c16
+      FIND_PACKAGE_ARGS # allow finding system installations?
+    )
+    set(SAFETENSORS_CPP_CXX_EXCEPTIONS true) #TODO maybe depend on language?
+    set(SAFETENSORS_CPP_BUILD_EXAMPLES false)
+    set(SAFETENSORS_CPP_BUILD_C_API false)
+    FetchContent_MakeAvailable(safetensors-cpp)
+    FetchContent_GetProperties(safetensors-cpp SOURCE_DIR SAFETENSORS_CPP_INCLUDE_DIR BINARY_DIR SAFETENSORS_CPP_LIBRARY)
+    # add dependecy from safetensors_cpp library to its sources 
+    # so that everything that links to safetensors_cpp will also get the headers
+    target_include_directories(safetensors_cpp PUBLIC  
+        $<BUILD_INTERFACE:${SAFETENSORS_CPP_INCLUDE_DIR}>
+      )
+    # TODO this is not good, every package should install its own targets
+    # cf. https://discourse.cmake.org/t/propagation-of-fetchcontent-targets-when-installing/2559/2
+    install(TARGETS safetensors_cpp EXPORT dalotia
+      LIBRARY DESTINATION lib
+      ARCHIVE DESTINATION lib
+      RUNTIME DESTINATION bin
+      INCLUDES DESTINATION include
+    )
+  else()
+    # to pass safetensors-cpp_DIR on the command line:
+    find_package(safetensors-cpp REQUIRED CMAKE_FIND_ROOT_PATH_BOTH)
+  endif()
+endif (DALOTIA_WITH_SAFETENSORS_CPP)
+
 add_subdirectory(src) # target dalotia_cpp is generated here
 if (DALOTIA_WITH_OPENMP)
   find_package(OpenMP)
@@ -35,36 +72,6 @@ if (DALOTIA_WITH_OPENMP)
     message(WARNING "OpenMP not found")
   endif()
 endif(DALOTIA_WITH_OPENMP)
-
-# copy example / test files to build directory
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
-
-# safetensors-cpp
-if (DALOTIA_WITH_SAFETENSORS_CPP)
-  include(FetchContent)
-  FetchContent_Declare(
-    safetensors-cpp
-    GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
-    GIT_TAG 82571c11c2dc47a6663fc9ec0251241baf339c16
-    FIND_PACKAGE_ARGS # allow finding system installations
-  )
-  set(SAFETENSORS_CPP_CXX_EXCEPTIONS true) #TODO maybe depend on language?
-  set(SAFETENSORS_CPP_BUILD_EXAMPLES false)
-  set(SAFETENSORS_CPP_BUILD_C_API false)
-  FetchContent_MakeAvailable(safetensors-cpp)
-  FetchContent_GetProperties(safetensors-cpp SOURCE_DIR SAFETENSORS_CPP_INCLUDE_DIR BINARY_DIR SAFETENSORS_CPP_LIBRARY)
-  # add dependecy from safetensors_cpp library to its sources 
-  # so that everything that links to safetensors_cpp will also get the headers
-  target_include_directories(safetensors_cpp PUBLIC  
-      $<BUILD_INTERFACE:${SAFETENSORS_CPP_INCLUDE_DIR}>
-    )
-  install(TARGETS safetensors_cpp EXPORT dalotia
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-  )
-endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
 if (DALOTIA_CPP_BUILD_EXAMPLES)
   add_executable(dalotia-example example.cpp)
@@ -80,10 +87,17 @@ endif (DALOTIA_BUILD_TESTS)
 # install version info etc.
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-  "dalotia-config-version.cmake"
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/dalotia-config-version.cmake
   VERSION 0.0.1
   COMPATIBILITY SameMajorVersion
 )
-install(FILES "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>/dalotia-config-version.cmake" # "dalotia-config.cmake"
+install(FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/"dalotia-config-version.cmake" # "dalotia-config.cmake"
+  DESTINATION lib/cmake/dalotia
+)
+
+# export full library interface
+install(EXPORT dalotia
+  FILE dalotia.cmake
+  NAMESPACE dalotia::
   DESTINATION lib/cmake/dalotia
 )
