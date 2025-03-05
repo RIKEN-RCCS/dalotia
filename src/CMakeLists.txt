@@ -42,10 +42,3 @@ install(TARGETS dalotia_fortran EXPORT dalotia
   LIBRARY DESTINATION lib
   INCLUDES DESTINATION include
 )
-
-# export full library interface
-install(EXPORT dalotia
-  FILE dalotia.cmake
-  NAMESPACE dalotia::
-  DESTINATION lib/cmake/dalotia
-)
