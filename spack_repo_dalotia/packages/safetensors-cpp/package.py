@@ -11,8 +11,7 @@ class SafetensorsCpp(CMakePackage):
     """Header-only safetensors loader and saver in C++ """
 
     homepage = "https://github.com/syoyo/safetensors-cpp"
-    git = "https://github.com/freifrauvonbleifrei/safetensors-cpp" #TODO: change to upstream
-
+    git = "https://github.com/syoyo/safetensors-cpp"
     # FIXME: Add a list of GitHub accounts to
     # notify when the package is updated.
     # maintainers("syoyo", "freifrauvonbleifrei")
@@ -20,7 +19,7 @@ class SafetensorsCpp(CMakePackage):
 
     license("MIT", checked_by="freifrauvonbleifrei")
 
-    version("main", branch="add_cmake_install") #TODO
+    version("main", branch="main") #TODO
 
     variant("c", default=True, description="build C API")
     variant("examples", default=True, description="build examples")
