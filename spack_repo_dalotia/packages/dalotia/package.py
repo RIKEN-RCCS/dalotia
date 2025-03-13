@@ -9,12 +9,9 @@ from spack.package import *
 class Dalotia(CMakePackage):
     """Data loader for tensors in AI library """
 
-    # FIXME: Add a proper url for your package's homepage here.
     homepage = "https://github.com/RIKEN-RCCS/dalotia"
     git = "https://github.com/RIKEN-RCCS/dalotia"
 
-    # FIXME: Add a list of GitHub accounts to
-    # notify when the package is updated.
     maintainers("freifrauvonbleifrei", "domke")
 
     license("Apache-2.0", checked_by="freifrauvonbleifrei")
