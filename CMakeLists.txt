@@ -87,11 +87,11 @@ endif (DALOTIA_BUILD_TESTS)
 # install version info etc.
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/dalotia-config-version.cmake
+  "dalotia-config-version.cmake"
   VERSION 0.0.1
   COMPATIBILITY SameMajorVersion
 )
-install(FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/"dalotia-config-version.cmake" # "dalotia-config.cmake"
+install(FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>/dalotia-config-version.cmake
   DESTINATION lib/cmake/dalotia
 )
 
