@@ -45,8 +45,8 @@ module dalotia_c_interface
         integer(C_int), intent(in), value:: dalotia_weight_format
     end function dalotia_sizeof_weight_format
 
-    pure logical function dalotia_is_sparse_c(dalotia_file_pointer, tensor_name) bind(C,name="dalotia_is_sparse")
-        use, intrinsic::ISO_C_BINDING, only: C_ptr, C_char
+    pure logical(C_bool) function dalotia_is_sparse_c(dalotia_file_pointer, tensor_name) bind(C,name="dalotia_is_sparse")
+        use, intrinsic::ISO_C_BINDING, only: C_ptr, C_char, C_bool
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char), dimension(*), intent(in) :: tensor_name
@@ -167,7 +167,7 @@ module dalotia_c_interface
         dalotia_open_file = dalotia_open_file_c(trim(file_name) // NUL)
     end function dalotia_open_file
 
-    pure logical function dalotia_is_sparse(dalotia_file_pointer, tensor_name)
+    pure logical(C_bool) function dalotia_is_sparse(dalotia_file_pointer, tensor_name)
         ! delegate to C function with trimmed name
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
@@ -366,6 +366,7 @@ module dalotia_c_interface
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
+        ! class(*), dimension(:,:), allocatable, intent(out) :: tensor
         real(C_float), dimension(:,:), allocatable, intent(out) :: tensor
         integer(C_int), optional, intent(in):: permutation(2)
         real(kind=kind(tensor)), dimension(:), allocatable:: tensor_1d
@@ -374,6 +375,7 @@ module dalotia_c_interface
         call dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, 2, tensor_extents, permutation)
         call dalotia_load_tensor_dense(dalotia_file_pointer, tensor_name, tensor_1d, permutation)
         tensor = reshape(tensor_1d, tensor_extents)
+        ! call C_F_POINTER (C_LOC(tensor_1d), tensor, tensor_extents)
     end subroutine dalotia_load_rank_2_float_tensor_dense
 
     subroutine dalotia_load_rank_2_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
