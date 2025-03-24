@@ -30,8 +30,8 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(dalotia_cpp PRIVATE -Wall -Wextra)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(dalotia_cpp PRIVATE -Wall -Wextra)
-else()
-    message( FATAL_ERROR "Unknown compiler, please add matching compiler flags here." )
+else
+    target_compile_options(dalotia_cpp PRIVATE -Wall -Wextra)
 endif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 install(TARGETS dalotia_cpp EXPORT dalotia
