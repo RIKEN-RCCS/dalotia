@@ -309,8 +309,7 @@ module dalotia_c_interface
         
         ! transfer into the real tensor
         ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
-        allocate(tensor(num_tensor_elements))
-        tensor = transfer(tensor_bytes, tensor, num_tensor_elements)
+        tensor = transfer(tensor_bytes, tensor, num_tensor_elements) ! if this throws a segfault, ulimit may not be high enough
     end subroutine dalotia_load_rank_1_float_tensor_dense
 
     subroutine dalotia_load_rank_1_double_tensor_dense(dalotia_file_pointer, tensor_name, tensor, permutation)
@@ -327,7 +326,6 @@ module dalotia_c_interface
 
         ! transfer into the real tensor
         ! cf. https://community.intel.com/t5/Intel-Fortran-Compiler/reinterpret-cast-for-arrays/td-p/855632
-        allocate(tensor(num_tensor_elements))
         tensor = transfer(tensor_bytes, tensor, num_tensor_elements)
     end subroutine dalotia_load_rank_1_double_tensor_dense
 
