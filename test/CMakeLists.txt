@@ -17,7 +17,7 @@ if(DALOTIA_WITH_SAFETENSORS_CPP)
     add_test( mnist_load test_mnist )
 
     if (DALOTIA_WITH_FORTRAN)
-        add_executable( test_mnist_fortran test_mnist.f03 )
+        add_executable( test_mnist_fortran test_mnist.f90 )
         set_target_properties(test_mnist_fortran PROPERTIES LINKER_LANGUAGE Fortran)
         target_include_directories(test_mnist_fortran PUBLIC $<TARGET_PROPERTY:dalotia_fortran,Fortran_MODULE_DIRECTORY>)
         target_link_libraries( test_mnist_fortran dalotia_fortran )

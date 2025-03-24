@@ -4,7 +4,7 @@ target_sources(dalotia_cpp PRIVATE dalotia_assignment.cpp dalotia_formats.cpp da
 add_library(dalotia INTERFACE)
 
 if (DALOTIA_WITH_FORTRAN)
-    add_library(dalotia_fortran dalotia.f03)
+    add_library(dalotia_fortran dalotia.f90)
     set_target_properties(dalotia_fortran PROPERTIES LINKER_LANGUAGE Fortran)
     target_link_libraries(dalotia_fortran INTERFACE dalotia_cpp)
     # target_link_libraries(dalotia INTERFACE dalotia_fortran)
