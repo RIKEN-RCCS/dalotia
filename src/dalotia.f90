@@ -172,7 +172,7 @@ module dalotia_c_interface
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char,len=*), intent(in) :: tensor_name
-        dalotia_is_sparse = dalotia_is_sparse_c(dalotia_file_pointer, trim(tensor_name))
+        dalotia_is_sparse = dalotia_is_sparse_c(dalotia_file_pointer, trim(tensor_name) // NUL)
     end function dalotia_is_sparse
 
     integer function dalotia_get_tensor_name(dalotia_file_pointer, tensor_index_fortran, tensor_name)
@@ -204,7 +204,7 @@ module dalotia_c_interface
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char,len=*), intent(in) :: tensor_name
-        dalotia_get_num_dimensions = dalotia_get_num_dimensions_c(dalotia_file_pointer, trim(tensor_name))
+        dalotia_get_num_dimensions = dalotia_get_num_dimensions_c(dalotia_file_pointer, trim(tensor_name) // NUL)
     end function dalotia_get_num_dimensions
 
     pure integer function dalotia_get_num_tensor_elements(dalotia_file_pointer, tensor_name)
@@ -212,7 +212,7 @@ module dalotia_c_interface
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char,len=*), intent(in):: tensor_name
-        dalotia_get_num_tensor_elements = dalotia_get_num_tensor_elements_c(dalotia_file_pointer, trim(tensor_name))
+        dalotia_get_num_tensor_elements = dalotia_get_num_tensor_elements_c(dalotia_file_pointer, trim(tensor_name) // NUL)
     end function dalotia_get_num_tensor_elements
 
     subroutine dalotia_get_tensor_extents_fixed(dalotia_file_pointer, tensor_name, &
