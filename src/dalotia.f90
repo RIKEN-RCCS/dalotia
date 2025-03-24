@@ -272,11 +272,11 @@ module dalotia_c_interface
         allocate( tensor_bytes(num_tensor_elements * dalotia_sizeof_weight_format(weight_format)))
         if (present(permutation)) then
             ordering = dalotia_F_ordering
-            call dalotia_load_tensor_dense_with_permutation_c(dalotia_file_pointer, trim(tensor_name), tensor_bytes, &
-                weight_format, ordering, permutation)
+            call dalotia_load_tensor_dense_with_permutation_c(dalotia_file_pointer, trim(tensor_name) // NUL, &
+                tensor_bytes, weight_format, ordering, permutation)
         else
             ordering = dalotia_C_ordering
-            call dalotia_load_tensor_dense_c(dalotia_file_pointer, trim(tensor_name), tensor_bytes, &
+            call dalotia_load_tensor_dense_c(dalotia_file_pointer, trim(tensor_name) // NUL, tensor_bytes, &
                  weight_format, ordering)
         end if
     end function dalotia_load_rank_1_byte_tensor_dense
