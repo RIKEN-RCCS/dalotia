@@ -7,12 +7,23 @@ jobs:
     strategy:
       matrix:
         build_type: [Debug, Release]
-        # compiler: [gcc, clang]
+        toolchain:
+          - {compiler: gcc, version: 13}
+          - {compiler: intel, version: '2025.0'}
+          #todo flang...
     name: Test Dalotia
     runs-on: ubuntu-latest
     steps:
     - name: install valgrind
       run: sudo apt update && sudo apt-get install valgrind
+
+    - name: set up Fortran compiler
+      uses: fortran-lang/setup-fortran@v1
+      id: setup-fortran
+      with:
+        compiler: ${{ matrix.toolchain.compiler }}
+        version: ${{ matrix.toolchain.version }}
+        # -> environment vars FC, CC, and CXX are set
     - name: Checkout
       uses: actions/checkout@v4.2.0
 
@@ -27,6 +38,5 @@ jobs:
     - name: Test Project
       uses: threeal/ctest-action@v1.1.0
       with:
-        # build-config: ${{ matrix.build_type }}
         test-dir: build-${{ matrix.build_type }}
         args: --output-on-failure -T memcheck
