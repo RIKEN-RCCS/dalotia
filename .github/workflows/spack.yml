@@ -1,0 +1,26 @@
+name: Spack Install
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Spack
+      uses: spack/setup-spack@v2
+      with:
+        ref: releases/v0.23.1
+        # buildcache: true  # Configure oci://ghcr.io/spack/github-actions-buildcache
+        color: true
+        path: spack
+    - name: Add dalotia repo
+      shell: spack-bash {0}
+      run: |
+        spack repo add $(pwd)/spack_repo_dalotia
+        spack repo list
+    - name: info and install dalotia
+      shell: spack-bash {0}
+      run: |
+        spack spec dalotia
+        spack info dalotia
+        spack install dalotia
