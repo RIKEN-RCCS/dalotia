@@ -16,7 +16,8 @@ jobs:
     - name: Add dalotia repo
       shell: spack-bash {0}
       run: |
-        spack repo add $(pwd)/../spack_repo_dalotia
+        ls -l
+        spack repo add $(pwd)/spack_repo_dalotia
         spack repo list
     - name: info and install dalotia
       shell: spack-bash {0}
