@@ -9,7 +9,7 @@ jobs:
     - name: Set up Spack
       uses: spack/setup-spack@v2
       with:
-        ref: releases/v0.23.1
+        ref: releases/v0.23
         # buildcache: true  # Configure oci://ghcr.io/spack/github-actions-buildcache
         color: true
         path: spack
