@@ -265,7 +265,7 @@ module dalotia_c_interface
         integer(C_int), intent(in) :: weight_format
         character(C_char), dimension(:), allocatable, target, intent(out):: tensor_bytes
         integer(C_int), dimension(:), optional, intent(in):: permutation
-        integer(C_int) :: ordering, i
+        integer(C_int) :: ordering
 
         num_tensor_elements = dalotia_get_num_tensor_elements(dalotia_file_pointer, tensor_name)
 
