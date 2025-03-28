@@ -61,12 +61,14 @@ SafetensorsFile::SafetensorsFile(const std::string &filename) : TensorFile(filen
         std::cerr << "  ERR: " << err << "\n";
         throw std::runtime_error("Could not open file " + filename);
     }
-    // Check if data_offsets are valid //TODO maybe only in debug mode
+#ifndef NDEBUG
+    // Check if data_offsets are valid
     if (!safetensors::validate_data_offsets(st_, err)) {
         std::cerr << "Invalid data_offsets\n";
         std::cerr << err << "\n";
         throw std::runtime_error("Invalid safetensors file " + filename);
     }
+#endif // NDEBUG
 }
 
 SafetensorsFile::~SafetensorsFile() {
