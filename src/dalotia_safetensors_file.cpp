@@ -76,7 +76,7 @@ SafetensorsFile::~SafetensorsFile() {
 }
 
 bool SafetensorsFile::is_sparse(const std::string &/*tensor_name*/) const {
-    return false;  // TODO figure out how sparsity works / could work
+    return false;
 }
 
 size_t SafetensorsFile::get_num_dimensions(const std::string &tensor_name) const {

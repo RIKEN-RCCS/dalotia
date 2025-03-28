@@ -36,8 +36,6 @@ load_tensor_dense(
     return dalotia_file->load_tensor_dense<value_type>(tensor_name, std::forward<Ts>(params)...);
 }
 
-// TODO same for sparse
-
 // TODO allow md-range sub-tensor requests
 
 }  // namespace dalotia
