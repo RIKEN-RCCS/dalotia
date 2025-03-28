@@ -8,19 +8,19 @@
 
 namespace dalotia {
 
-const std::map<safetensors::dtype, dalotia_WeightFormat> safetensors_type_map{
-    {safetensors::dtype::kFLOAT64, dalotia_WeightFormat::dalotia_float_64},
-    {safetensors::dtype::kFLOAT32, dalotia_WeightFormat::dalotia_float_32},
-    {safetensors::dtype::kFLOAT16, dalotia_WeightFormat::dalotia_float_16},
+const std::map<safetensors::dtype,  dalotia_WeightFormat> safetensors_type_map{
+    {safetensors::dtype::kFLOAT64,  dalotia_WeightFormat::dalotia_float_64},
+    {safetensors::dtype::kFLOAT32,  dalotia_WeightFormat::dalotia_float_32},
+    {safetensors::dtype::kFLOAT16,  dalotia_WeightFormat::dalotia_float_16},
     {safetensors::dtype::kBFLOAT16, dalotia_WeightFormat::dalotia_bfloat_16},
     // {kBOOL, dalotia_bool},
-    // {kUINT8, dalotia_uint_8},
-    // {kINT8, dalotia_int_8},
-    // {kUINT16, dalotia_uint_16},
-    // {kINT32, dalotia_int_32},
-    // {kUINT32, dalotia_uint_32},
-    // {kINT64, dalotia_int_64},
-    // {kUINT64, dalotia_uint_64},
+    {safetensors::dtype::kUINT8,    dalotia_WeightFormat::dalotia_uint_8},
+    {safetensors::dtype::kINT8,     dalotia_WeightFormat::dalotia_int_8},
+    {safetensors::dtype::kUINT16,   dalotia_WeightFormat::dalotia_uint_16},
+    {safetensors::dtype::kINT32,    dalotia_WeightFormat::dalotia_int_32},
+    {safetensors::dtype::kUINT32,   dalotia_WeightFormat::dalotia_uint_32},
+    // {safetensors::dtype::kINT64,    dalotia_WeightFormat::dalotia_int_64},
+    // {safetensors::dtype::kUINT64,   dalotia_WeightFormat::dalotia_uint_64},
     // {dalotia_float_8},
     // {dalotia_int_2},
 };
