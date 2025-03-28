@@ -20,6 +20,7 @@ jobs:
       run: |
         spack repo add $(pwd)/spack_repo_dalotia
         spack repo list
+        spack external find
     - name: info and install dalotia
       shell: spack-bash {0}
       run: |
