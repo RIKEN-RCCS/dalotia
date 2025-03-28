@@ -25,5 +25,5 @@ jobs:
       run: |
         spack spec dalotia
         spack info dalotia
-        spack install dalotia
+        spack dev-build dalotia@main
         
