@@ -94,10 +94,47 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
                weight_output_format == dalotia_float_32) {
         // TODO abstract all the combinations, or copy paste this here
         // for all type combinations...
+        // maybe std::type_index / typeid(...) + visitor could work?
         return cpp_type_assignment<double, float>(store_item_bytes);
+    } else if (weight_input_format == dalotia_float_64 &&
+               weight_output_format == dalotia_float_16) {
+        return cpp_type_assignment<double, short>(store_item_bytes);
+    } else if (weight_input_format == dalotia_float_32 &&
+               weight_output_format == dalotia_float_16) {
+        return cpp_type_assignment<float, short>(store_item_bytes);
     } else if (weight_input_format == dalotia_float_32 &&
                weight_output_format == dalotia_float_64) {
         return cpp_type_assignment<float, double>(store_item_bytes);
+    } else if (weight_input_format == dalotia_float_16 &&
+               weight_output_format == dalotia_float_64) {
+        return cpp_type_assignment<short, double>(store_item_bytes);
+    } else if (weight_input_format == dalotia_float_16 &&
+               weight_output_format == dalotia_float_32) {
+        return cpp_type_assignment<short, float>(store_item_bytes);
+    } else if (weight_input_format == dalotia_uint_32 &&
+               weight_output_format == dalotia_uint_16) {
+        return cpp_type_assignment<uint32_t, uint16_t>(store_item_bytes);
+    } else if (weight_input_format == dalotia_uint_32 &&
+               weight_output_format == dalotia_uint_16) {
+        return cpp_type_assignment<uint32_t, uint16_t>(store_item_bytes);
+    } else if (weight_input_format == dalotia_uint_32 &&
+               weight_output_format == dalotia_uint_8) {
+        return cpp_type_assignment<uint32_t, uint8_t>(store_item_bytes);
+    } else if (weight_input_format == dalotia_uint_16 &&
+               weight_output_format == dalotia_uint_8) {
+        return cpp_type_assignment<uint16_t, uint8_t>(store_item_bytes);
+    } else if (weight_input_format == dalotia_int_32 &&
+               weight_output_format == dalotia_int_16) {
+        return cpp_type_assignment<int32_t, int16_t>(store_item_bytes);
+    } else if (weight_input_format == dalotia_int_32 &&
+               weight_output_format == dalotia_int_16) {
+        return cpp_type_assignment<int32_t, int16_t>(store_item_bytes);
+    } else if (weight_input_format == dalotia_int_32 &&
+               weight_output_format == dalotia_int_8) {
+        return cpp_type_assignment<int32_t, int8_t>(store_item_bytes);
+    } else if (weight_input_format == dalotia_int_16 &&
+               weight_output_format == dalotia_int_8) {
+        return cpp_type_assignment<int16_t, int8_t>(store_item_bytes);
     } else {  // TODO chain builtin conversion and bfloat conversion?
         auto b_in = bfloat_compatible_float.find(weight_input_format);
         auto b_out = bfloat_compatible_float.find(weight_output_format);
