@@ -230,7 +230,7 @@ void assign_permuted<1>(dalotia_byte *__restrict__ dest,
                         const size_t *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
-                        const int *permutation) {
+                        [[maybe_unused]] const int *permutation) {
     assert(permutation[0] == 0);
     assign_linearly(dest, weight_output_format, input_shape[0], tensor_start,
                     weight_input_format);
@@ -245,7 +245,7 @@ void assign_permuted<2>(dalotia_byte *__restrict__ dest,
                         const int *permutation) {
     constexpr int num_dimensions = 2;
     auto desired_shape = std::vector<size_t>(num_dimensions);
-    size_t total_size = 1;
+    [[maybe_unused]] size_t total_size = 1;
     for (size_t i = 0; i < num_dimensions; ++i) {
         desired_shape[i] = input_shape[permutation[i]];
         total_size *= desired_shape[i];
