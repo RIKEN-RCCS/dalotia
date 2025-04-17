@@ -1,5 +1,5 @@
 add_library(dalotia_cpp dalotia.cpp) # Daniel Pfeifer says: no variables
-target_sources(dalotia_cpp PRIVATE dalotia_assignment.cpp dalotia_formats.cpp dalotia_safetensors_file.cpp )
+target_sources(dalotia_cpp PRIVATE dalotia_assignment.cpp dalotia_formats.cpp )
 # have one dalotia library target that can be used in C++ and Fortran
 add_library(dalotia INTERFACE)
 
@@ -18,6 +18,7 @@ endif (DALOTIA_WITH_CPP_PMR)
 if (DALOTIA_WITH_SAFETENSORS_CPP)
     target_link_libraries(dalotia_cpp PUBLIC safetensors_cpp)
     target_compile_options(dalotia_cpp PUBLIC "-DDALOTIA_WITH_SAFETENSORS_CPP")
+    target_sources(dalotia_cpp PRIVATE dalotia_safetensors_file.cpp )
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
 # not sure if this is elegant, but helps to make this compatible to all languages
@@ -38,7 +39,10 @@ install(TARGETS dalotia_cpp EXPORT dalotia
   LIBRARY DESTINATION lib
   INCLUDES DESTINATION include
 )
-install(TARGETS dalotia_fortran EXPORT dalotia
-  LIBRARY DESTINATION lib
-  INCLUDES DESTINATION include
-)
+
+if (DALOTIA_WITH_FORTRAN)
+    install(TARGETS dalotia_fortran EXPORT dalotia
+    LIBRARY DESTINATION lib
+    INCLUDES DESTINATION include
+    )
+endif (DALOTIA_WITH_FORTRAN)

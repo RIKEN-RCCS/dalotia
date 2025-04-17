@@ -19,7 +19,6 @@ if (DALOTIA_WITH_FORTRAN)
 endif (DALOTIA_WITH_FORTRAN)
 
 set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_MAKE_PROGRAM "make")
 
 # if this is empty, will be set at config time
 # (build with --config Release or --config Debug etc.)
@@ -75,6 +74,9 @@ endif(DALOTIA_WITH_OPENMP)
 if (DALOTIA_CPP_BUILD_EXAMPLES)
   add_executable(dalotia-example example.cpp)
   target_link_libraries(dalotia-example dalotia_cpp)
+  if (DALOTIA_WITH_SAFETENSORS_CPP)  
+    target_compile_options(dalotia-example PUBLIC "-DDALOTIA_WITH_SAFETENSORS_CPP")
+  endif (DALOTIA_WITH_SAFETENSORS_CPP)
 endif (DALOTIA_CPP_BUILD_EXAMPLES)
 
 if (DALOTIA_BUILD_TESTS)
