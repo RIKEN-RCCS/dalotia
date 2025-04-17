@@ -131,7 +131,7 @@ Additional CMake options are
 - `DALOTIA_CPP_BUILD_EXAMPLES`, default ON
 - `DALOTIA_BUILD_TESTS`, default ON
 - `DALOTIA_WITH_CPP_PMR`, default ON
-- `DALOTIA_WITH_OPENMP`, default ON
+- `DALOTIA_WITH_OPENMP`, default OFF
 - `DALOTIA_WITH_SAFETENSORS_CPP`, default ON
 - `DALOTIA_WITH_FORTRAN`, default ON
 

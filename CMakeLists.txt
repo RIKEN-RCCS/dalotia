@@ -5,7 +5,7 @@ project(DALOTIA CXX C)
 option(DALOTIA_CPP_BUILD_EXAMPLES "Build examples" ON)
 option(DALOTIA_BUILD_TESTS "Build tests" ON)
 option(DALOTIA_WITH_CPP_PMR "use polymorphic memory resources (pmr) C++17 feature for dalotia" ON)
-option(DALOTIA_WITH_OPENMP "Build with OpenMP support" ON)
+option(DALOTIA_WITH_OPENMP "Build with OpenMP support" OFF)
 option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
 option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)
 if (DALOTIA_WITH_FORTRAN)
@@ -24,7 +24,6 @@ set(CMAKE_CXX_STANDARD 17)
 # if this is empty, will be set at config time
 # (build with --config Release or --config Debug etc.)
 message(STATUS "CMAKE BUILD TYPE: ${CMAKE_BUILD_TYPE}")
-
 
 # copy example / test files to build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
