@@ -1,6 +1,6 @@
 #include <array>
 #include <cassert>
-#include <iostream>  //TODO remove
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -160,9 +160,6 @@ int main(int argc, char *argv[]) {
         std::cout << tensor_cpp2[i] << " ";
     }
     std::cout << std::endl;
-
-    //... // do something with the tensor
-    // everything alex calls a runtime = possibly jit compiled
 
     return 0;
 }
