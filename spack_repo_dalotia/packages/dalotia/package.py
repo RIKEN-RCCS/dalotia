@@ -18,6 +18,7 @@ class Dalotia(CMakePackage):
 
     # FIXME: Add proper versions here.
     version("main", branch="main")
+    version("1.0.0", tag="v1.0.0")
 
     variant("tests", default=True, description="build dalotia tests")
     variant("cpp_pmr", default=True, description="use polymorphic memory resources (pmr) C++17 feature for dalotia")
