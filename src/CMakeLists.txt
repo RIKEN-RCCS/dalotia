@@ -21,7 +21,7 @@ if (DALOTIA_WITH_CPP_PMR)
 endif (DALOTIA_WITH_CPP_PMR)
 
 if (DALOTIA_WITH_SAFETENSORS_CPP)
-    target_link_libraries(dalotia_cpp PUBLIC safetensors_cpp)
+    target_link_libraries(dalotia_cpp PUBLIC safetensors-cpp::safetensors_cpp)
     target_compile_options(dalotia_cpp PUBLIC "-DDALOTIA_WITH_SAFETENSORS_CPP")
     target_sources(dalotia_cpp PRIVATE dalotia_safetensors_file.cpp )
 endif (DALOTIA_WITH_SAFETENSORS_CPP)

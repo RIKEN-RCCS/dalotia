@@ -35,7 +35,7 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
       safetensors-cpp
       GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
       GIT_TAG 82571c11c2dc47a6663fc9ec0251241baf339c16
-      FIND_PACKAGE_ARGS # allow finding system installations?
+      OVERRIDE_FIND_PACKAGE
     )
     set(SAFETENSORS_CPP_CXX_EXCEPTIONS true) #TODO maybe depend on language?
     set(SAFETENSORS_CPP_BUILD_EXAMPLES false)

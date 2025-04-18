@@ -30,7 +30,7 @@ class Dalotia(CMakePackage):
     depends_on("c", type="build")
     depends_on("fortran", type="build", when="+fortran")
     depends_on("cmake@3.24:", type="build")
-    depends_on("safetensors-cpp", when="+safetensorscpp")
+    depends_on("safetensors-cpp+cxxexceptions", when="+safetensorscpp")
 
 
     def cmake_args(self):
