@@ -2,9 +2,9 @@ add_library(dalotia_cpp dalotia.cpp) # Daniel Pfeifer says: no variables
 target_sources(dalotia_cpp PRIVATE dalotia_assignment.cpp dalotia_formats.cpp )
 set_target_properties(dalotia_cpp PROPERTIES PUBLIC_HEADER
 	"dalotia.h;dalotia_formats.h;dalotia.hpp;dalotia_formats.hpp;dalotia_assignment.hpp;dalotia_tensor_file.hpp;dalotia_safetensors_file.hpp")
-
 # have one dalotia library target that can be used in C++ and Fortran
 add_library(dalotia INTERFACE)
+add_library(dalotia::dalotia_cpp ALIAS dalotia_cpp)
 
 if (DALOTIA_WITH_FORTRAN)
     add_library(dalotia_fortran dalotia.f90)
@@ -12,6 +12,7 @@ if (DALOTIA_WITH_FORTRAN)
     target_link_libraries(dalotia_fortran INTERFACE dalotia_cpp)
     # target_link_libraries(dalotia INTERFACE dalotia_fortran)
     set_target_properties(dalotia_fortran PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/../include/dalotia_c_interface.mod")
+    add_library(dalotia::dalotia_fortran ALIAS dalotia_fortran)
 endif (DALOTIA_WITH_FORTRAN)
 
 if (DALOTIA_WITH_CPP_PMR)
