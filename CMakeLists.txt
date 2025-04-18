@@ -98,7 +98,7 @@ install(FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>/dalotia-config-vers
 
 # export full library interface
 install(EXPORT dalotia
-  FILE dalotia.cmake
+  FILE dalotia-config.cmake
   NAMESPACE dalotia::
   DESTINATION lib/cmake/dalotia
 )
