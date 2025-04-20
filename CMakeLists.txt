@@ -34,7 +34,7 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
     FetchContent_Declare(
       safetensors-cpp
       GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
-      GIT_TAG 82571c11c2dc47a6663fc9ec0251241baf339c16
+      GIT_TAG a88953c981c6773760540592fa97f04619a8f825
       OVERRIDE_FIND_PACKAGE
     )
     set(SAFETENSORS_CPP_CXX_EXCEPTIONS true) #TODO maybe depend on language?
