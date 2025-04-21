@@ -45,3 +45,10 @@ class Dalotia(CMakePackage):
         if self.spec.satisfies("+safetensorscpp"):
             args.append(self.define("safetensors-cpp_DIR", self.spec["safetensors-cpp"].prefix.lib.cmake))
         return args
+
+    def setup_dependent_build_environment(self, env, dependent_spec):
+        cmake_prefix = self.prefix.lib.cmake.dalotia
+        env.set('dalotia_DIR', cmake_prefix)
+
+    def setup_run_environment(self, env):
+        return self.setup_dependent_build_environment(env, None)
