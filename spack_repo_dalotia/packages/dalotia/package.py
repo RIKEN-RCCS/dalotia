@@ -43,7 +43,7 @@ class Dalotia(CMakePackage):
             self.define_from_variant("DALOTIA_WITH_FORTRAN", "fortran"),
         ]
         if self.spec.satisfies("+safetensorscpp"):
-            args.append(self.define("safetensors-cpp_DIR", self.spec["safetensors-cpp"].prefix.lib.cmake))
+            args.append(self.define("safetensors-cpp_DIR", "find"))
         return args
 
     def setup_dependent_build_environment(self, env, dependent_spec):

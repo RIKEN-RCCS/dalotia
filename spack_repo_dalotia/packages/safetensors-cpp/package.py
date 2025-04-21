@@ -36,3 +36,8 @@ class SafetensorsCpp(CMakePackage):
             self.define_from_variant("SAFETENSORS_CPP_CXX_EXCEPTIONS", "cxxexceptions"),
         ]
         return args
+
+    def setup_dependent_build_environment(self, env, dependent_spec):
+        cmake_prefix = self.prefix.lib.cmake
+        env.set('safetensors-cpp_DIR', cmake_prefix)
+
