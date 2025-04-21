@@ -13,10 +13,20 @@ int8_t sizeof_weight_format(dalotia_WeightFormat format) {
             return sizeof_weight_format<dalotia_float_32>();
         case dalotia_float_16:
             return sizeof_weight_format<dalotia_float_16>();
-        case dalotia_float_8:
-            return sizeof_weight_format<dalotia_float_8>();
+        // case dalotia_float_8:
+        //     return sizeof_weight_format<dalotia_float_8>();
         case dalotia_bfloat_16:
             return sizeof_weight_format<dalotia_bfloat_16>();
+        case dalotia_uint_32:
+            return sizeof_weight_format<dalotia_uint_32>();
+        case dalotia_uint_16:
+            return sizeof_weight_format<dalotia_uint_16>();
+        case dalotia_uint_8:
+            return sizeof_weight_format<dalotia_uint_8>();
+        case dalotia_int_32:
+            return sizeof_weight_format<dalotia_int_32>();
+        case dalotia_int_16:
+            return sizeof_weight_format<dalotia_int_16>();
         case dalotia_int_8:
             return sizeof_weight_format<dalotia_int_8>();
         case dalotia_int_2:

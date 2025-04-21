@@ -1,6 +1,6 @@
 #include <array>
 #include <cassert>
-#include <iostream>  //TODO remove
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
     auto [extents_file_obj, tensor_cpp_file_obj] = file_cpp->load_tensor_dense(tensor_name, weightFormat,
                                                  ordering, vector_permutation);
     
+#ifdef DALOTIA_WITH_SAFETENSORS_CPP
     // if we create a derived file on the stack, we have less template magic available
     auto stack_file = dalotia::SafetensorsFile(filename);
     // for instance, this will call the non-template overload and fail:
@@ -130,7 +131,8 @@ int main(int argc, char *argv[]) {
 
     auto [extents_derived_float, tensor_cpp_derived_float] =
         file_cpp->load_tensor_dense<float>(tensor_name, ordering, vector_permutation);
-    
+#endif
+
 #ifdef DALOTIA_WITH_CPP_PMR
     // C++17 pmr -> small tensors can even live on the stack
     std::array<double, 300> storage_array;
@@ -160,9 +162,6 @@ int main(int argc, char *argv[]) {
         std::cout << tensor_cpp2[i] << " ";
     }
     std::cout << std::endl;
-
-    //... // do something with the tensor
-    // everything alex calls a runtime = possibly jit compiled
 
     return 0;
 }

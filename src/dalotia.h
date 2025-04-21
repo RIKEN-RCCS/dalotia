@@ -62,6 +62,4 @@ EXTERNC int dalotia_load_tensor_sparse(DalotiaTensorFile *file,
                                        dalotia_WeightFormat weightFormat,
                                        dalotia_Ordering ordering);
 
-// TODO ...also with permutation and named tensors...
-
 #undef EXTERNC

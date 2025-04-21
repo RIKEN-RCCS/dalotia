@@ -5,7 +5,7 @@ project(DALOTIA CXX C)
 option(DALOTIA_CPP_BUILD_EXAMPLES "Build examples" ON)
 option(DALOTIA_BUILD_TESTS "Build tests" ON)
 option(DALOTIA_WITH_CPP_PMR "use polymorphic memory resources (pmr) C++17 feature for dalotia" ON)
-option(DALOTIA_WITH_OPENMP "Build with OpenMP support" ON)
+option(DALOTIA_WITH_OPENMP "Build with OpenMP support" OFF)
 option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
 option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)
 if (DALOTIA_WITH_FORTRAN)
@@ -19,12 +19,10 @@ if (DALOTIA_WITH_FORTRAN)
 endif (DALOTIA_WITH_FORTRAN)
 
 set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_MAKE_PROGRAM "make")
 
 # if this is empty, will be set at config time
 # (build with --config Release or --config Debug etc.)
 message(STATUS "CMAKE BUILD TYPE: ${CMAKE_BUILD_TYPE}")
-
 
 # copy example / test files to build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
@@ -36,8 +34,8 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
     FetchContent_Declare(
       safetensors-cpp
       GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
-      GIT_TAG 82571c11c2dc47a6663fc9ec0251241baf339c16
-      FIND_PACKAGE_ARGS # allow finding system installations?
+      GIT_TAG a88953c981c6773760540592fa97f04619a8f825
+      OVERRIDE_FIND_PACKAGE
     )
     set(SAFETENSORS_CPP_CXX_EXCEPTIONS true) #TODO maybe depend on language?
     set(SAFETENSORS_CPP_BUILD_EXAMPLES false)
@@ -76,6 +74,9 @@ endif(DALOTIA_WITH_OPENMP)
 if (DALOTIA_CPP_BUILD_EXAMPLES)
   add_executable(dalotia-example example.cpp)
   target_link_libraries(dalotia-example dalotia_cpp)
+  if (DALOTIA_WITH_SAFETENSORS_CPP)  
+    target_compile_options(dalotia-example PUBLIC "-DDALOTIA_WITH_SAFETENSORS_CPP")
+  endif (DALOTIA_WITH_SAFETENSORS_CPP)
 endif (DALOTIA_CPP_BUILD_EXAMPLES)
 
 if (DALOTIA_BUILD_TESTS)
@@ -97,7 +98,7 @@ install(FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>/dalotia-config-vers
 
 # export full library interface
 install(EXPORT dalotia
-  FILE dalotia.cmake
+  FILE dalotia-config.cmake
   NAMESPACE dalotia::
   DESTINATION lib/cmake/dalotia
 )

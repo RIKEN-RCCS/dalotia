@@ -220,7 +220,7 @@ module dalotia_c_interface
         implicit none
         type(C_ptr), intent(in), value:: dalotia_file_pointer
         character(kind=C_char, len=*), intent(in):: tensor_name
-        integer(C_int), intent(in) :: tensor_rank !TODO deduce rank from tensor_extents
+        integer(C_int), intent(in) :: tensor_rank
         integer(C_int), intent(out):: tensor_extents(tensor_rank)
         integer(C_int), optional, intent(in):: permutation(tensor_rank)
         character(kind=C_char, len=:), allocatable :: tensor_name_c

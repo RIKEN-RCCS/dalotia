@@ -16,8 +16,15 @@ typedef enum {
     dalotia_float_64,
     dalotia_float_32,
     dalotia_float_16,
-    dalotia_float_8,
+    // dalotia_float_8, #TODO distinguish 4-3 and 5-2 etc.
     dalotia_bfloat_16,
+    // dalotia_uint_64,
+    dalotia_uint_32,
+    dalotia_uint_16,
+    dalotia_uint_8,
+    // dalotia_int_64,
+    dalotia_int_32,
+    dalotia_int_16,
     dalotia_int_8,
     dalotia_int_2,
 } dalotia_WeightFormat;

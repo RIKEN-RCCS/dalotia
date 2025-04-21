@@ -136,7 +136,7 @@ int main(int i, char** c) {
 
     test_get_tensor_names(filename);
     test_load(filename, "conv1");
-    test_load(filename, "conv2");  // TODO
+    test_load(filename, "conv2");
     test_load(filename, "fc1");
     fprintf(stdout, "test_load.c passed\n");
     return 0;
