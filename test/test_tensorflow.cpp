@@ -49,11 +49,20 @@ void test_names() {
 #ifdef DALOTIA_WITH_CPP_PMR
     {
         std::string tensor_name = "dense/kernel/Read/ReadVariableOp";
-        auto [extents, tensor_cpp] = dalotia::load_tensor_dense<double>(
-            filename, tensor_name, weightFormat, ordering);  // todo float
-        std::cout << "Tensor extents: " << dalotia::to_string(extents) << std::endl;
-        std::cout << "Loaded tensor: " << tensor_name << ", size: " << tensor_cpp.size()
-                  << ", contents: " << dalotia::to_string(tensor_cpp) << std::endl;
+        auto [extents, tensor_cpp_double] = dalotia::load_tensor_dense<double>(
+            filename, tensor_name, weightFormat, ordering);
+        assert(!extents.empty());
+        assert(!tensor_cpp_double.empty());
+        auto [extents_float, tensor_cpp_float] =
+            dalotia::load_tensor_dense<float>(filename, tensor_name, dalotia_WeightFormat::dalotia_float_32,
+                                              ordering);
+        for (size_t i = 0; i < extents.size(); ++i) {
+            assert(extents[i] == extents_float[i]);
+        }
+        for (size_t i = 0; i < tensor_cpp_double.size(); ++i) {
+            assert (tensor_cpp_float[i] ==
+                    static_cast<float>(tensor_cpp_double[i]));
+        }
     }
 #endif  // DALOTIA_WITH_CPP_PMR
 }
