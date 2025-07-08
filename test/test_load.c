@@ -1,10 +1,10 @@
 #include <assert.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "dalotia.h"
+#include "test_helper.h"
 
 void test_get_tensor_names(const char* filename) {
     DalotiaTensorFile* dalotia_file = dalotia_open_file(filename);
@@ -29,13 +29,6 @@ void test_get_tensor_names(const char* filename) {
         }
     }
     dalotia_close_file(dalotia_file);
-}
-
-void assert_close(volatile float a, volatile float b) {
-    if (fabsf(a - b) > 1e-4) {
-        fprintf(stderr, "assert_close: expected %f but got %f\n", b, a);
-        assert(false);
-    }
 }
 
 void test_load(const char* filename, const char* tensor_name) {
