@@ -11,32 +11,8 @@ namespace dalotia {
 
 TF_Output get_operation_from_name(const std::string &tensor_name,
                                   std::shared_ptr<TF_Graph> graph) {
-    size_t pos = 0;
-    TF_Operation *oper = nullptr;
-    int output_index = 0;
-    while ((oper = TF_GraphNextOperation(graph.get(), &pos)) != nullptr) {
-        int num_outputs = TF_OperationNumOutputs(oper);
-        const char *op_name = TF_OperationName(oper);
-
-        if (num_outputs > 1) {
-            if (tensor_name.find(op_name) == std::string::npos) {
-                continue;  // not a match
-            }
-            for (int i = 0; i < num_outputs; ++i) {
-                std::string compare_tensor_name =
-                    std::string(op_name) + "/" + std::to_string(i);
-                if (tensor_name == compare_tensor_name) {
-                    output_index = i;
-                    break;
-                }
-            }
-        } else if (num_outputs == 1) {
-            if (tensor_name == op_name) {
-                break;
-            }
-        }
-    }
-    return {oper, output_index};
+    TF_Operation* oper = TF_GraphOperationByName(graph.get(), tensor_name.c_str());
+    return {oper, 0};
 }
 
 // parts of this code are intensely based on cppflow, esp. tf_status_check and the
@@ -114,20 +90,8 @@ TensorflowSavedModel::TensorflowSavedModel(const std::string &filename)
         size_t pos = 0;
         TF_Operation *oper;
         while ((oper = TF_GraphNextOperation(graph_.get(), &pos)) != nullptr) {
-            int num_outputs = TF_OperationNumOutputs(oper);
             const char *op_name = TF_OperationName(oper);
-
-            if (num_outputs > 1) {
-                for (int i = 0; i < num_outputs; ++i) {
-                    std::string tensor_name =
-                        std::string(op_name) + "/" + std::to_string(i);
-                    tensor_names_.push_back(tensor_name);
-                }
-            } else if (num_outputs == 1) {
-                // If there is only one output, we can just use the operation
-                // name
-                tensor_names_.push_back(op_name);
-            }
+            tensor_names_.emplace_back(op_name);
         }
     }
 }
