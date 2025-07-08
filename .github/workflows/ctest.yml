@@ -31,7 +31,7 @@ jobs:
       uses: threeal/cmake-action@v1.3.0
       with:
         run-build: true
-        options: -DDALOTIA_WITH_TENSORFLOW=ON
+        options: DALOTIA_WITH_TENSORFLOW=ON
         build-args: --config ${{ matrix.build_type }}
         # cxx-compiler: ${{ matrix.compiler }}
         build-dir: build-${{ matrix.build_type }}
