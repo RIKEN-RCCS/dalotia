@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 
 #include "dalotia_assignment.hpp"
 #include "dalotia_formats.hpp"
@@ -176,13 +175,10 @@ void TensorflowSavedModel::load_tensor_dense(const std::string &tensor_name,
             ". Tensor names in the file: " + to_string(tensor_names_));
     }
     const size_t num_tensor_elements = this->get_num_tensor_elements(tensor_name);
-    std::cout << "dalotia: loading tensor " << tensor_name << " with "
-              << num_tensor_elements << std::endl;
 
     TF_Tensor *tf_tensor = nullptr;
     TF_SessionRun(this->session_.get(), nullptr, nullptr, nullptr, 0, &output, &tf_tensor,
                   1, nullptr, 0, nullptr, this->status_.get());
-    std::cout << "dalotia: loaded tensor " << tensor_name << std::endl;
     if (tf_tensor == nullptr) {
         throw std::runtime_error("Failed to load tensor: " + tensor_name);
     }
@@ -191,9 +187,6 @@ void TensorflowSavedModel::load_tensor_dense(const std::string &tensor_name,
     void *databuffer = TF_TensorData(tf_tensor);
     int num_dimensions = TF_NumDims(tf_tensor);
 
-    std::cout << "dalotia: loading tensor " << tensor_name << " with "
-              << TF_TensorElementCount(tf_tensor)
-              << " elements, num_dimensions: " << num_dimensions << std::endl;
     TF_DataType tf_type = TF_TensorType(tf_tensor);
     const dalotia_WeightFormat input_weight_format = tensorflow_type_map.at(tf_type);
 #ifndef NDEBUG
