@@ -11,7 +11,7 @@ namespace dalotia {
 
 TF_Output get_operation_from_name(const std::string &tensor_name,
                                   std::shared_ptr<TF_Graph> graph) {
-    TF_Operation* oper = TF_GraphOperationByName(graph.get(), tensor_name.c_str());
+    TF_Operation *oper = TF_GraphOperationByName(graph.get(), tensor_name.c_str());
     return {oper, 0};
 }
 
@@ -113,6 +113,11 @@ size_t TensorflowSavedModel::get_num_dimensions(const std::string &tensor_name) 
             "Tensor not found: " + tensor_name +
             ". Tensor names in the file: " + to_string(tensor_names_));
     }
+    if (tensor_name == "NoOp") {
+        // NoOp is a special operation in TensorFlow, it has no dimensions
+        // (weird vector error otherwise)
+        return 0;
+    }
     int num_dimensions = tf_get_num_dimensions(output, this->graph_, this->status_);
     if (num_dimensions < 0) {
         throw std::runtime_error("Failed to get number of dimensions for tensor: " +
@@ -157,5 +162,65 @@ TensorflowSavedModel::get_tensor_extents(const std::string &tensor_name,
         extents.assign(extents_read.begin(), extents_read.end());
     }
     return extents;
+}
+
+void TensorflowSavedModel::load_tensor_dense(const std::string &tensor_name,
+                                             dalotia_WeightFormat weightFormat,
+                                             dalotia_Ordering ordering,
+                                             dalotia_byte *__restrict__ tensor,
+                                             const std::vector<int> &permutation) {
+    TF_Output output = get_operation_from_name(tensor_name, this->graph_);
+    if (output.oper == nullptr) {
+        throw std::runtime_error(
+            "Tensor not found: " + tensor_name +
+            ". Tensor names in the file: " + to_string(tensor_names_));
+    }
+    const size_t num_tensor_elements = this->get_num_tensor_elements(tensor_name);
+    std::cout << "dalotia: loading tensor " << tensor_name << " with "
+              << num_tensor_elements << std::endl;
+
+    TF_Tensor *tf_tensor = nullptr;
+    TF_SessionRun(this->session_.get(), nullptr, nullptr, nullptr, 0, &output, &tf_tensor,
+                  1, nullptr, 0, nullptr, this->status_.get());
+    std::cout << "dalotia: loaded tensor " << tensor_name << std::endl;
+    if (tf_tensor == nullptr) {
+        throw std::runtime_error("Failed to load tensor: " + tensor_name);
+    }
+    tf_status_check(this->status_);
+
+    void *databuffer = TF_TensorData(tf_tensor);
+    int num_dimensions = TF_NumDims(tf_tensor);
+
+    std::cout << "dalotia: loading tensor " << tensor_name << " with "
+              << TF_TensorElementCount(tf_tensor)
+              << " elements, num_dimensions: " << num_dimensions << std::endl;
+    TF_DataType tf_type = TF_TensorType(tf_tensor);
+    const dalotia_WeightFormat input_weight_format = tensorflow_type_map.at(tf_type);
+#ifndef NDEBUG
+    assert(databuffer != nullptr);
+    assert(tf_tensor != nullptr);
+    assert(num_dimensions == static_cast<int>(this->get_num_dimensions(tensor_name)));
+    assert(num_dimensions >= 0);
+    assert(TF_TensorElementCount(tf_tensor) == static_cast<int64_t>(num_tensor_elements));
+    size_t num_bytes = TF_TensorByteSize(tf_tensor);
+    assert(num_bytes ==
+           static_cast<size_t>(dalotia::sizeof_weight_format(input_weight_format)) *
+               num_tensor_elements);
+#endif  // NDEBUG
+
+    auto *tensor_start = reinterpret_cast<const dalotia_byte *__restrict__>(databuffer);
+
+    auto final_permutation_in_c_order = final_c_permutation_from_permutation_and_order(
+        permutation, ordering, num_dimensions);
+    if (!final_permutation_in_c_order.empty()) {
+        std::vector<int> input_shape = this->get_tensor_extents(tensor_name);
+        dalotia::assign_permuted(num_dimensions, tensor, weightFormat, input_shape.data(),
+                                 tensor_start, input_weight_format,
+                                 final_permutation_in_c_order.data());
+    } else {
+        dalotia::assign_linearly(tensor, weightFormat, num_tensor_elements, tensor_start,
+                                 input_weight_format);
+    }
+    TF_DeleteTensor(tf_tensor);
 }
 }  // namespace dalotia
