@@ -7,6 +7,7 @@ option(DALOTIA_BUILD_TESTS "Build tests" ON)
 option(DALOTIA_WITH_CPP_PMR "use polymorphic memory resources (pmr) C++17 feature for dalotia" ON)
 option(DALOTIA_WITH_OPENMP "Build with OpenMP support" OFF)
 option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
+option(DALOTIA_WITH_TENSORFLOW "use the Tensorflow C backend for tensor I/O" OFF)
 option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)
 if (DALOTIA_WITH_FORTRAN)
     enable_language(Fortran)
@@ -19,6 +20,7 @@ if (DALOTIA_WITH_FORTRAN)
 endif (DALOTIA_WITH_FORTRAN)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/modules")
 
 # if this is empty, will be set at config time
 # (build with --config Release or --config Debug etc.)
@@ -60,6 +62,32 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
     find_package(safetensors-cpp REQUIRED CMAKE_FIND_ROOT_PATH_BOTH)
   endif()
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
+
+# tensorflow
+if (DALOTIA_WITH_TENSORFLOW)  
+  if (NOT DEFINED tensorflow_DIR OR tensorflow_DIR MATCHES "fetch")
+    include(FetchContent)
+    FetchContent_Declare(
+      tensorflow
+      URL https://storage.googleapis.com/tensorflow/versions/2.18.0/libtensorflow-gpu-linux-x86_64.tar.gz
+      OVERRIDE_FIND_PACKAGE
+    )
+    FetchContent_MakeAvailable(tensorflow)
+
+    FetchContent_GetProperties(tensorflow SOURCE_DIR tensorflow_SRC_DIR)
+    set(tensorflow_INCLUDE_DIRS ${tensorflow_SRC_DIR}/include)
+    find_library(tensorflow_LIBRARIES
+      NAMES tensorflow
+      PATHS ${tensorflow_SRC_DIR}/lib
+      NO_DEFAULT_PATH
+    )
+    message(STATUS "tensorflow_LIBRARIES: ${tensorflow_LIBRARIES}")
+
+    include(FindPackageHandleStandardArgs)
+    find_package_handle_standard_args(tensorflow DEFAULT_MSG tensorflow_INCLUDE_DIRS tensorflow_LIBRARIES)
+  endif()
+  find_package(tensorflow REQUIRED CMAKE_FIND_ROOT_PATH_BOTH)
+endif (DALOTIA_WITH_TENSORFLOW)
 
 add_subdirectory(src) # target dalotia_cpp is generated here
 if (DALOTIA_WITH_OPENMP)

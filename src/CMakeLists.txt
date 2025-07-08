@@ -26,6 +26,16 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
     target_sources(dalotia_cpp PRIVATE dalotia_safetensors_file.cpp )
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
+if (DALOTIA_WITH_TENSORFLOW)
+    target_link_libraries(dalotia_cpp PUBLIC ${tensorflow_LIBRARIES})
+    target_include_directories(dalotia_cpp PUBLIC
+        $<BUILD_INTERFACE:${tensorflow_INCLUDE_DIRS}>
+        $<INSTALL_INTERFACE:include>
+    )
+    target_compile_options(dalotia_cpp PUBLIC "-DDALOTIA_WITH_TENSORFLOW")
+    target_sources(dalotia_cpp PRIVATE dalotia_tensorflow_file.cpp )
+endif (DALOTIA_WITH_TENSORFLOW)
+
 # not sure if this is elegant, but helps to make this compatible to all languages
 target_sources(dalotia_cpp PRIVATE dalotia.hpp dalotia.h)
 target_include_directories(dalotia_cpp PUBLIC

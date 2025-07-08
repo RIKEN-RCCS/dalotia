@@ -9,6 +9,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "dalotia_formats.hpp"
@@ -181,5 +182,22 @@ class TensorFile {
     // no private section to allow visibility from C
     // FILE *file_ = nullptr;
 };
+
+// helper function to output iterables
+template <typename Iterable>
+inline std::string to_string(const Iterable &iterable) {
+    std::string result;
+    for (const auto &item : iterable) {
+        if (!result.empty()) {
+            result += ", ";
+        }
+        if constexpr (std::is_same_v<std::decay_t<decltype(item)>, std::string>) {
+            result += item;  // for strings, just append
+        } else {
+            result += std::to_string(item);  // for other types, convert to string
+        }
+    }
+    return result;
+}
 
 }  // namespace dalotia

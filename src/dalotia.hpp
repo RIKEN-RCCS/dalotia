@@ -17,6 +17,9 @@
 #ifdef DALOTIA_WITH_SAFETENSORS_CPP
 #include "dalotia_safetensors_file.hpp"
 #endif
+#ifdef DALOTIA_WITH_TENSORFLOW
+#include "dalotia_tensorflow_file.hpp"
+#endif
 
 namespace dalotia {
 // factory function for the file, selected by file extension and
