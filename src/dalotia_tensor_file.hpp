@@ -117,6 +117,11 @@ class TensorFile {
         if constexpr (std::is_same_v<value_type, dalotia_byte>) {
             tensor.resize(total_size * sizeof_weight_format(weight_format));
         } else {
+            if (dalotia::sizeof_weight_format(weight_format) !=
+                sizeof(value_type)) {
+                throw std::runtime_error(
+                    "load_tensor_dense: weight format size does not match value type size");
+            }
             tensor.resize(total_size);
         }
         this->load_tensor_dense(tensor_name, weight_format, ordering,
