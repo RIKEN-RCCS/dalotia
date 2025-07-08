@@ -200,7 +200,7 @@ void assign_linearly(dalotia_byte *__restrict__ dest,
  */
 template <int num_dimensions>
 std::pair<std::array<size_t, num_dimensions>, size_t> get_new_strides_permuted(
-    const size_t *const input_shape, const int *permutation) {
+    const int *const input_shape, const int *permutation) {
     auto desired_shape = std::vector<size_t>(num_dimensions);
     size_t total_size = 1;
     for (size_t i = 0; i < num_dimensions; ++i) {
@@ -227,7 +227,7 @@ std::pair<std::array<size_t, num_dimensions>, size_t> get_new_strides_permuted(
 template <>
 void assign_permuted<1>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         [[maybe_unused]] const int *permutation) {
@@ -239,7 +239,7 @@ void assign_permuted<1>(dalotia_byte *__restrict__ dest,
 template <>
 void assign_permuted<2>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
@@ -275,7 +275,7 @@ void assign_permuted<2>(dalotia_byte *__restrict__ dest,
 template <>
 void assign_permuted<3>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
@@ -319,7 +319,7 @@ void assign_permuted<3>(dalotia_byte *__restrict__ dest,
 template <>
 void assign_permuted<4>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
@@ -368,7 +368,7 @@ void assign_permuted<4>(dalotia_byte *__restrict__ dest,
 template <>
 void assign_permuted<5>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
