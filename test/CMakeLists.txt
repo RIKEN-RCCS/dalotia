@@ -33,7 +33,7 @@ endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
 if (DALOTIA_WITH_TENSORFLOW)
     add_executable( test_tensorflow test_tensorflow.cpp )
-    target_link_libraries( test_tensorflow dalotia_cpp ${tensorflow_LIBRARIES} )
+    target_link_libraries( test_tensorflow dalotia_cpp tensorflow::tensorflow )
     target_include_directories( test_tensorflow PUBLIC ${tensorflow_INCLUDE_DIRS})
     add_test( tensorflow-file test_tensorflow )
 endif (DALOTIA_WITH_TENSORFLOW)

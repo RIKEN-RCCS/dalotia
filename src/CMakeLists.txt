@@ -27,7 +27,7 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
 if (DALOTIA_WITH_TENSORFLOW)
-    target_link_libraries(dalotia_cpp PUBLIC ${tensorflow_LIBRARIES})
+    target_link_libraries(dalotia_cpp PUBLIC tensorflow::tensorflow)
     target_include_directories(dalotia_cpp PUBLIC
         $<BUILD_INTERFACE:${tensorflow_INCLUDE_DIRS}>
         $<INSTALL_INTERFACE:include>
