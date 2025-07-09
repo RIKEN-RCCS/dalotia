@@ -22,6 +22,9 @@ endif (DALOTIA_WITH_FORTRAN)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/modules")
 
+include(GNUInstallDirs)
+set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
 # if this is empty, will be set at config time
 # (build with --config Release or --config Debug etc.)
 message(STATUS "CMAKE BUILD TYPE: ${CMAKE_BUILD_TYPE}")
@@ -137,12 +140,12 @@ write_basic_package_version_file(
   COMPATIBILITY SameMajorVersion
 )
 install(FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>/dalotia-config-version.cmake
-  DESTINATION lib/cmake/dalotia
+  DESTINATION ${INSTALL_CONFIGDIR}
 )
 
 # export full library interface
 install(EXPORT dalotia
   FILE dalotia-config.cmake
   NAMESPACE dalotia::
-  DESTINATION lib/cmake/dalotia
+  DESTINATION ${INSTALL_CONFIGDIR}
 )
