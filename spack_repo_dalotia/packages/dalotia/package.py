@@ -20,7 +20,6 @@ class Dalotia(CMakePackage):
     version("main", branch="main")
     version("1.0.0", tag="v1.0.0")
 
-    variant("tests", default=True, description="build dalotia tests")
     variant("cpp_pmr", default=True, description="use polymorphic memory resources (pmr) C++17 feature for dalotia")
     variant("openmp", default=True, description="Build with OpenMP support")
     variant("safetensorscpp", default=True, description="use safetensors-cpp for tensor I/O")
@@ -36,7 +35,6 @@ class Dalotia(CMakePackage):
     def cmake_args(self):
         args = [
             self.define("DALOTIA_CPP_BUILD_EXAMPLES", True),
-            self.define_from_variant("DALOTIA_BUILD_TESTS", "tests"),
             self.define_from_variant("DALOTIA_WITH_CPP_PMR", "cpp_pmr"),
             self.define_from_variant("DALOTIA_WITH_OPENMP", "openmp"),
             self.define_from_variant("DALOTIA_WITH_SAFETENSORS_CPP", "safetensorscpp"),
