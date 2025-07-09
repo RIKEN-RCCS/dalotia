@@ -139,3 +139,11 @@
    fun:_ZN10tensorflow24KernelDef_AttrConstraint9MergeImplERN6google8protobuf7MessageERKS3_
    ...
 }
+{
+   possible_leak_tensorflow_register_op
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:_ZN10tensorflow11register_op*
+   ...
+}
