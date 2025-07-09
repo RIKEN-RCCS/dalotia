@@ -24,6 +24,7 @@ class Dalotia(CMakePackage):
     variant("openmp", default=True, description="Build with OpenMP support")
     variant("safetensorscpp", default=True, description="use safetensors-cpp for tensor I/O")
     variant("fortran", default=True, description="Build Fortran interface")
+    variant("tensorflow", default=False, description="Build with TensorFlow support")
 
     depends_on("cxx", type="build")
     depends_on("c", type="build")
@@ -38,6 +39,7 @@ class Dalotia(CMakePackage):
             self.define_from_variant("DALOTIA_WITH_CPP_PMR", "cpp_pmr"),
             self.define_from_variant("DALOTIA_WITH_OPENMP", "openmp"),
             self.define_from_variant("DALOTIA_WITH_SAFETENSORS_CPP", "safetensorscpp"),
+            self.define_from_variant("DALOTIA_WITH_TENSORFLOW", "tensorflow"),
             self.define_from_variant("DALOTIA_WITH_FORTRAN", "fortran"),
         ]
         if self.spec.satisfies("+safetensorscpp"):
