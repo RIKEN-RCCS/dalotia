@@ -12,6 +12,7 @@
    fun:_ZN10tensorflow10checkpoint25CheckpointCallbackManager32GetCheckpointIdAndPathFromPrefixB5cxx11ESt17basic_string_viewIcSt11char_traitsIcEE
    ...
 }
+# now, possible mem leaks, first the ones that don't reference tf in frame trace at all:
 {
    possible_leak_tensorflow_sub_I_host
    Memcheck:Leak
@@ -39,7 +40,59 @@
    ...
    fun:_GLOBAL__sub_I_cutlass_gemm_fusion.cc
    ...
+   fun:_dl_init
+   ...
 }
+# then, tf calls that originate in init and appear in everything linked with tf
+{
+   possible_leak_tensorflow_register_op
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:_ZN10tensorflow11register_op*
+   ...
+}
+{
+   possible_leak_tensorflow_new_op_definition_builder
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:TF_NewOpDefinitionBuilder
+   ...
+   fun:_dl_init
+   ...
+}
+{
+   possible_leak_tensorflow_register_kernel_builder
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:TF_RegisterKernelBuilderWithKernelDef
+   ...
+   fun:_dl_init
+   ...
+}
+{
+   possible_leak_tensorflow_kernel_registrar
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:_ZN10tensorflow14kernel_factory17OpKernelRegistrarC2EPKNS_9KernelDefESt17basic_string_viewIcSt11char_traitsIcEEPFPNS_8OpKernelEPNS_20OpKernelConstructionEE
+   ...
+   fun:_dl_init
+   ...
+}
+{
+   possible_leak_tensorflow_dataset_experiment_registrar
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:_ZN10tensorflow4data26DatasetExperimentRegistrarC2ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFbmEESA_IFblbEE
+   ...
+   fun:_dl_init
+   ...
+}
+# and then the actual ones that show up when running tensorflow
 {
    possible_leak_tensorflow_shape_refiner
    Memcheck:Leak
@@ -62,30 +115,6 @@
    match-leak-kinds: possible
    ...
    fun:_ZN10tensorflow22LoadSavedModelInternalERKNS_14SessionOptionsERKNS_10RunOptionsERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKSt13unordered_setISB_St4hashISB_ESt8equal_toISB_ESaISB_EEPNS_16SavedModelBundleE
-   ...
-}
-{
-   possible_leak_tensorflow_kernel_registrar
-   Memcheck:Leak
-   match-leak-kinds: possible
-   ...
-   fun:_ZN10tensorflow14kernel_factory17OpKernelRegistrarC2EPKNS_9KernelDefESt17basic_string_viewIcSt11char_traitsIcEEPFPNS_8OpKernelEPNS_20OpKernelConstructionEE
-   ...
-}
-{
-   possible_leak_tensorflow_register_kernel_builder
-   Memcheck:Leak
-   match-leak-kinds: possible
-   ...
-   fun:TF_RegisterKernelBuilderWithKernelDef
-   ...
-}
-{
-   possible_leak_tensorflow_dataset_experiment_registrar
-   Memcheck:Leak
-   match-leak-kinds: possible
-   ...
-   fun:_ZN10tensorflow4data26DatasetExperimentRegistrarC2ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFbmEESA_IFblbEE
    ...
 }
 {
@@ -150,23 +179,5 @@
    match-leak-kinds: possible
    ...
    fun:_ZN10tensorflow24KernelDef_AttrConstraint9MergeImplERN6google8protobuf7MessageERKS3_
-   ...
-}
-{
-   possible_leak_tensorflow_register_op
-   Memcheck:Leak
-   match-leak-kinds: possible
-   ...
-   fun:_ZN10tensorflow11register_op*
-   ...
-}
-{
-   possible_leak_tensorflow_new_op_definition_builder
-   Memcheck:Leak
-   match-leak-kinds: possible
-   ...
-   fun:TF_NewOpDefinitionBuilder
-   ...
-   fun:_dl_init
    ...
 }
