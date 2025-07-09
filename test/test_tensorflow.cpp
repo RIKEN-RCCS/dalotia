@@ -3,6 +3,7 @@
 
 #include "dalotia.h"
 #include "dalotia.hpp"
+#include "test_helper.h"
 
 void test_names() {
     std::string filename = "../data/tensorflow_model";
@@ -53,16 +54,21 @@ void test_names() {
             filename, tensor_name, weightFormat, ordering);
         assert(!extents.empty());
         assert(!tensor_cpp_double.empty());
-        auto [extents_float, tensor_cpp_float] =
-            dalotia::load_tensor_dense<float>(filename, tensor_name, dalotia_WeightFormat::dalotia_float_32,
-                                              ordering);
+        auto [extents_float, tensor_cpp_float] = dalotia::load_tensor_dense<float>(
+            filename, tensor_name, dalotia_WeightFormat::dalotia_float_32, ordering);
         for (size_t i = 0; i < extents.size(); ++i) {
             assert(extents[i] == extents_float[i]);
         }
         for (size_t i = 0; i < tensor_cpp_double.size(); ++i) {
-            assert (tensor_cpp_float[i] ==
-                    static_cast<float>(tensor_cpp_double[i]));
+            assert(tensor_cpp_float[i] == static_cast<float>(tensor_cpp_double[i]));
         }
+        std::vector<double> true_values_begin = {
+            -0.25138268, -0.25613192, 0.16491315, -0.13381714, 0.35687172, -0.35824186,
+            0.3529436,   -0.55490106, 0.27651784, 0.30784482,  -0.2846631};
+        for (size_t i = 0; i < true_values_begin.size(); ++i) {
+            assert_close(tensor_cpp_double[i], true_values_begin[i]);
+        }
+        assert_close(tensor_cpp_double.back(), -0.21346514);
     }
 #endif  // DALOTIA_WITH_CPP_PMR
 }
