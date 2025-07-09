@@ -155,3 +155,11 @@
    fun:_ZN10tensorflow11register_op*
    ...
 }
+{
+   possible_leak_tensorflow_new_op_definition_builder
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:TF_NewOpDefinitionBuilder
+   ...
+}
