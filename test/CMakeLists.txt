@@ -1,3 +1,9 @@
+list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+
+# cf. https://stackoverflow.com/questions/52730994/how-to-pass-arguments-to-memcheck-with-ctest
+set(MEMORYCHECK_COMMAND_OPTIONS
+    "--suppressions=${CMAKE_CURRENT_SOURCE_DIR}/tensorflow.supp"
+)
 include (CTest)
 
 if(DALOTIA_WITH_SAFETENSORS_CPP)
