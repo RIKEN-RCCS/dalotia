@@ -48,6 +48,8 @@ class TensorflowSavedModel : public TensorFile {
                            dalotia_byte *__restrict__ tensor,
                            const std::vector<int> &permutation = {}) override;
 
+    std::vector<const dalotia_byte *> get_tensor_pointers(const std::string &tensor_name);
+
     // cf. https://github.com/serizba/cppflow/blob/master/include/cppflow/model.h
     std::shared_ptr<TF_Status> status_;
     std::shared_ptr<TF_Graph> graph_;

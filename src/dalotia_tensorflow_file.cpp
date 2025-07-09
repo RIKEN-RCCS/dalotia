@@ -203,6 +203,13 @@ void TensorflowSavedModel::load_tensor_dense(const std::string &tensor_name,
     }
 }
 
+std::vector<const dalotia_byte *>
+TensorflowSavedModel::get_tensor_pointers(const std::string &tensor_name) {
+    const TF_Tensor *tf_tensor = this->get_tensor_pointer_from_name(tensor_name);
+    return std::vector<const dalotia_byte *>(
+        1, reinterpret_cast<const dalotia_byte *>(TF_TensorData(tf_tensor)));
+}
+
 const TF_Tensor *
 TensorflowSavedModel::get_tensor_pointer_from_name(const std::string &tensor_name) {
     // check if it is already in the cache

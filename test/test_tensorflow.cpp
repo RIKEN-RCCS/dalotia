@@ -3,6 +3,7 @@
 
 #include "dalotia.h"
 #include "dalotia.hpp"
+#include "dalotia_tensorflow_file.hpp"
 #include "test_helper.h"
 
 void test_names() {
@@ -69,6 +70,20 @@ void test_names() {
             assert_close(tensor_cpp_double[i], true_values_begin[i]);
         }
         assert_close(tensor_cpp_double.back(), -0.21346514);
+
+        // check if this is also what is in the original buffer
+        if (auto dalotia_tensorflow_file =
+                dynamic_cast<dalotia::TensorflowSavedModel *>(dalotia_file.get())) {
+            const dalotia_byte *tensor_pointer =
+                dalotia_tensorflow_file->get_tensor_pointers(tensor_name)[0];
+            const float *tensor_float_pointer =
+                reinterpret_cast<const float *>(tensor_pointer);
+            for (size_t i = 0; i < tensor_cpp_float.size(); ++i) {
+                assert_equal(tensor_cpp_float[i], tensor_float_pointer[i]);
+            }
+        } else {
+            throw std::runtime_error("dalotia_file is not a TensorflowSavedModel");
+        }
     }
 #endif  // DALOTIA_WITH_CPP_PMR
 }
