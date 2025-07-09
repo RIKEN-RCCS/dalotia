@@ -96,6 +96,13 @@ if (DALOTIA_WITH_TENSORFLOW)
       IMPORTED_LOCATION "${tensorflow_LIBRARIES}"
       INTERFACE_INCLUDE_DIRECTORIES "${tensorflow_INCLUDE_DIRS}"
     )
+    # cf. https://stackoverflow.com/a/41179630/7272382
+    install(FILES ${tensorflow_INCLUDE_DIRS}/tensorflow/c/c_api.h
+      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tensorflow/c
+    )
+    install(FILES ${tensorflow_LIBRARIES}
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
   endif()
 endif (DALOTIA_WITH_TENSORFLOW)
 
@@ -118,7 +125,6 @@ if (DALOTIA_CPP_BUILD_EXAMPLES)
 endif (DALOTIA_CPP_BUILD_EXAMPLES)
 
 if (DALOTIA_BUILD_TESTS)
-  list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
   enable_testing()
   add_subdirectory(test)
 endif (DALOTIA_BUILD_TESTS)
