@@ -8,3 +8,10 @@ void assert_close(volatile float a, volatile float b) {
         assert(false);
     }
 }
+
+void assert_equal(volatile float a, volatile float b) {
+    if (a != b) {
+        fprintf(stderr, "assert_equal: expected %f but got %f\n", b, a);
+        assert(false);
+    }
+}
