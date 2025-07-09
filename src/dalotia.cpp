@@ -54,7 +54,7 @@ TensorFile *make_tensor_file(const std::string &filename) {
 #else   // DALOTIA_WITH_SAFETENSORS_CPP
         throw std::runtime_error("Safetensors support not enabled");
 #endif  // DALOTIA_WITH_SAFETENSORS_CPP
-    } else if (extension == "pb" || is_directory(filename.c_str())) {
+    } else if (extension == "keras" || extension == "pb" || is_directory(filename.c_str())) {
 #ifdef DALOTIA_WITH_TENSORFLOW
         return new TensorflowSavedModel(filename);
 #else   // DALOTIA_WITH_TENSORFLOW
