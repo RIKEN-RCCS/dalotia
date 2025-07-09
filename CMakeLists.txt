@@ -70,7 +70,6 @@ if (DALOTIA_WITH_TENSORFLOW)
     FetchContent_Declare(
       tensorflow
       URL https://storage.googleapis.com/tensorflow/versions/2.18.0/libtensorflow-gpu-linux-x86_64.tar.gz
-      OVERRIDE_FIND_PACKAGE
     )
     FetchContent_MakeAvailable(tensorflow)
 
@@ -85,8 +84,19 @@ if (DALOTIA_WITH_TENSORFLOW)
 
     include(FindPackageHandleStandardArgs)
     find_package_handle_standard_args(tensorflow DEFAULT_MSG tensorflow_INCLUDE_DIRS tensorflow_LIBRARIES)
+  else()
+    find_package(tensorflow REQUIRED CMAKE_FIND_ROOT_PATH_BOTH)
   endif()
-  find_package(tensorflow REQUIRED CMAKE_FIND_ROOT_PATH_BOTH)
+  if(NOT TARGET tensorflow::tensorflow)
+    add_library(tensorflow::tensorflow SHARED IMPORTED)
+    set_target_properties(
+      tensorflow::tensorflow 
+      PROPERTIES
+      IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+      IMPORTED_LOCATION "${tensorflow_LIBRARIES}"
+      INTERFACE_INCLUDE_DIRECTORIES "${tensorflow_INCLUDE_DIRS}"
+    )
+  endif()
 endif (DALOTIA_WITH_TENSORFLOW)
 
 add_subdirectory(src) # target dalotia_cpp is generated here
