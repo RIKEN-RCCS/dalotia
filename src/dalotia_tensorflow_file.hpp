@@ -53,6 +53,11 @@ class TensorflowSavedModel : public TensorFile {
     std::shared_ptr<TF_Graph> graph_;
     std::shared_ptr<TF_Session> session_;
     std::vector<std::string> tensor_names_;
+    std::map<std::string, std::unique_ptr<TF_Tensor, decltype(&TF_DeleteTensor)>>
+        tensors_;  // cache for loaded tensor pointers
+
+  private:
+    const TF_Tensor *get_tensor_pointer_from_name(const std::string &tensor_name);
 };
 
 }  // namespace dalotia

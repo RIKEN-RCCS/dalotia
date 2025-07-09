@@ -168,24 +168,10 @@ void TensorflowSavedModel::load_tensor_dense(const std::string &tensor_name,
                                              dalotia_Ordering ordering,
                                              dalotia_byte *__restrict__ tensor,
                                              const std::vector<int> &permutation) {
-    TF_Output output = get_operation_from_name(tensor_name, this->graph_);
-    if (output.oper == nullptr) {
-        throw std::runtime_error(
-            "Tensor not found: " + tensor_name +
-            ". Tensor names in the file: " + to_string(tensor_names_));
-    }
-    const size_t num_tensor_elements = this->get_num_tensor_elements(tensor_name);
-
-    TF_Tensor *tf_tensor = nullptr;
-    TF_SessionRun(this->session_.get(), nullptr, nullptr, nullptr, 0, &output, &tf_tensor,
-                  1, nullptr, 0, nullptr, this->status_.get());
-    if (tf_tensor == nullptr) {
-        throw std::runtime_error("Failed to load tensor: " + tensor_name);
-    }
-    tf_status_check(this->status_);
-
+    const TF_Tensor *tf_tensor = this->get_tensor_pointer_from_name(tensor_name);
     void *databuffer = TF_TensorData(tf_tensor);
     int num_dimensions = TF_NumDims(tf_tensor);
+    const int64_t num_tensor_elements = TF_TensorElementCount(tf_tensor);
 
     TF_DataType tf_type = TF_TensorType(tf_tensor);
     const dalotia_WeightFormat input_weight_format = tensorflow_type_map.at(tf_type);
@@ -194,7 +180,8 @@ void TensorflowSavedModel::load_tensor_dense(const std::string &tensor_name,
     assert(tf_tensor != nullptr);
     assert(num_dimensions == static_cast<int>(this->get_num_dimensions(tensor_name)));
     assert(num_dimensions >= 0);
-    assert(TF_TensorElementCount(tf_tensor) == static_cast<int64_t>(num_tensor_elements));
+    assert(num_tensor_elements ==
+           static_cast<int64_t>(this->get_num_tensor_elements(tensor_name)));
     size_t num_bytes = TF_TensorByteSize(tf_tensor);
     assert(num_bytes ==
            static_cast<size_t>(dalotia::sizeof_weight_format(input_weight_format)) *
@@ -214,6 +201,35 @@ void TensorflowSavedModel::load_tensor_dense(const std::string &tensor_name,
         dalotia::assign_linearly(tensor, weightFormat, num_tensor_elements, tensor_start,
                                  input_weight_format);
     }
-    TF_DeleteTensor(tf_tensor);
+}
+
+const TF_Tensor *
+TensorflowSavedModel::get_tensor_pointer_from_name(const std::string &tensor_name) {
+    // check if it is already in the cache
+    auto it = tensors_.find(tensor_name);
+    if (it != tensors_.end()) {
+        return it->second.get();
+    } else {
+        // if not, load it from the graph
+        TF_Output output = get_operation_from_name(tensor_name, this->graph_);
+        if (output.oper == nullptr) {
+            throw std::runtime_error(
+                "Tensor not found: " + tensor_name +
+                ". Tensor names in the file: " + to_string(tensor_names_));
+        }
+
+        TF_Tensor *tf_tensor = nullptr;
+        TF_SessionRun(this->session_.get(), nullptr, nullptr, nullptr, 0, &output,
+                      &tf_tensor, 1, nullptr, 0, nullptr, this->status_.get());
+        if (tf_tensor == nullptr) {
+            throw std::runtime_error("Failed to load tensor: " + tensor_name);
+        }
+        tf_status_check(this->status_);
+        auto [position, inserted] = this->tensors_.emplace(
+            tensor_name, std::unique_ptr<TF_Tensor, decltype(&TF_DeleteTensor)>(
+                             tf_tensor, &TF_DeleteTensor));
+        assert(inserted);  // should not already exist
+        return position->second.get();
+    }
 }
 }  // namespace dalotia
