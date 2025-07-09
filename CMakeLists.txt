@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(DALOTIA CXX C)
+project(dalotia CXX C)
 
 option(DALOTIA_CPP_BUILD_EXAMPLES "Build examples" ON)
 option(DALOTIA_BUILD_TESTS "Build tests" ON)
@@ -54,7 +54,7 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
       )
     # TODO this is not good, every package should install its own targets
     # cf. https://discourse.cmake.org/t/propagation-of-fetchcontent-targets-when-installing/2559/2
-    install(TARGETS safetensors_cpp EXPORT dalotia
+    install(TARGETS safetensors_cpp EXPORT dalotia_export_set
       LIBRARY DESTINATION lib
       ARCHIVE DESTINATION lib
       RUNTIME DESTINATION bin
@@ -144,7 +144,7 @@ install(FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>/dalotia-config-vers
 )
 
 # export full library interface
-install(EXPORT dalotia
+install(EXPORT dalotia_export_set
   FILE dalotia-config.cmake
   NAMESPACE dalotia::
   DESTINATION ${INSTALL_CONFIGDIR}

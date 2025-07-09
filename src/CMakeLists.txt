@@ -50,14 +50,14 @@ else()
     target_compile_options(dalotia_cpp PRIVATE -Wall -Wextra)
 endif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
-install(TARGETS dalotia_cpp EXPORT dalotia
+install(TARGETS dalotia_cpp EXPORT dalotia_export_set
   LIBRARY DESTINATION lib
   INCLUDES DESTINATION include
   PUBLIC_HEADER DESTINATION include
 )
 
 if (DALOTIA_WITH_FORTRAN)
-    install(TARGETS dalotia_fortran EXPORT dalotia
+    install(TARGETS dalotia_fortran EXPORT dalotia_export_set
       LIBRARY DESTINATION lib
       INCLUDES DESTINATION include
       PUBLIC_HEADER DESTINATION include
