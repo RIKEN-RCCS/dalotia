@@ -20,6 +20,14 @@
    ...
 }
 {
+   possible_leak_tensorflow_sub_I_cuda_platform
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_GLOBAL__sub_I_cuda_platform.cc
+   ...
+}
+{
    possible_leak_tensorflow_cutlass_gemm
    Memcheck:Leak
    match-leak-kinds: possible
