@@ -41,3 +41,5 @@ jobs:
       with:
         test-dir: build-${{ matrix.build_type }}
         args: --output-on-failure -T memcheck
+    - name: Output Memcheck Log
+      run: cat /home/runner/work/dalotia/dalotia/build-*/Testing/Temporary/MemoryChecker.*.log
