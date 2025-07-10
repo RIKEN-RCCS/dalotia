@@ -34,5 +34,4 @@ jobs:
         spack spec dalotia~safetensorscpp+tensorflow
         spack info dalotia~safetensorscpp+tensorflow
         spack dev-build --test=root dalotia@main ~safetensorscpp+tensorflow
-        spack load --sh dalotia@main
-        
+        spack load --sh dalotia@main+tensorflow
