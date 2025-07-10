@@ -31,7 +31,7 @@ class TensorflowSavedModel : public TensorFile {
   public:
     explicit TensorflowSavedModel(const std::string &filename);
 
-    ~TensorflowSavedModel();
+    ~TensorflowSavedModel() override;
 
     const std::vector<std::string> &get_tensor_names() const override;
 
