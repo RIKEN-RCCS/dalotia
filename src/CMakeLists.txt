@@ -1,7 +1,7 @@
 add_library(dalotia_cpp dalotia.cpp) # Daniel Pfeifer says: no variables
 target_sources(dalotia_cpp PRIVATE dalotia_assignment.cpp dalotia_formats.cpp )
 set_target_properties(dalotia_cpp PROPERTIES PUBLIC_HEADER
-	"dalotia.h;dalotia_formats.h;dalotia.hpp;dalotia_formats.hpp;dalotia_assignment.hpp;dalotia_tensor_file.hpp;dalotia_safetensors_file.hpp")
+	"dalotia.h;dalotia_formats.h;dalotia.hpp;dalotia_formats.hpp;dalotia_assignment.hpp;dalotia_tensor_file.hpp;dalotia_safetensors_file.hpp;dalotia_tensorflow_file.hpp")
 # have one dalotia library target that can be used in C++ and Fortran
 add_library(dalotia INTERFACE)
 add_library(dalotia::dalotia_cpp ALIAS dalotia_cpp)
@@ -28,10 +28,6 @@ endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
 if (DALOTIA_WITH_TENSORFLOW)
     target_link_libraries(dalotia_cpp PUBLIC tensorflow::tensorflow)
-    target_include_directories(dalotia_cpp PUBLIC
-        $<BUILD_INTERFACE:${tensorflow_INCLUDE_DIRS}>
-        $<INSTALL_INTERFACE:include>
-    )
     target_compile_options(dalotia_cpp PUBLIC "-DDALOTIA_WITH_TENSORFLOW")
     target_sources(dalotia_cpp PRIVATE dalotia_tensorflow_file.cpp )
 endif (DALOTIA_WITH_TENSORFLOW)
