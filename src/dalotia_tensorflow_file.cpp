@@ -137,11 +137,6 @@ TensorflowSavedModel::get_tensor_extents(const std::string &tensor_name,
 
     int num_dimensions = tf_get_num_dimensions(output, this->graph_, this->status_);
     std::vector<int64_t> extents_read(num_dimensions);
-    // use tensor_name only from the last slash onward
-    size_t last_slash_pos = tensor_name.find_last_of('/');
-    auto shortened_tensor_name = (last_slash_pos != std::string::npos)
-                                     ? tensor_name.substr(last_slash_pos + 1)
-                                     : tensor_name;
     TF_GraphGetTensorShape(this->graph_.get(), output, extents_read.data(),
                            extents_read.size(), this->status_.get());
     tf_status_check(this->status_);
