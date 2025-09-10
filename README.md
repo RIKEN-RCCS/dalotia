@@ -117,7 +117,7 @@ git clone https://github.com/RIKEN-RCCS/dalotia.git
 cd dalotia
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PATH=$(pwd)/../install ..
+cmake -DCMAKE_INSTALL_PREFIX=$(pwd)/../install ..
 make
 make install
 ```
