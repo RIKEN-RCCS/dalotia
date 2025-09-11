@@ -1,10 +1,12 @@
 #pragma once
 #include <array>
+#include <map>
 #include <string>
+#include <vector>
 
 #include "dalotia_formats.hpp"
-#include "safetensors.hh"
 #include "dalotia_tensor_file.hpp"
+#include "safetensors.hh"
 
 namespace dalotia {
 
@@ -29,7 +31,7 @@ class SafetensorsFile : public TensorFile {
    public:
     explicit SafetensorsFile(const std::string &filename);
 
-    ~SafetensorsFile();
+    ~SafetensorsFile() override;
 
     const std::vector<std::string> &get_tensor_names() const override;
 

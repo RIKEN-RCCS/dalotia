@@ -128,8 +128,10 @@ void SafetensorsFile::load_tensor_dense(const std::string &tensor_name,
         reinterpret_cast<const dalotia_byte *__restrict__>(databuffer) +
         safetensor.data_offsets[0];
     if (!final_permutation_in_c_order.empty()) {
+        std::vector<int> input_shape(
+            safetensor.shape.begin(), safetensor.shape.end());
         assign_permuted(num_dimensions, tensor, weightFormat,
-                        safetensor.shape.data(), tensor_start,
+                        input_shape.data(), tensor_start,
                         input_weight_format,
                         final_permutation_in_c_order.data());
     } else {

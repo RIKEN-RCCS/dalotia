@@ -31,6 +31,7 @@ jobs:
       uses: threeal/cmake-action@v1.3.0
       with:
         run-build: true
+        options: DALOTIA_WITH_TENSORFLOW=ON
         build-args: --config ${{ matrix.build_type }}
         # cxx-compiler: ${{ matrix.compiler }}
         build-dir: build-${{ matrix.build_type }}
@@ -40,3 +41,5 @@ jobs:
       with:
         test-dir: build-${{ matrix.build_type }}
         args: --output-on-failure -T memcheck
+    - name: Output Memcheck Log
+      run: for i in /home/runner/work/dalotia/dalotia/build-*/Testing/Temporary/MemoryChecker.*.log ; do echo $i ; cat $i ; done

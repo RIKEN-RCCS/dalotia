@@ -26,5 +26,12 @@ jobs:
       run: |
         spack spec dalotia
         spack info dalotia
-        spack dev-build dalotia@main
-        
+        spack dev-build --test=root dalotia@main
+        spack load --sh dalotia@main
+    - name: info and install dalotia with tensorflow
+      shell: spack-bash {0}
+      run: |
+        spack spec dalotia~safetensorscpp+tensorflow
+        spack info dalotia~safetensorscpp+tensorflow
+        spack dev-build --test=root dalotia@main ~safetensorscpp+tensorflow
+        spack load --sh dalotia@main+tensorflow

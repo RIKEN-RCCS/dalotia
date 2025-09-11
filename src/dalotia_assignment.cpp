@@ -200,8 +200,8 @@ void assign_linearly(dalotia_byte *__restrict__ dest,
  */
 template <int num_dimensions>
 std::pair<std::array<size_t, num_dimensions>, size_t> get_new_strides_permuted(
-    const size_t *const input_shape, const int *permutation) {
-    auto desired_shape = std::vector<size_t>(num_dimensions);
+    const int *const input_shape, const int *permutation) {
+    auto desired_shape = std::vector<int>(num_dimensions);
     size_t total_size = 1;
     for (size_t i = 0; i < num_dimensions; ++i) {
         desired_shape[i] = input_shape[permutation[i]];
@@ -227,7 +227,7 @@ std::pair<std::array<size_t, num_dimensions>, size_t> get_new_strides_permuted(
 template <>
 void assign_permuted<1>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         [[maybe_unused]] const int *permutation) {
@@ -239,12 +239,12 @@ void assign_permuted<1>(dalotia_byte *__restrict__ dest,
 template <>
 void assign_permuted<2>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
     constexpr int num_dimensions = 2;
-    auto desired_shape = std::vector<size_t>(num_dimensions);
+    auto desired_shape = std::vector<int>(num_dimensions);
     [[maybe_unused]] size_t total_size = 1;
     for (size_t i = 0; i < num_dimensions; ++i) {
         desired_shape[i] = input_shape[permutation[i]];
@@ -259,8 +259,8 @@ void assign_permuted<2>(dalotia_byte *__restrict__ dest,
     auto assign_function =
         get_assignment_function(weight_output_format, weight_input_format);
     size_t load_index = 0;
-    for (size_t i = 0; i < input_shape[1]; ++i) {
-        for (size_t j = 0; j < input_shape[0]; ++j) {
+    for (int i = 0; i < input_shape[1]; ++i) {
+        for (int j = 0; j < input_shape[0]; ++j) {
             auto store_index = j * input_shape[1] + i;
             auto input_pointer = tensor_start + load_index * load_item_bytes;
             auto output_pointer = dest + store_index * store_item_bytes;
@@ -275,7 +275,7 @@ void assign_permuted<2>(dalotia_byte *__restrict__ dest,
 template <>
 void assign_permuted<3>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
@@ -291,9 +291,9 @@ void assign_permuted<3>(dalotia_byte *__restrict__ dest,
         get_assignment_function(weight_output_format, weight_input_format);
     auto input_pointer = tensor_start;
     size_t store_index = 0;
-    for (size_t i = 0; i < input_shape[0]; ++i) {
-        for (size_t j = 0; j < input_shape[1]; ++j) {
-            for (size_t k = 0; k < input_shape[2]; ++k) {
+    for (int i = 0; i < input_shape[0]; ++i) {
+        for (int j = 0; j < input_shape[1]; ++j) {
+            for (int k = 0; k < input_shape[2]; ++k) {
                 assert(static_cast<int>(store_index) ==
                        std::inner_product(new_strides_permuted.begin(),
                                           new_strides_permuted.end(),
@@ -319,7 +319,7 @@ void assign_permuted<3>(dalotia_byte *__restrict__ dest,
 template <>
 void assign_permuted<4>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
@@ -335,10 +335,10 @@ void assign_permuted<4>(dalotia_byte *__restrict__ dest,
         get_assignment_function(weight_output_format, weight_input_format);
     auto input_pointer = tensor_start;
     size_t store_index = 0;
-    for (size_t i = 0; i < input_shape[0]; ++i) {
-        for (size_t j = 0; j < input_shape[1]; ++j) {
-            for (size_t k = 0; k < input_shape[2]; ++k) {
-                for (size_t l = 0; l < input_shape[3]; ++l) {
+    for (int i = 0; i < input_shape[0]; ++i) {
+        for (int j = 0; j < input_shape[1]; ++j) {
+            for (int k = 0; k < input_shape[2]; ++k) {
+                for (int l = 0; l < input_shape[3]; ++l) {
                     assert(static_cast<int>(store_index) ==
                            std::inner_product(new_strides_permuted.begin(),
                                               new_strides_permuted.end(),
@@ -368,7 +368,7 @@ void assign_permuted<4>(dalotia_byte *__restrict__ dest,
 template <>
 void assign_permuted<5>(dalotia_byte *__restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const size_t *const input_shape,
+                        const int *const input_shape,
                         const dalotia_byte *__restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
                         const int *permutation) {
@@ -384,11 +384,11 @@ void assign_permuted<5>(dalotia_byte *__restrict__ dest,
         get_assignment_function(weight_output_format, weight_input_format);
     auto input_pointer = tensor_start;
     size_t store_index = 0;
-    for (size_t i = 0; i < input_shape[0]; ++i) {
-        for (size_t j = 0; j < input_shape[1]; ++j) {
-            for (size_t k = 0; k < input_shape[2]; ++k) {
-                for (size_t l = 0; l < input_shape[3]; ++l) {
-                    for (size_t m = 0; m < input_shape[4]; ++m) {
+    for (int i = 0; i < input_shape[0]; ++i) {
+        for (int j = 0; j < input_shape[1]; ++j) {
+            for (int k = 0; k < input_shape[2]; ++k) {
+                for (int l = 0; l < input_shape[3]; ++l) {
+                    for (int m = 0; m < input_shape[4]; ++m) {
                         assert(static_cast<int>(store_index) ==
                             std::inner_product(new_strides_permuted.begin(),
                                                 new_strides_permuted.end(),

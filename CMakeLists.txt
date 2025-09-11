@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(DALOTIA CXX C)
+project(dalotia CXX C)
 
 option(DALOTIA_CPP_BUILD_EXAMPLES "Build examples" ON)
 option(DALOTIA_BUILD_TESTS "Build tests" ON)
 option(DALOTIA_WITH_CPP_PMR "use polymorphic memory resources (pmr) C++17 feature for dalotia" ON)
 option(DALOTIA_WITH_OPENMP "Build with OpenMP support" OFF)
 option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
+option(DALOTIA_WITH_TENSORFLOW "use the Tensorflow C backend for tensor I/O" OFF)
 option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)
 if (DALOTIA_WITH_FORTRAN)
     enable_language(Fortran)
@@ -19,6 +20,10 @@ if (DALOTIA_WITH_FORTRAN)
 endif (DALOTIA_WITH_FORTRAN)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/modules")
+
+include(GNUInstallDirs)
+set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
 # if this is empty, will be set at config time
 # (build with --config Release or --config Debug etc.)
@@ -28,14 +33,14 @@ message(STATUS "CMAKE BUILD TYPE: ${CMAKE_BUILD_TYPE}")
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)
 
 # safetensors-cpp
+set(DALOTIA_EXTERNAL_SAFETENSORS_CPP OFF)
 if (DALOTIA_WITH_SAFETENSORS_CPP)
-  if (NOT DEFINED safetensors-cpp_DIR OR safetensors-cpp_DIR MATCHES "fetch")
+  if (NOT DEFINED safetensors-cpp_DIR OR safetensors-cpp_DIR MATCHES "fetch" AND (NOT DEFINED safetensors-cpp_FOUND OR NOT safetensors-cpp_FOUND))
     include(FetchContent)
     FetchContent_Declare(
       safetensors-cpp
       GIT_REPOSITORY https://github.com/syoyo/safetensors-cpp.git
       GIT_TAG a88953c981c6773760540592fa97f04619a8f825
-      OVERRIDE_FIND_PACKAGE
     )
     set(SAFETENSORS_CPP_CXX_EXCEPTIONS true) #TODO maybe depend on language?
     set(SAFETENSORS_CPP_BUILD_EXAMPLES false)
@@ -47,19 +52,55 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
     target_include_directories(safetensors_cpp PUBLIC  
         $<BUILD_INTERFACE:${SAFETENSORS_CPP_INCLUDE_DIR}>
       )
-    # TODO this is not good, every package should install its own targets
-    # cf. https://discourse.cmake.org/t/propagation-of-fetchcontent-targets-when-installing/2559/2
-    install(TARGETS safetensors_cpp EXPORT dalotia
-      LIBRARY DESTINATION lib
-      ARCHIVE DESTINATION lib
-      RUNTIME DESTINATION bin
-      INCLUDES DESTINATION include
-    )
   else()
     # to pass safetensors-cpp_DIR on the command line:
     find_package(safetensors-cpp REQUIRED CMAKE_FIND_ROOT_PATH_BOTH)
+    set(DALOTIA_EXTERNAL_SAFETENSORS_CPP ON)
   endif()
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
+
+# tensorflow
+if (DALOTIA_WITH_TENSORFLOW)  
+  if (NOT DEFINED tensorflow_DIR OR tensorflow_DIR MATCHES "fetch")
+    include(FetchContent)
+    FetchContent_Declare(
+      tensorflow
+      URL https://storage.googleapis.com/tensorflow/versions/2.18.0/libtensorflow-gpu-linux-x86_64.tar.gz
+    )
+    FetchContent_MakeAvailable(tensorflow)
+
+    FetchContent_GetProperties(tensorflow SOURCE_DIR tensorflow_SRC_DIR)
+    set(tensorflow_INCLUDE_DIRS ${tensorflow_SRC_DIR}/include)
+    find_library(tensorflow_LIBRARIES
+      NAMES tensorflow
+      PATHS ${tensorflow_SRC_DIR}/lib
+      NO_DEFAULT_PATH
+    )
+    message(STATUS "tensorflow_LIBRARIES: ${tensorflow_LIBRARIES}")
+
+    include(FindPackageHandleStandardArgs)
+    find_package_handle_standard_args(tensorflow DEFAULT_MSG tensorflow_INCLUDE_DIRS tensorflow_LIBRARIES)
+  else()
+    find_package(tensorflow REQUIRED CMAKE_FIND_ROOT_PATH_BOTH)
+  endif()
+  if(NOT TARGET tensorflow::tensorflow)
+    add_library(tensorflow::tensorflow SHARED IMPORTED)
+    set_target_properties(
+      tensorflow::tensorflow 
+      PROPERTIES
+      IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+      IMPORTED_LOCATION "${tensorflow_LIBRARIES}"
+      INTERFACE_INCLUDE_DIRECTORIES "${tensorflow_INCLUDE_DIRS}"
+    )# $<BUILD_INTERFACE:${tensorflow_INCLUDE_DIRS}> $<INSTALL_INTERFACE:include>
+    # cf. https://stackoverflow.com/a/41179630/7272382
+    install(FILES ${tensorflow_INCLUDE_DIRS}/tensorflow/c/c_api.h
+      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tensorflow/c
+    )
+    install(FILES ${tensorflow_LIBRARIES}
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+  endif()
+endif (DALOTIA_WITH_TENSORFLOW)
 
 add_subdirectory(src) # target dalotia_cpp is generated here
 if (DALOTIA_WITH_OPENMP)
@@ -80,25 +121,38 @@ if (DALOTIA_CPP_BUILD_EXAMPLES)
 endif (DALOTIA_CPP_BUILD_EXAMPLES)
 
 if (DALOTIA_BUILD_TESTS)
-  list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
   enable_testing()
   add_subdirectory(test)
 endif (DALOTIA_BUILD_TESTS)
 
-# install version info etc.
+
+# install dependencies, version info, etc.
 include(CMakePackageConfigHelpers)
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+  INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
+  PATH_VARS DALOTIA_EXTERNAL_SAFETENSORS_CPP
+)
+# # Install find modules
+# install(DIRECTORY cmake/modules/ DESTINATION ${INSTALL_CONFIGDIR}/modules)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+  DESTINATION ${INSTALL_CONFIGDIR}
+)
 write_basic_package_version_file(
   "dalotia-config-version.cmake"
   VERSION 0.0.1
   COMPATIBILITY SameMajorVersion
 )
 install(FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>/dalotia-config-version.cmake
-  DESTINATION lib/cmake/dalotia
+  DESTINATION ${INSTALL_CONFIGDIR}
 )
 
 # export full library interface
-install(EXPORT dalotia
-  FILE dalotia-config.cmake
+install(EXPORT dalotia_export_set
+  FILE ${PROJECT_NAME}-targets.cmake
   NAMESPACE dalotia::
-  DESTINATION lib/cmake/dalotia
+  DESTINATION ${INSTALL_CONFIGDIR}
 )

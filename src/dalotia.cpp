@@ -3,9 +3,20 @@
 #include <filesystem>
 namespace dalotia {
 using file_exists = std::filesystem::exists;
-}
-#else   // __cpp_lib_filesystem
+using is_directory = std::filesystem::is_directory;
+}  // namespace dalotia
+#else  // __cpp_lib_filesystem
 namespace dalotia {
+#include <sys/stat.h>
+
+bool is_directory(const char *path) {
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        return S_ISDIR(st.st_mode);
+    }
+    return false;
+}
+
 bool file_exists(const std::string &name) {
     if (FILE *file = fopen(name.c_str(), "r")) {
         fclose(file);
@@ -43,6 +54,12 @@ TensorFile *make_tensor_file(const std::string &filename) {
 #else   // DALOTIA_WITH_SAFETENSORS_CPP
         throw std::runtime_error("Safetensors support not enabled");
 #endif  // DALOTIA_WITH_SAFETENSORS_CPP
+    } else if (extension == "keras" || extension == "pb" || is_directory(filename.c_str())) {
+#ifdef DALOTIA_WITH_TENSORFLOW
+        return new TensorflowSavedModel(filename);
+#else   // DALOTIA_WITH_TENSORFLOW
+        throw std::runtime_error("Tensorflow support not enabled");
+#endif  // DALOTIA_WITH_TENSORFLOW
     } else {
         throw std::runtime_error("Unsupported file extension: ." + extension);
     }
