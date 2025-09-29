@@ -2,8 +2,9 @@
 #if __cpp_lib_filesystem
 #include <filesystem>
 namespace dalotia {
-using file_exists = std::filesystem::exists;
-using is_directory = std::filesystem::is_directory;
+using std::filesystem::exists;
+auto file_exists = exists;
+using std::filesystem::is_directory;
 }  // namespace dalotia
 #else  // __cpp_lib_filesystem
 namespace dalotia {
