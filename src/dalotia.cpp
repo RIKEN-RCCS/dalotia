@@ -3,7 +3,9 @@
 #include <filesystem>
 namespace dalotia {
 using std::filesystem::exists;
-auto file_exists = exists;
+auto file_exists = [](const std::filesystem::path& p) {
+    return std::filesystem::exists(p);
+};
 using std::filesystem::is_directory;
 }  // namespace dalotia
 #else  // __cpp_lib_filesystem
