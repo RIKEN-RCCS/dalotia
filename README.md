@@ -106,6 +106,91 @@ fc1_output = max(0.0, fc1_output) ! reLU
 ! [...repeat GEMM for weight_2/bias_2...]
 ```
 
+### ...with shared-memory parallelism through OpenMP
+
+Depending on tensor sizes, the efficiency of shared-memory programs on NUMA architectures can depend on
+which part of the main memory the tensors live on.
+The following code snippets are equivalent to the above but duplicates the weights and biases on each thread
+and allocates slices of the input and output data for each thread.
+
+```C++
+// [...initialize inputs, allocate output arrays...]
+std::string filename = "./model.st";
+auto dalotia_file = std::unique_ptr<dalotia::TensorFile>(
+    dalotia::make_tensor_file(filename));
+#pragma omp parallel
+{
+// thread-local -> first-touch efficiency
+auto [weight_extents_1, weight_1] = 
+    dalotia_file->load_tensor_dense<float>("fc1.weight");
+auto [bias_extents_1, bias_1] = 
+    dalotia_file->load_tensor_dense<float>("fc1.bias");
+auto [weight_extents_2, weight_2] = 
+    dalotia_file->load_tensor_dense<float>("fc2.weight");
+auto [bias_extents_2, bias_2] = 
+    dalotia_file->load_tensor_dense<float>("fc2.bias");
+int num_hidden_neurons = weight_extents_1[0];
+int num_input_features = weight_extents_1[1];
+// [...allocate thread-local intermediate arrays...]
+
+for (int i = 0; i < this_thread_num_inputs; ++i)
+  for (int j = 0; j < num_hidden_neurons; ++j)
+    hidden[i*num_hidden_neurons + j] = bias_1[j];
+
+cblas_sgemm(CblasColMajor, CblasTrans,
+    CblasNoTrans, num_hidden_neurons, 
+    this_thread_num_inputs, num_input_features, 
+    1.0, weight_1.data(), num_input_features,
+    &inputs[this_thread_inputs_start_index], 
+    num_input_features,  1.0, hidden.data(),
+    num_hidden_neurons);
+for (auto& value : hidden)
+  value = value < 0. ? 0. : value; // ReLU
+
+// [...repeat GEMM for weight_2/bias_2...]
+```
+
+```fortran
+type(C_ptr) :: dalotia_file_pointer
+! fixed-size input arrays
+real(C_float) :: weight_1(10, 300), bias_1(300)
+! allocatable input arrays
+real(C_float), allocatable :: weight_2(:,:), bias_2(:)
+integer :: num_input_features = size(weight_1, 1)
+integer :: num_hidden_neurons = size(weight_1, 2)
+! [...other variables...]
+! [...initialize inputs, allocate output arrays...]
+
+dalotia_file = dalotia_open_file("./model.safetensors")
+!$OMP parallel
+call dalotia_load_tensor(dalotia_file, &
+                         "fc1.bias", bias_1)
+call dalotia_load_tensor(dalotia_file, &
+                         "fc1.weight", weight_1)
+call dalotia_load_tensor_dense(dalotia_file, & 
+                         "fc2.bias", bias_2)
+call dalotia_load_tensor_dense(dalotia_file, &
+                         "fc2.weight", weight_2)
+! [...allocate thread-local intermediate arrays...]
+
+do o = 1, this_thread_num_inputs
+    fc1_output(:,o) = bias_1(:)
+end do
+call sgemm('T', 'N', num_hidden_neurons, &
+    this_thread_num_inputs, num_input_features, &
+    1.0,  weight_1, num_input_features, inputs, &
+    num_input_features, 1.0, fc1_output, num_hidden_neurons)        
+fc1_output = max(0.0, fc1_output) ! reLU
+
+! [...repeat GEMM for weight_2/bias_2...]
+!$OMP end parallel
+call dalotia_close_file(dalotia_file)
+```
+
+This is exactly what's used in the fully-connected [C++](https://github.com/RIKEN-RCCS/dalotia_evaluation/blob/main/benchmarks/SubgridLES/subgridLES.cpp)
+and [Fortran examples](https://github.com/RIKEN-RCCS/dalotia_evaluation/blob/main/benchmarks/SubgridLES/subgridLES.f90)
+of the inference comparison benchmark code https://github.com/RIKEN-RCCS/dalotia_evaluation.
+
 ## Installation
 
 ### With CMake
