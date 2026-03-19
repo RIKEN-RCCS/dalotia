@@ -1,0 +1,20 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Pollinger
+  given-names: Theresa
+  orcid: "https://orcid.org/0000-0002-0186-4340"
+title: "dalotia"
+url: "https://github.com/RIKEN-RCCS/dalotia"
+message: "If you use this software, please cite our article at SCA/HPCAsia as below."
+preferred-citation:
+  authors:
+  - family-names: "Pollinger"
+    given-names: "Theresa"
+    orcid: "https://orcid.org/0000-0002-0186-4340"
+  - family-names: "Domke"
+    given-names: "Jens"
+    orcid: "https://orcid.org/0000-0002-5343-414X"
+  date-published: 2026-01-25
+  doi: 10.1145/3773656.3773664
+  title: "High-performance in-situ ML Inference with dalotia: A Lightweight Tensor Loader API for Science Codes"
+  url: "https://dl.acm.org/doi/10.1145/3773656.3773664"
