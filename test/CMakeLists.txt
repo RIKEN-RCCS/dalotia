@@ -31,6 +31,12 @@ if(DALOTIA_WITH_SAFETENSORS_CPP)
     endif (DALOTIA_WITH_FORTRAN)
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
+if (DALOTIA_WITH_CUFILE)
+    add_executable( test_cufile test_cufile.cpp )
+    target_link_libraries( test_cufile dalotia_cpp CUDA::cudart )
+    add_test( cufile-pointer-detection test_cufile )
+endif (DALOTIA_WITH_CUFILE)
+
 if (DALOTIA_WITH_TENSORFLOW)
     add_executable( test_tensorflow test_tensorflow.cpp )
     target_link_libraries( test_tensorflow dalotia_cpp tensorflow::tensorflow )

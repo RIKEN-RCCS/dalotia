@@ -8,6 +8,7 @@ option(DALOTIA_WITH_CPP_PMR "use polymorphic memory resources (pmr) C++17 featur
 option(DALOTIA_WITH_OPENMP "Build with OpenMP support" OFF)
 option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
 option(DALOTIA_WITH_TENSORFLOW "use the Tensorflow C backend for tensor I/O" OFF)
+option(DALOTIA_WITH_CUFILE "use NVIDIA cuFile (GDS) for direct GPU tensor loading" OFF)
 option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)
 if (DALOTIA_WITH_FORTRAN)
     enable_language(Fortran)
@@ -101,6 +102,11 @@ if (DALOTIA_WITH_TENSORFLOW)
     )
   endif()
 endif (DALOTIA_WITH_TENSORFLOW)
+
+# cuFile (GPU Direct Storage)
+if (DALOTIA_WITH_CUFILE)
+  find_package(CUDAToolkit REQUIRED)
+endif (DALOTIA_WITH_CUFILE)
 
 add_subdirectory(src) # target dalotia_cpp is generated here
 if (DALOTIA_WITH_OPENMP)
