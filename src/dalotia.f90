@@ -33,7 +33,8 @@ module dalotia_c_interface
         character(kind=C_char), dimension(*), intent(in):: file_name
     end function dalotia_open_file_c
 
-    type(C_ptr) function dalotia_load_file_from_memory_c(address, num_bytes, file_format) bind(C,name="dalotia_load_file_from_memory")
+    type(C_ptr) function dalotia_load_file_from_memory_c(address, num_bytes, file_format) &
+                                               bind(C,name="dalotia_load_file_from_memory")
         use, intrinsic::ISO_C_BINDING, only: C_ptr, C_char, C_size_t
         implicit none
         type(C_ptr), intent(in), value :: address
