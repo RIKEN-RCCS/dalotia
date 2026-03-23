@@ -31,6 +31,12 @@ if(DALOTIA_WITH_SAFETENSORS_CPP)
     endif (DALOTIA_WITH_FORTRAN)
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
+# Compile-only test: verify headers don't require C++20
+add_executable(test_cxx17_compat test_cxx17_compat.cpp)
+target_link_libraries(test_cxx17_compat dalotia_cpp)
+set_target_properties(test_cxx17_compat PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+add_test(NAME cxx17-compat COMMAND test_cxx17_compat)
+
 if (DALOTIA_WITH_CUDA)
     add_executable( test_cufile test_cufile.cpp )
     target_link_libraries( test_cufile dalotia_cpp CUDA::cudart )
