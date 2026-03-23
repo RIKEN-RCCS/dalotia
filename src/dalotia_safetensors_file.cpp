@@ -130,66 +130,26 @@ bool SafetensorsFile::is_sparse(const std::string& /*tensor_name*/) const {
     return false;
 }
 
-size_t SafetensorsFile::get_num_dimensions(
+std::vector<int> SafetensorsFile::get_tensor_extents_raw(
     const std::string& tensor_name) const {
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
-    return safetensor.shape.size();
+    return {safetensor.shape.begin(), safetensor.shape.end()};
 }
 
-size_t SafetensorsFile::get_num_tensor_elements(
+TensorFile::TensorInfo SafetensorsFile::get_tensor_info(
     const std::string& tensor_name) const {
-    safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
-    return safetensors::get_shape_size(safetensor);
-}
-
-std::vector<int> SafetensorsFile::get_tensor_extents(
-    const std::string& tensor_name, const std::vector<int>& permutation) const {
-    safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
-    std::vector<int> extents(safetensor.shape.begin(), safetensor.shape.end());
-    if (!permutation.empty()) {
-        auto final_permutation_in_c_order =
-            final_c_permutation_from_permutation_and_order(
-                permutation, dalotia_Ordering::dalotia_C_ordering,
-                extents.size());
-        if (!final_permutation_in_c_order.empty()) {
-            for (size_t i = 0; i < extents.size(); i++) {
-                extents[i] = safetensor.shape[final_permutation_in_c_order[i]];
-            }
-        }
-    }
-    return extents;
-}
-
-void SafetensorsFile::load_tensor_dense_impl(
-    const std::string& tensor_name, dalotia_WeightFormat weightFormat,
-    dalotia_Ordering ordering, dalotia_byte* __restrict__ tensor,
-    const std::vector<int>& permutation) {
     if (!data_source_) {
         throw std::runtime_error(
-            "SafetensorsFile::load_tensor_dense_impl: data source not "
-            "initialized");
+            "SafetensorsFile::get_tensor_info: data source not initialized");
     }
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
-    const auto num_dimensions = safetensor.shape.size();
-    auto final_permutation_in_c_order =
-        final_c_permutation_from_permutation_and_order(permutation, ordering,
-                                                       num_dimensions);
-
-    const dalotia_WeightFormat input_weight_format =
-        safetensors_type_map.at(safetensor.dtype);
-    auto* tensor_start = reinterpret_cast<const dalotia_byte* __restrict__>(
-        data_source_->host_data(safetensor.data_offsets[0]));
-    if (!final_permutation_in_c_order.empty()) {
-        std::vector<int> input_shape(safetensor.shape.begin(),
-                                     safetensor.shape.end());
-        assign_permuted(num_dimensions, tensor, weightFormat,
-                        input_shape.data(), tensor_start, input_weight_format,
-                        final_permutation_in_c_order.data());
-    } else {
-        const size_t nitems = safetensors::get_shape_size(safetensor);
-        assign_linearly(tensor, weightFormat, nitems, tensor_start,
-                        input_weight_format);
-    }
+    return {
+        reinterpret_cast<const dalotia_byte*>(
+            data_source_->host_data(safetensor.data_offsets[0])),
+        safetensors_type_map.at(safetensor.dtype),
+        {safetensor.shape.begin(), safetensor.shape.end()},
+        safetensors::get_shape_size(safetensor),
+    };
 }
 
 std::vector<const dalotia_byte*> SafetensorsFile::get_mmap_tensor_pointers(

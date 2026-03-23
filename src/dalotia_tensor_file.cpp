@@ -29,9 +29,14 @@ void TensorFile::load_tensor_dense(const std::string& tensor_name,
                                    dalotia_Ordering ordering,
                                    dalotia_byte* __restrict__ tensor,
                                    const std::vector<int>& permutation) {
+    // Normalize the permutation once: convert from user-supplied
+    // (possibly 1-indexed, possibly F-ordering) to 0-indexed C-order.
+    auto final_perm = final_c_permutation_from_permutation_and_order(
+        permutation, ordering, this->get_num_dimensions(tensor_name));
+
 #ifdef DALOTIA_WITH_CUDA
     if (is_device_pointer(tensor)) {
-        if (!permutation.empty()) {
+        if (!final_perm.empty()) {
             throw std::runtime_error(
                 "load_tensor_dense: permutation to device memory is not "
                 "supported; transpose on-device after loading instead.");
@@ -71,9 +76,25 @@ void TensorFile::load_tensor_dense(const std::string& tensor_name,
     }
 #endif  // DALOTIA_WITH_CUDA
 
-    // Host path — delegate to the format-specific implementation.
-    load_tensor_dense_impl(tensor_name, weightFormat, ordering, tensor,
-                           permutation);
+    // Host path
+    load_tensor_dense_impl(tensor_name, weightFormat, dalotia_C_ordering,
+                           tensor, final_perm);
+}
+
+void TensorFile::load_tensor_dense_impl(const std::string& tensor_name,
+                                        dalotia_WeightFormat weightFormat,
+                                        dalotia_Ordering /*ordering*/,
+                                        dalotia_byte* __restrict__ tensor,
+                                        const std::vector<int>& permutation) {
+    auto info = get_tensor_info(tensor_name);
+    if (!permutation.empty()) {
+        assign_permuted(static_cast<uint8_t>(info.shape.size()), tensor,
+                        weightFormat, info.shape.data(), info.data, info.format,
+                        permutation.data());
+    } else {
+        assign_linearly(tensor, weightFormat, info.num_elements, info.data,
+                        info.format);
+    }
 }
 
 }  // namespace dalotia

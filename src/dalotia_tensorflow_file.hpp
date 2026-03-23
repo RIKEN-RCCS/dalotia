@@ -34,19 +34,10 @@ class TensorflowSavedModel : public TensorFile {
     ~TensorflowSavedModel() override;
 
     const std::vector<std::string>& get_tensor_names() const override;
-
     bool is_sparse(const std::string& tensor_name) const override;
-
-    size_t get_num_dimensions(const std::string& tensor_name) const override;
-
-    std::vector<int> get_tensor_extents(
-        const std::string& tensor_name = "",
-        const std::vector<int>& permutation = {}) const override;
-
-    void load_tensor_dense_impl(
-        const std::string& tensor_name, dalotia_WeightFormat weightFormat,
-        dalotia_Ordering ordering, dalotia_byte* __restrict__ tensor,
-        const std::vector<int>& permutation = {}) override;
+    std::vector<int> get_tensor_extents_raw(
+        const std::string& tensor_name) const override;
+    TensorInfo get_tensor_info(const std::string& tensor_name) const override;
 
     std::vector<const dalotia_byte*> get_tensor_pointers(
         const std::string& tensor_name);

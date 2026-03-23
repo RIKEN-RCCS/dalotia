@@ -54,23 +54,34 @@ class TensorFile {
         return false;
     }
 
-    [[nodiscard]] virtual size_t get_num_dimensions(const std::string &tensor_name) const {
+    [[nodiscard]] size_t get_num_dimensions(
+        const std::string& tensor_name) const {
         return this->get_tensor_extents(tensor_name).size();
     }
 
-    [[nodiscard]] virtual std::vector<int> get_tensor_extents(
-        const std::string &/*tensor_name*/,
-        const std::vector<int>& /*permutation*/ = {}) const
-    {
-        throw std::runtime_error(
-            "get_tensor_extents not implemented for this tensor type");
-        return {};
+    // Returns the tensor extents, optionally permuted.
+    [[nodiscard]] std::vector<int> get_tensor_extents(
+        const std::string& tensor_name,
+        const std::vector<int>& permutation = {}) const {
+        auto extents = get_tensor_extents_raw(tensor_name);
+        if (!permutation.empty()) {
+            auto final_perm = final_c_permutation_from_permutation_and_order(
+                permutation, dalotia_C_ordering, extents.size());
+            if (!final_perm.empty()) {
+                auto raw = extents;
+                for (size_t i = 0; i < extents.size(); i++) {
+                    extents[i] = raw[final_perm[i]];
+                }
+            }
+        }
+        return extents;
     }
 
-    [[nodiscard]] virtual size_t get_num_tensor_elements(const std::string &tensor_name) const {
-        // ?
+    [[nodiscard]] size_t get_num_tensor_elements(
+        const std::string& tensor_name) const {
         auto extents = this->get_tensor_extents(tensor_name);
-        return std::accumulate(extents.begin(), extents.end(), 1, std::multiplies<size_t>());
+        return std::accumulate(extents.begin(), extents.end(), size_t{1},
+                               std::multiplies<size_t>());
     }
 
     [[nodiscard]] virtual size_t get_nnz(const std::string &/* tensor_name*/) const {
@@ -199,16 +210,35 @@ class TensorFile {
     }
 #endif  // DALOTIA_WITH_CUFILE
 
-    // Format-specific host loading. Subclasses override this to implement
-    // the actual tensor reading with format conversion and permutation.
-    virtual void load_tensor_dense_impl(
-        const std::string& /*tensor_name*/,
-        dalotia_WeightFormat /*weightFormat*/, dalotia_Ordering /*ordering*/,
-        dalotia_byte* __restrict__ /*tensor*/,
-        const std::vector<int>& /*permutation*/) {
+    // Information needed to read a tensor from the file.
+    struct TensorInfo {
+        const dalotia_byte* data;     // pointer to raw tensor bytes
+        dalotia_WeightFormat format;  // format of the data in the file
+        std::vector<int> shape;       // unpermuted shape
+        size_t num_elements;          // total number of elements
+    };
+
+    // Subclasses override this to provide access to a tensor's raw data.
+    [[nodiscard]] virtual TensorInfo get_tensor_info(
+        const std::string& /*tensor_name*/) const {
         throw std::runtime_error(
-            "load_tensor_dense not implemented for this tensor type");
+            "get_tensor_info not implemented for this tensor type");
     }
+
+    // Returns unpermuted extents. Subclasses override this.
+    [[nodiscard]] virtual std::vector<int> get_tensor_extents_raw(
+        const std::string& /*tensor_name*/) const {
+        throw std::runtime_error(
+            "get_tensor_extents_raw not implemented for this tensor type");
+    }
+
+    // Default implementation of host tensor loading using get_tensor_info.
+    // Subclasses typically don't need to override this.
+    virtual void load_tensor_dense_impl(const std::string& tensor_name,
+                                        dalotia_WeightFormat weightFormat,
+                                        dalotia_Ordering ordering,
+                                        dalotia_byte* __restrict__ tensor,
+                                        const std::vector<int>& permutation);
 
     std::unique_ptr<DataSource> data_source_;
 #ifdef DALOTIA_WITH_CUFILE
