@@ -25,12 +25,14 @@ class Dalotia(CMakePackage):
     variant("safetensorscpp", default=True, description="use safetensors-cpp for tensor I/O")
     variant("fortran", default=True, description="Build Fortran interface")
     variant("tensorflow", default=False, description="Build with TensorFlow support")
+    variant("cufile", default=False, description="Enable GPU Direct Storage (GDS) for loading tensors directly into GPU memory")
 
     depends_on("cxx", type="build")
     depends_on("c", type="build")
     depends_on("fortran", type="build", when="+fortran")
     depends_on("cmake@3.24:", type="build")
     depends_on("safetensors-cpp+cxxexceptions", when="+safetensorscpp")
+    depends_on("cuda", when="+cufile")
 
 
     def cmake_args(self):
@@ -40,6 +42,7 @@ class Dalotia(CMakePackage):
             self.define_from_variant("DALOTIA_WITH_OPENMP", "openmp"),
             self.define_from_variant("DALOTIA_WITH_SAFETENSORS_CPP", "safetensorscpp"),
             self.define_from_variant("DALOTIA_WITH_TENSORFLOW", "tensorflow"),
+            self.define_from_variant("DALOTIA_WITH_CUFILE", "cufile"),
             self.define_from_variant("DALOTIA_WITH_FORTRAN", "fortran"),
         ]
         if self.spec.satisfies("+safetensorscpp"):
