@@ -64,8 +64,5 @@ jobs:
       uses: threeal/cmake-action@v1.3.0
       with:
         run-build: true
-        options: |
-          DALOTIA_WITH_CUFILE=ON
-          DALOTIA_BUILD_TESTS=OFF
-          DALOTIA_WITH_FORTRAN=OFF
+        options: DALOTIA_WITH_CUFILE=ON DALOTIA_BUILD_TESTS=OFF DALOTIA_WITH_FORTRAN=OFF
         build-dir: build-cuda
