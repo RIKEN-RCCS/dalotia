@@ -158,18 +158,19 @@ TensorflowSavedModel::get_tensor_extents(const std::string &tensor_name,
     return extents;
 }
 
-void TensorflowSavedModel::load_tensor_dense(const std::string &tensor_name,
-                                             dalotia_WeightFormat weightFormat,
-                                             dalotia_Ordering ordering,
-                                             dalotia_byte *__restrict__ tensor,
-                                             const std::vector<int> &permutation) {
-    const TF_Tensor *tf_tensor = this->get_tensor_pointer_from_name(tensor_name);
-    void *databuffer = TF_TensorData(tf_tensor);
+void TensorflowSavedModel::load_tensor_dense_impl(
+    const std::string& tensor_name, dalotia_WeightFormat weightFormat,
+    dalotia_Ordering ordering, dalotia_byte* __restrict__ tensor,
+    const std::vector<int>& permutation) {
+    const TF_Tensor* tf_tensor =
+        this->get_tensor_pointer_from_name(tensor_name);
+    void* databuffer = TF_TensorData(tf_tensor);
     int num_dimensions = TF_NumDims(tf_tensor);
     const int64_t num_tensor_elements = TF_TensorElementCount(tf_tensor);
 
     TF_DataType tf_type = TF_TensorType(tf_tensor);
-    const dalotia_WeightFormat input_weight_format = tensorflow_type_map.at(tf_type);
+    const dalotia_WeightFormat input_weight_format =
+        tensorflow_type_map.at(tf_type);
 #ifndef NDEBUG
     assert(databuffer != nullptr);
     assert(tf_tensor != nullptr);
