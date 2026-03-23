@@ -43,3 +43,32 @@ jobs:
         args: --output-on-failure -T memcheck
     - name: Output Memcheck Log
       run: for i in /home/runner/work/dalotia/dalotia/build-*/Testing/Temporary/MemoryChecker.*.log ; do echo $i ; cat $i ; done
+
+  test-cuda:
+    name: Build + test with CUDA/cuFile (no GPU!)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.2.0
+
+    - name: Install CUDA Toolkit
+      uses: Jimver/cuda-toolkit@8022558310ea543e35132143092835585f60e628 # v0.2.21
+      id: cuda-toolkit
+      with:
+        cuda: '12.6.3'
+        method: 'network'
+        sub-packages: '["nvcc", "cudart-dev"]'
+        non-cuda-sub-packages: '["libcufile-dev", "libcublas-dev"]'
+
+    - name: Configure and Build with cuFile
+      uses: threeal/cmake-action@v1.3.0
+      with:
+        run-build: true
+        options: DALOTIA_WITH_CUFILE=ON DALOTIA_BUILD_TESTS=ON DALOTIA_WITH_FORTRAN=OFF
+        build-dir: build-cuda
+
+    - name: Run non-GPU tests
+      uses: threeal/ctest-action@v1.1.0
+      with:
+        test-dir: build-cuda
+        args: --output-on-failure --exclude-regex cufile-pointer-detection

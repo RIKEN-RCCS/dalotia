@@ -8,6 +8,7 @@ option(DALOTIA_WITH_CPP_PMR "use polymorphic memory resources (pmr) C++17 featur
 option(DALOTIA_WITH_OPENMP "Build with OpenMP support" OFF)
 option(DALOTIA_WITH_SAFETENSORS_CPP "use safetensors-cpp for tensor I/O" ON)
 option(DALOTIA_WITH_TENSORFLOW "use the Tensorflow C backend for tensor I/O" OFF)
+option(DALOTIA_WITH_CUFILE "use NVIDIA cuFile (GDS) for direct GPU tensor loading" OFF)
 option(DALOTIA_WITH_FORTRAN "Build Fortran interface" ON)
 if (DALOTIA_WITH_FORTRAN)
     enable_language(Fortran)
@@ -101,6 +102,23 @@ if (DALOTIA_WITH_TENSORFLOW)
     )
   endif()
 endif (DALOTIA_WITH_TENSORFLOW)
+
+# CUDA support: auto-detected when CUFILE is requested, or when CUDAToolkit
+# is found. Enables device-pointer detection and cudaMemcpy fallback.
+if (DALOTIA_WITH_CUFILE)
+  # cuFile adds GPU Direct Storage (GDS)
+  find_package(CUDAToolkit REQUIRED)
+  set(DALOTIA_WITH_CUDA ON CACHE BOOL "CUDA support (auto-detected)" FORCE)
+else()
+  find_package(CUDAToolkit QUIET)
+  if (CUDAToolkit_FOUND)
+    set(DALOTIA_WITH_CUDA ON CACHE BOOL "CUDA support (auto-detected)" FORCE)
+  endif()
+endif (DALOTIA_WITH_CUFILE)
+if (DALOTIA_WITH_CUDA)
+  enable_language(CUDA)
+  message(STATUS "CUDA support enabled (toolkit: ${CUDAToolkit_VERSION})")
+endif (DALOTIA_WITH_CUDA)
 
 add_subdirectory(src) # target dalotia_cpp is generated here
 if (DALOTIA_WITH_OPENMP)

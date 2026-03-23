@@ -35,3 +35,7 @@ jobs:
         spack info dalotia~safetensorscpp+tensorflow
         spack dev-build --test=root dalotia@main ~safetensorscpp+tensorflow
         spack load --sh dalotia@main+tensorflow
+    - name: check dalotia+cufile spec resolves
+      shell: spack-bash {0}
+      run: |
+        spack spec dalotia+cufile

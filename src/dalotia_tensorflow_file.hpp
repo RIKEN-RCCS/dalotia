@@ -28,38 +28,33 @@ static const std::map<TF_DataType, dalotia_WeightFormat> tensorflow_type_map{
 };
 
 class TensorflowSavedModel : public TensorFile {
-  public:
-    explicit TensorflowSavedModel(const std::string &filename);
+   public:
+    explicit TensorflowSavedModel(const std::string& filename);
 
     ~TensorflowSavedModel() override;
 
-    const std::vector<std::string> &get_tensor_names() const override;
+    const std::vector<std::string>& get_tensor_names() const override;
+    bool is_sparse(const std::string& tensor_name) const override;
+    std::vector<int> get_tensor_extents_raw(
+        const std::string& tensor_name) const override;
+    TensorInfo get_tensor_info(const std::string& tensor_name) const override;
 
-    bool is_sparse(const std::string &tensor_name) const override;
+    std::vector<const dalotia_byte*> get_tensor_pointers(
+        const std::string& tensor_name);
 
-    size_t get_num_dimensions(const std::string &tensor_name) const override;
-
-    std::vector<int>
-    get_tensor_extents(const std::string &tensor_name = "",
-                       const std::vector<int> &permutation = {}) const override;
-
-    void load_tensor_dense(const std::string &tensor_name,
-                           dalotia_WeightFormat weightFormat, dalotia_Ordering ordering,
-                           dalotia_byte *__restrict__ tensor,
-                           const std::vector<int> &permutation = {}) override;
-
-    std::vector<const dalotia_byte *> get_tensor_pointers(const std::string &tensor_name);
-
-    // cf. https://github.com/serizba/cppflow/blob/master/include/cppflow/model.h
+    // cf.
+    // https://github.com/serizba/cppflow/blob/master/include/cppflow/model.h
     std::shared_ptr<TF_Status> status_;
     std::shared_ptr<TF_Graph> graph_;
     std::shared_ptr<TF_Session> session_;
     std::vector<std::string> tensor_names_;
-    std::map<std::string, std::unique_ptr<TF_Tensor, decltype(&TF_DeleteTensor)>>
+    std::map<std::string,
+             std::unique_ptr<TF_Tensor, decltype(&TF_DeleteTensor)>>
         tensors_;  // cache for loaded tensor pointers
 
-  private:
-    const TF_Tensor *get_tensor_pointer_from_name(const std::string &tensor_name);
+   private:
+    const TF_Tensor* get_tensor_pointer_from_name(
+        const std::string& tensor_name);
 };
 
 }  // namespace dalotia
