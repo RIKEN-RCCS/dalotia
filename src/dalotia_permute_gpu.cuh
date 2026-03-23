@@ -21,12 +21,12 @@ static constexpr int kMaxPermuteDims = 8;
 // The kernel is launched on `stream` (default: 0). No synchronization is
 // performed — the caller is responsible for synchronizing the stream if
 // needed before reading from `d_dest`.
-void permute_on_gpu(const void *d_src, void *d_dest, size_t total_elements,
+void permute_on_gpu(const void* d_src, void* d_dest, size_t total_elements,
                     size_t element_bytes, int ndims,
-                    const std::vector<int> &input_shape,
-                    const std::vector<int> &permutation,
+                    const std::vector<int>& input_shape,
+                    const std::vector<int>& permutation,
                     cudaStream_t stream = 0);
 
-} // namespace dalotia
+}  // namespace dalotia
 
-#endif // DALOTIA_WITH_CUDA
+#endif  // DALOTIA_WITH_CUDA
