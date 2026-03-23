@@ -7,11 +7,7 @@ void TensorFile::load_tensor_dense(const std::string& tensor_name,
                                    dalotia_Ordering ordering,
                                    dalotia_byte* __restrict__ tensor,
                                    const std::vector<int>& permutation) {
-    // Host path
-    if (!data_source_) {
-        throw std::runtime_error(
-            "load_tensor_dense: data source not initialized!");
-    }
+    // Host path — delegate to the format-specific implementation.
     load_tensor_dense_impl(tensor_name, weightFormat, ordering, tensor,
                            permutation);
 }

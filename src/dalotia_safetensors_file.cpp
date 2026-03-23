@@ -145,6 +145,11 @@ void SafetensorsFile::load_tensor_dense_impl(
     const std::string& tensor_name, dalotia_WeightFormat weightFormat,
     dalotia_Ordering ordering, dalotia_byte* __restrict__ tensor,
     const std::vector<int>& permutation) {
+    if (!data_source_) {
+        throw std::runtime_error(
+            "SafetensorsFile::load_tensor_dense_impl: data source not "
+            "initialized");
+    }
     safetensors::tensor_t safetensor = get_tensor_from_name(tensor_name, st_);
     const auto num_dimensions = safetensor.shape.size();
     auto final_permutation_in_c_order =
