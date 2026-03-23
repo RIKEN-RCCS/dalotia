@@ -3,6 +3,9 @@
 #include <cstring>
 #include <stdexcept>
 
+#include <fcntl.h>   // for open() and O_RDONLY/O_DIRECT
+#include <unistd.h>  // for close()
+
 namespace dalotia {
 
 const uint8_t* DataSource::host_data(size_t /*offset*/) const {
