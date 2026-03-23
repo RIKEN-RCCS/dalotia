@@ -1,9 +1,8 @@
 #pragma once
 
 typedef enum  // cannot be scoped to allow for C interface
-{
-    dalotia_CSR,
-    dalotia_COO
+{ dalotia_CSR,
+  dalotia_COO
 } dalotia_SparseFormat;  //? compressed formats for d > 2? -> NO common ones
 //  pytorch uses M+K, but M is always 2, K is dense
 //  onnx also has only 2d sparse tensors, same for tensorflow

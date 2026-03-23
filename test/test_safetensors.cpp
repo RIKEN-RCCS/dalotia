@@ -8,7 +8,7 @@ void test_simple_linear_load() {
     // the C version
     char filename[] = "../data/model.safetensors";
     char tensor_name[] = "embedding";
-    DalotiaTensorFile *file = dalotia_open_file(filename);
+    DalotiaTensorFile* file = dalotia_open_file(filename);
     bool tensor_is_sparse = dalotia_is_sparse(file, tensor_name);
     assert(!tensor_is_sparse);
     constexpr dalotia_WeightFormat weightFormat =
@@ -38,13 +38,13 @@ void test_simple_linear_load() {
     assert(total_size == 60);
     assert(total_size == dalotia_get_num_tensor_elements(file, tensor_name));
 
-    auto tensor = (char *)malloc(dalotia::sizeof_weight_format<weightFormat>() *
-                                 total_size);
+    auto tensor = (char*)malloc(dalotia::sizeof_weight_format<weightFormat>() *
+                                total_size);
 
     dalotia_load_tensor_dense(file, tensor_name, tensor, weightFormat,
                               ordering);
 
-    auto double_tensor = reinterpret_cast<double *>(tensor);
+    auto double_tensor = reinterpret_cast<double*>(tensor);
     for (int i = 0; i < total_size; i++) {
         assert(double_tensor[i] == i);
     }
@@ -157,7 +157,7 @@ void test_load_other_float_format() {
     }
 }
 
-int main(int, char **) {
+int main(int, char**) {
     test_simple_linear_load();
     test_permutation();
     test_permuted_load();
