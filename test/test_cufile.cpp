@@ -144,7 +144,6 @@ void test_load_to_gpu() {
     CHECK_CUDA(cudaFree(d_tensor));
     std::cout << "OK (via fallback)" << std::endl;
 }
-
 #ifdef DALOTIA_WITH_CUFILE
 void test_load_to_gpu_with_driver() {
     std::cout << "test_load_to_gpu_with_driver... " << std::flush;
@@ -181,6 +180,7 @@ void test_same_file_host_and_gpu() {
     // a host pointer and a device pointer, and verify both match.
     std::cout << "test_same_file_host_and_gpu... " << std::flush;
 
+    auto driver = try_open_driver();
     dalotia::SafetensorsFile file(TEST_FILE);
 
     // Load to host
@@ -214,6 +214,7 @@ void test_same_file_host_and_gpu() {
 void test_permuted_load_to_gpu() {
     std::cout << "test_permuted_load_to_gpu... " << std::flush;
 
+    auto driver = try_open_driver();
     // The test model has "embedding_firstchanged" with shape [4,3,5].
     // Permutation [1,0,2] gives shape [3,4,5] with values 0..59.
     const char* perm_tensor = "embedding_firstchanged";
