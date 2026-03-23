@@ -7,6 +7,9 @@
 #include "dalotia_assignment.hpp"
 #include "dalotia_formats.hpp"
 #include "safetensors.hh"
+#ifdef DALOTIA_WITH_CUFILE
+#include "dalotia_cufile.hpp"
+#endif
 
 namespace dalotia {
 
@@ -75,6 +78,15 @@ SafetensorsFile::SafetensorsFile(const std::string& filename)
     }
 #endif  // NDEBUG
     init_data_source();
+#ifdef DALOTIA_WITH_CUFILE
+    // Only attempt to open a GDS data source if the cuFile driver is active.
+    if (CuFileDriver::is_open()) {
+        // base_offset = 8-byte length prefix + JSON header
+        const size_t base_offset = 8 + st_.header_size;
+        set_gpu_data_source(
+            std::make_unique<GDSDataSource>(filename, base_offset));
+    }
+#endif
 }
 
 SafetensorsFile::SafetensorsFile(const void* const address, size_t num_bytes)

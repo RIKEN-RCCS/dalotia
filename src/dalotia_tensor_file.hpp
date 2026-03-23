@@ -17,19 +17,26 @@
 #include "dalotia_datasource.hpp"
 
 namespace dalotia {
+
+#ifdef DALOTIA_WITH_CUDA
+// Returns true if `ptr` is a CUDA device pointer (cudaMalloc'd or managed).
+// Returns false for host pointers (including cudaMallocHost pinned memory).
+bool is_device_pointer(const void* ptr) noexcept;
+#endif  // DALOTIA_WITH_CUDA
+
 class TensorFile {
    public:
-    explicit TensorFile(const std::string &/* filename */) {
+    explicit TensorFile(const std::string& /* filename */) {
         // bool opened = (this->file_ = fopen(filename.c_str(), "rb"));
         // if (!opened) {
         //     throw std::runtime_error("Could not open file " + filename);
         // }
     }
 
-    TensorFile(const TensorFile &) = delete;
-    TensorFile &operator=(const TensorFile &) = delete;
-    TensorFile(TensorFile &&) = delete;
-    TensorFile &operator=(TensorFile &&) = delete;
+    TensorFile(const TensorFile&) = delete;
+    TensorFile& operator=(const TensorFile&) = delete;
+    TensorFile(TensorFile&&) = delete;
+    TensorFile& operator=(TensorFile&&) = delete;
 
     virtual ~TensorFile() {
         // assert(this->file_ != nullptr);
@@ -179,6 +186,19 @@ class TensorFile {
 
     DataSource* data_source() const noexcept { return data_source_.get(); }
 
+#ifdef DALOTIA_WITH_CUFILE
+    // Set the GPU data source. Subclasses call this in their constructor
+    // to enable direct file-to-device loading. Offsets must be
+    // data-section-relative (same convention as the host data source).
+    void set_gpu_data_source(std::unique_ptr<DataSource> source) {
+        gpu_data_source_ = std::move(source);
+    }
+
+    DataSource* gpu_data_source() const noexcept {
+        return gpu_data_source_.get();
+    }
+#endif  // DALOTIA_WITH_CUFILE
+
     // Format-specific host loading. Subclasses override this to implement
     // the actual tensor reading with format conversion and permutation.
     virtual void load_tensor_dense_impl(
@@ -191,6 +211,9 @@ class TensorFile {
     }
 
     std::unique_ptr<DataSource> data_source_;
+#ifdef DALOTIA_WITH_CUFILE
+    std::unique_ptr<DataSource> gpu_data_source_;
+#endif  // DALOTIA_WITH_CUFILE
 
     virtual std::vector<const dalotia_byte*> get_mmap_tensor_pointers(
         const std::string& /*tensor_name*/) const {

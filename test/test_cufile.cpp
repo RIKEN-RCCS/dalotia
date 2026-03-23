@@ -12,6 +12,7 @@
 
 #include "dalotia.hpp"
 #include "dalotia_cufile.hpp"
+#include "dalotia_safetensors_file.hpp"
 
 #define CHECK_CUDA(call)                                                 \
     do {                                                                 \
@@ -106,10 +107,112 @@ void test_host_pointer() {
     std::cout << "OK" << std::endl;
 }
 
+void test_load_to_gpu() {
+    std::cout << "test_load_to_gpu... " << std::flush;
+
+    // Load reference on host
+    auto [extents_ref, tensor_ref] = dalotia::load_tensor_dense<double>(
+        TEST_FILE, TENSOR_NAME, FORMAT, dalotia_C_ordering);
+    assert(tensor_ref.size() == NUM_ELEMENTS);
+
+    // Open file (no GDS driver — tests the cudaMemcpy fallback)
+    auto file = std::unique_ptr<dalotia::TensorFile>(
+        dalotia::make_tensor_file(TEST_FILE));
+
+    const size_t nbytes = NUM_ELEMENTS * sizeof(double);
+    double* d_tensor = nullptr;
+    CHECK_CUDA(cudaMalloc(&d_tensor, nbytes));
+
+    // load_tensor_dense should detect the device pointer and use the
+    // cudaMemcpy fallback (since no CuFileDriver is active)
+    file->load_tensor_dense(TENSOR_NAME, FORMAT, dalotia_C_ordering,
+                            reinterpret_cast<dalotia_byte*>(d_tensor));
+
+    // Copy back and verify
+    std::vector<double> h_result(NUM_ELEMENTS);
+    CHECK_CUDA(
+        cudaMemcpy(h_result.data(), d_tensor, nbytes, cudaMemcpyDeviceToHost));
+    for (int i = 0; i < NUM_ELEMENTS; i++) {
+        assert(h_result[i] == tensor_ref[i]);
+    }
+
+    CHECK_CUDA(cudaFree(d_tensor));
+    std::cout << "OK (via fallback)" << std::endl;
+}
+
+void test_load_to_gpu_with_driver() {
+    // Same as test_load_to_gpu but with the GDS driver active.
+    // Uses GDS if available, otherwise falls back to cudaMemcpy.
+    std::cout << "test_load_to_gpu_with_driver... " << std::flush;
+
+    auto [extents_ref, tensor_ref] = dalotia::load_tensor_dense<double>(
+        TEST_FILE, TENSOR_NAME, FORMAT, dalotia_C_ordering);
+
+    auto driver = try_open_driver();
+    auto file = std::unique_ptr<dalotia::TensorFile>(
+        dalotia::make_tensor_file(TEST_FILE));
+
+    const size_t nbytes = NUM_ELEMENTS * sizeof(double);
+    double* d_tensor = nullptr;
+    CHECK_CUDA(cudaMalloc(&d_tensor, nbytes));
+
+    file->load_tensor_dense(TENSOR_NAME, FORMAT, dalotia_C_ordering,
+                            reinterpret_cast<dalotia_byte*>(d_tensor));
+
+    std::vector<double> h_result(NUM_ELEMENTS);
+    CHECK_CUDA(
+        cudaMemcpy(h_result.data(), d_tensor, nbytes, cudaMemcpyDeviceToHost));
+    for (int i = 0; i < NUM_ELEMENTS; i++) {
+        assert(h_result[i] == tensor_ref[i]);
+    }
+
+    CHECK_CUDA(cudaFree(d_tensor));
+    std::cout << "OK" << (driver ? " (GDS attempted)" : " (fallback)")
+              << std::endl;
+}
+
+void test_same_file_host_and_gpu() {
+    // Load the same tensor from a single SafetensorsFile instance to both
+    // a host pointer and a device pointer, and verify both match.
+    std::cout << "test_same_file_host_and_gpu... " << std::flush;
+
+    dalotia::SafetensorsFile file(TEST_FILE);
+
+    // Load to host
+    auto [extents, h_tensor] =
+        file.load_tensor_dense<double>(TENSOR_NAME, FORMAT, dalotia_C_ordering);
+    assert(h_tensor.size() == NUM_ELEMENTS);
+    for (int i = 0; i < NUM_ELEMENTS; i++) {
+        assert(h_tensor[i] == static_cast<double>(i));
+    }
+
+    // Load the same tensor to a device pointer (same file object)
+    const size_t nbytes = NUM_ELEMENTS * sizeof(double);
+    double* d_tensor = nullptr;
+    CHECK_CUDA(cudaMalloc(&d_tensor, nbytes));
+
+    file.load_tensor_dense(TENSOR_NAME, FORMAT, dalotia_C_ordering,
+                           reinterpret_cast<dalotia_byte*>(d_tensor));
+
+    // Copy back and verify both results match
+    std::vector<double> h_result(NUM_ELEMENTS);
+    CHECK_CUDA(
+        cudaMemcpy(h_result.data(), d_tensor, nbytes, cudaMemcpyDeviceToHost));
+    for (int i = 0; i < NUM_ELEMENTS; i++) {
+        assert(h_result[i] == h_tensor[i]);
+    }
+
+    CHECK_CUDA(cudaFree(d_tensor));
+    std::cout << "OK" << std::endl;
+}
+
 int main() {
     test_is_device_pointer();
     test_external_driver_open();
     test_host_pointer();
+    test_load_to_gpu();
+    test_load_to_gpu_with_driver();
+    test_same_file_host_and_gpu();
     std::cout << "test_cufile succeeded" << std::endl;
     return 0;
 }

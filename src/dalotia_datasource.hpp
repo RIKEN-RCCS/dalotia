@@ -35,4 +35,29 @@ class MemoryDataSource : public DataSource {
     size_t size_;
 };
 
+#ifdef DALOTIA_WITH_CUFILE
+// GDS-backed data source.
+// Individual read_into() calls register/deregister the destination device
+// buffer (since each tensor goes to a different cudaMalloc'd pointer).
+//
+// `base_offset` is the byte offset from the start of the file to the data
+// section (e.g. 8 + header_size for safetensors).
+class GDSDataSource : public DataSource {
+   public:
+    GDSDataSource(const std::string& filepath, size_t base_offset);
+    ~GDSDataSource() override;
+
+    GDSDataSource(const GDSDataSource&) = delete;
+    GDSDataSource& operator=(const GDSDataSource&) = delete;
+
+    void read_into(size_t offset, size_t nbytes, void* d_ptr) override;
+    // host_data() returns nullptr — GDS data is not host-accessible.
+
+   private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+    size_t base_offset_;
+};
+#endif  // DALOTIA_WITH_CUFILE
+
 }  // namespace dalotia
