@@ -187,7 +187,48 @@ fc1_output = max(0.0, fc1_output) ! reLU
 call dalotia_close_file(dalotia_file)
 ```
 
-This is exactly what's used in the fully-connected [C++](https://github.com/RIKEN-RCCS/dalotia_evaluation/blob/main/benchmarks/SubgridLES/subgridLES.cpp)
+### ...with GPU Direct Storage (GDS)
+
+When built with `-DDALOTIA_WITH_CUFILE=ON`, dalotia can load tensors directly from a safetensors file
+into GPU device memory, bypassing the CPU page cache entirely.
+This requires the
+[NVIDIA cuFile / GDS](https://docs.nvidia.com/gpudirect-storage/) library
+(ships with CUDA Toolkit 11.4+) and a compatible filesystem.
+
+```bash
+cmake -DDALOTIA_WITH_CUFILE=ON -DCMAKE_INSTALL_PREFIX=../install ..
+make && make install
+```
+
+Then, loading weights directly to GPU memory uses the same `load_tensor_dense` API — dalotia
+automatically detects device pointers via `cudaPointerGetAttributes` and routes through GDS:
+
+```C++
+#include "dalotia.hpp"
+#include "dalotia_cufile.hpp"
+#include <cuda_runtime.h>
+
+// Initialize the GDS driver (once per process, before opening files)
+dalotia::CuFileDriver gds_guard;
+
+auto dalotia_file = std::unique_ptr<dalotia::TensorFile>(
+    dalotia::make_tensor_file("model.safetensors"));
+
+// Allocate device memory
+float *d_weights;
+cudaMalloc(&d_weights, num_elements * sizeof(float));
+
+// Same API as host loading — GDS is used automatically for device pointers
+dalotia_file->load_tensor_dense("fc1.weight", dalotia_float_32,
+    dalotia_C_ordering, reinterpret_cast<dalotia_byte*>(d_weights));
+```
+
+Note: when loading to a device pointer, format conversion and permutation are not supported
+(the data is loaded in the file's native format and ordering). Post-load transformations can
+be done on-device (e.g., with `cublasSgeam`).
+
+The different variants are used in the fully-connected
+[C++](https://github.com/RIKEN-RCCS/dalotia_evaluation/blob/main/benchmarks/SubgridLES/subgridLES.cpp)
 and [Fortran examples](https://github.com/RIKEN-RCCS/dalotia_evaluation/blob/main/benchmarks/SubgridLES/subgridLES.f90)
 of the inference comparison benchmark code https://github.com/RIKEN-RCCS/dalotia_evaluation.
 
