@@ -5,10 +5,10 @@
 #include <stdexcept>
 #include <string>
 
-#include <cuda_runtime.h>
 #include <cufile.h>
 
 namespace dalotia {
+
 CuFileDriver::CuFileDriver() {
     CUfileError_t status = cuFileDriverOpen();
     if (status.err != CU_FILE_SUCCESS) {
@@ -23,19 +23,6 @@ CuFileDriver::~CuFileDriver() {
 
 bool CuFileDriver::is_open() noexcept {
     return cuFileUseCount() > 0;
-}
-
-bool is_device_pointer(const void* ptr) noexcept {
-    if (!ptr)
-        return false;
-    cudaPointerAttributes attrs{};
-    cudaError_t err = cudaPointerGetAttributes(&attrs, ptr);
-    if (err != cudaSuccess) {
-        cudaGetLastError();
-        return false;
-    }
-    return attrs.type == cudaMemoryTypeDevice ||
-           attrs.type == cudaMemoryTypeManaged;
 }
 
 }  // namespace dalotia

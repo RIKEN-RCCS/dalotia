@@ -103,9 +103,17 @@ if (DALOTIA_WITH_TENSORFLOW)
   endif()
 endif (DALOTIA_WITH_TENSORFLOW)
 
-# cuFile (GPU Direct Storage)
+# CUDA support: auto-detected when CUFILE is requested, or when CUDAToolkit
+# is found. Enables device-pointer detection and cudaMemcpy fallback.
 if (DALOTIA_WITH_CUFILE)
+  # cuFile adds GPU Direct Storage (GDS)
   find_package(CUDAToolkit REQUIRED)
+  set(DALOTIA_WITH_CUDA ON)
+else()
+  find_package(CUDAToolkit QUIET)
+  if (CUDAToolkit_FOUND)
+    set(DALOTIA_WITH_CUDA ON)
+  endif()
 endif (DALOTIA_WITH_CUFILE)
 
 add_subdirectory(src) # target dalotia_cpp is generated here
