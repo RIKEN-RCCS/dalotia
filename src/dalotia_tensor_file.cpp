@@ -2,6 +2,7 @@
 
 #ifdef DALOTIA_WITH_CUDA
 #include <cuda_runtime.h>
+#include "dalotia_cuda_buffer.hpp"
 #include "dalotia_permute_gpu.cuh"
 #endif
 #ifdef DALOTIA_WITH_CUFILE
@@ -59,17 +60,12 @@ void TensorFile::load_tensor_dense(const std::string& tensor_name,
         size_t element_bytes = sizeof_weight_format(weightFormat);
         size_t nbytes = total_elements * element_bytes;
 
+        // If permutation needed, load into a temp buffer then permute.
+        CudaBuffer d_tmp;
         dalotia_byte* d_raw = tensor;
-        dalotia_byte* d_tmp = nullptr;
         if (needs_permute) {
-            cudaError_t alloc_err = cudaMallocAsync(&d_tmp, nbytes, stream);
-            if (alloc_err != cudaSuccess) {
-                throw std::runtime_error(
-                    std::string("load_tensor_dense: cudaMallocAsync for "
-                                "permutation temp buffer failed: ") +
-                    cudaGetErrorString(alloc_err));
-            }
-            d_raw = d_tmp;
+            d_tmp = CudaBuffer(nbytes, stream);
+            d_raw = d_tmp.as<dalotia_byte>();
         }
 
         bool loaded = false;
@@ -92,24 +88,20 @@ void TensorFile::load_tensor_dense(const std::string& tensor_name,
             cudaError_t err = cudaMemcpyAsync(d_raw, host_buf.data(), nbytes,
                                               cudaMemcpyHostToDevice, stream);
             if (err != cudaSuccess) {
-                if (d_tmp)
-                    cudaFreeAsync(d_tmp, stream);
                 throw std::runtime_error(
                     std::string("load_tensor_dense: cudaMemcpy failed: ") +
                     cudaGetErrorString(err));
             }
-            // Must synchronize before host_buf goes out of scope,
-            // since cudaMemcpyAsync reads from it asynchronously.
+            // Must synchronize before host_buf goes out of scope.
             cudaStreamSynchronize(stream);
         }
 
         if (needs_permute) {
-            permute_on_gpu(d_tmp, tensor, total_elements, element_bytes,
+            permute_on_gpu(d_raw, tensor, total_elements, element_bytes,
                            static_cast<int>(input_extents.size()),
                            input_extents, final_perm, stream);
-            // Synchronize before freeing the temp buffer.
+            // Synchronize before d_tmp is freed (RAII destructor).
             cudaStreamSynchronize(stream);
-            cudaFreeAsync(d_tmp, stream);
         }
         return;
     }
