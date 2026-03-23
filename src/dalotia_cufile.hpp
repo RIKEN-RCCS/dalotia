@@ -19,10 +19,6 @@ class CuFileDriver {
     [[nodiscard]] static bool is_open() noexcept;
 };
 
-// Returns true if `ptr` is a CUDA device pointer (cudaMalloc'd or managed).
-// Returns false for host pointers (including cudaMallocHost pinned memory).
-bool is_device_pointer(const void* ptr) noexcept;
-
 }  // namespace dalotia
 
 #endif  // DALOTIA_WITH_CUFILE
