@@ -57,8 +57,8 @@ jobs:
       with:
         cuda: '12.6.3'
         method: 'network'
-        sub-packages: '["nvcc", "cudart-dev", "cublas-dev", "cuda-driver-dev"]'
-        non-cuda-sub-packages: '["libcufile-dev"]'
+        sub-packages: '["nvcc", "cudart-dev"]'
+        non-cuda-sub-packages: '["libcufile-dev", "libcublas-dev"]'
 
     - name: Configure and Build with cuFile
       uses: threeal/cmake-action@v1.3.0
