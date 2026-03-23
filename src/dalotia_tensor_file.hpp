@@ -17,16 +17,10 @@
 #include "dalotia_datasource.hpp"
 
 #ifdef DALOTIA_WITH_CUDA
-#include <cuda_runtime.h>
+#include "dalotia_cuda.hpp"
 #endif
 
 namespace dalotia {
-
-#ifdef DALOTIA_WITH_CUDA
-// Returns true if `ptr` is a CUDA device pointer (cudaMalloc'd or managed).
-// Returns false for host pointers (including cudaMallocHost pinned memory).
-bool is_device_pointer(const void* ptr) noexcept;
-#endif  // DALOTIA_WITH_CUDA
 
 class TensorFile {
    public:

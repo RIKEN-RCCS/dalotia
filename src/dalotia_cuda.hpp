@@ -9,6 +9,10 @@
 
 namespace dalotia {
 
+// Returns true if `ptr` is a CUDA device pointer (cudaMalloc'd or managed).
+// Returns false for host pointers (including cudaMallocHost pinned memory).
+bool is_device_pointer(const void* ptr) noexcept;
+
 // RAII wrapper for a cudaMalloc'd device buffer. Move-only.
 // Type-erased (stores void*); use as<T>() for typed access.
 class CudaBuffer {
@@ -49,7 +53,6 @@ class CudaBuffer {
         }
     }
 
-    // Move
     CudaBuffer(CudaBuffer&& other) noexcept
         : ptr_(other.ptr_)
         , size_(other.size_)
@@ -77,7 +80,6 @@ class CudaBuffer {
         return *this;
     }
 
-    // No copy
     CudaBuffer(const CudaBuffer&) = delete;
     CudaBuffer& operator=(const CudaBuffer&) = delete;
 
@@ -85,6 +87,16 @@ class CudaBuffer {
     const void* data() const noexcept { return ptr_; }
     size_t size() const noexcept { return size_; }
     bool empty() const noexcept { return ptr_ == nullptr; }
+
+    template <typename T>
+    T* as() noexcept {
+        return static_cast<T*>(ptr_);
+    }
+
+    template <typename T>
+    const T* as() const noexcept {
+        return static_cast<const T*>(ptr_);
+    }
 
    private:
     void* ptr_ = nullptr;
