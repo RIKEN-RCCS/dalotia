@@ -16,6 +16,10 @@
 #include "dalotia_assignment.hpp"
 #include "dalotia_datasource.hpp"
 
+#ifdef DALOTIA_WITH_CUDA
+#include <cuda_runtime.h>
+#endif
+
 namespace dalotia {
 
 #ifdef DALOTIA_WITH_CUDA
@@ -84,7 +88,8 @@ class TensorFile {
                                std::multiplies<size_t>());
     }
 
-    [[nodiscard]] virtual size_t get_nnz(const std::string &/* tensor_name*/) const {
+    [[nodiscard]] virtual size_t get_nnz(
+        const std::string& /* tensor_name*/) const {
         // This function will read the file and return the number of non-zero
         // elements ? may take a while for dense tensors, only allow for sparse?
         throw std::runtime_error(
@@ -93,7 +98,8 @@ class TensorFile {
     }
 
     [[nodiscard]] virtual std::vector<int> get_sparse_tensor_extents(
-        const std::string &/*tensor_name*/, dalotia_SparseFormat /*format*/) const {
+        const std::string& /*tensor_name*/,
+        dalotia_SparseFormat /*format*/) const {
         // This function will (lazily) read the file and return the tensor
         // extents
         throw std::runtime_error(
@@ -105,7 +111,12 @@ class TensorFile {
                            dalotia_WeightFormat weightFormat,
                            dalotia_Ordering ordering,
                            dalotia_byte* __restrict__ tensor,
-                           const std::vector<int>& permutation = {});
+                           const std::vector<int>& permutation = {}
+#ifdef DALOTIA_WITH_CUDA
+                           ,
+                           cudaStream_t stream = 0
+#endif
+    );
 
     template <typename value_type = dalotia_byte>  //? or have no defaults?
     [[nodiscard]] std::pair<std::vector<int>, dalotia::vector<value_type>>

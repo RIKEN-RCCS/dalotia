@@ -211,6 +211,45 @@ void test_same_file_host_and_gpu() {
     std::cout << "OK" << std::endl;
 }
 
+void test_permuted_load_to_gpu() {
+    std::cout << "test_permuted_load_to_gpu... " << std::flush;
+
+    // The test model has "embedding_firstchanged" with shape [4,3,5].
+    // Permutation [1,0,2] gives shape [3,4,5] with values 0..59.
+    const char* perm_tensor = "embedding_firstchanged";
+    std::vector<int> perm = {1, 0, 2};
+
+    // Load with permutation on CPU as reference
+    auto file = std::unique_ptr<dalotia::TensorFile>(
+        dalotia::make_tensor_file(TEST_FILE));
+    auto [extents_ref, h_ref] = file->load_tensor_dense<double>(
+        perm_tensor, FORMAT, dalotia_C_ordering, perm);
+    assert(extents_ref == std::vector<int>({3, 4, 5}));
+    assert(h_ref.size() == NUM_ELEMENTS);
+    for (int i = 0; i < NUM_ELEMENTS; i++) {
+        assert(h_ref[i] == static_cast<double>(i));
+    }
+
+    // Now load with permutation directly to GPU
+    const size_t nbytes = NUM_ELEMENTS * sizeof(double);
+    double* d_tensor = nullptr;
+    CHECK_CUDA(cudaMalloc(&d_tensor, nbytes));
+
+    file->load_tensor_dense(perm_tensor, FORMAT, dalotia_C_ordering,
+                            reinterpret_cast<dalotia_byte*>(d_tensor), perm);
+
+    // Copy back and verify
+    std::vector<double> h_result(NUM_ELEMENTS);
+    CHECK_CUDA(
+        cudaMemcpy(h_result.data(), d_tensor, nbytes, cudaMemcpyDeviceToHost));
+    for (int i = 0; i < NUM_ELEMENTS; i++) {
+        assert(h_result[i] == h_ref[i]);
+    }
+
+    CHECK_CUDA(cudaFree(d_tensor));
+    std::cout << "OK" << std::endl;
+}
+
 int main() {
     test_is_device_pointer();
 #ifdef DALOTIA_WITH_CUFILE
@@ -222,6 +261,7 @@ int main() {
     test_load_to_gpu_with_driver();
 #endif
     test_same_file_host_and_gpu();
+    test_permuted_load_to_gpu();
     std::cout << "test_cufile succeeded" << std::endl;
     return 0;
 }

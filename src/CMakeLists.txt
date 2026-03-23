@@ -29,6 +29,8 @@ endif (DALOTIA_WITH_SAFETENSORS_CPP)
 if (DALOTIA_WITH_CUDA)
     target_link_libraries(dalotia_cpp PUBLIC CUDA::cudart)
     target_compile_definitions(dalotia_cpp PUBLIC "DALOTIA_WITH_CUDA")
+    target_sources(dalotia_cpp PRIVATE dalotia_permute_gpu.cu)
+    set_source_files_properties(dalotia_permute_gpu.cu PROPERTIES LANGUAGE CUDA)
 endif (DALOTIA_WITH_CUDA)
 
 if (DALOTIA_WITH_CUFILE)
