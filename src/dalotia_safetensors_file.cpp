@@ -81,10 +81,17 @@ SafetensorsFile::SafetensorsFile(const std::string& filename)
 #ifdef DALOTIA_WITH_CUFILE
     // Only attempt to open a GDS data source if the cuFile driver is active.
     if (CuFileDriver::is_open()) {
-        // base_offset = 8-byte length prefix + JSON header
-        const size_t base_offset = 8 + st_.header_size;
-        set_gpu_data_source(
-            std::make_unique<GDSDataSource>(filename, base_offset));
+        try {
+            const size_t base_offset = 8 + st_.header_size;
+            set_gpu_data_source(
+                std::make_unique<GDSDataSource>(filename, base_offset));
+        } catch (const std::exception& e) {
+            std::cerr << "dalotia: GDS unavailable for " << filename << " ("
+                      << e.what() << "), will use cudaMemcpy fallback\n";
+        } catch (...) {
+            std::cerr << "dalotia: GDS unavailable for " << filename
+                      << " (unknown error), will use cudaMemcpy fallback\n";
+        }
     }
 #endif
 }
