@@ -27,6 +27,6 @@ void permute_on_gpu(const void *d_src, void *d_dest, size_t total_elements,
                     const std::vector<int> &permutation,
                     cudaStream_t stream = 0);
 
-}  // namespace dalotia
+} // namespace dalotia
 
-#endif  // DALOTIA_WITH_CUDA
+#endif // DALOTIA_WITH_CUDA
