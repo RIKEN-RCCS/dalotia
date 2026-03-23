@@ -26,8 +26,13 @@ if (DALOTIA_WITH_SAFETENSORS_CPP)
     target_sources(dalotia_cpp PRIVATE dalotia_safetensors_file.cpp )
 endif (DALOTIA_WITH_SAFETENSORS_CPP)
 
+if (DALOTIA_WITH_CUDA)
+    target_link_libraries(dalotia_cpp PUBLIC CUDA::cudart)
+    target_compile_definitions(dalotia_cpp PUBLIC "DALOTIA_WITH_CUDA")
+endif (DALOTIA_WITH_CUDA)
+
 if (DALOTIA_WITH_CUFILE)
-    target_link_libraries(dalotia_cpp PUBLIC CUDA::cudart CUDA::cuda_driver)
+    target_link_libraries(dalotia_cpp PUBLIC CUDA::cuda_driver)
     find_library(CUFILE_LIBRARY cufile
         PATHS ${CUDAToolkit_LIBRARY_DIR}
         REQUIRED)

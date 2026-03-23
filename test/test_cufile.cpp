@@ -8,10 +8,12 @@
 #include <vector>
 
 #include <cuda_runtime.h>
+#ifdef DALOTIA_WITH_CUFILE
 #include <cufile.h>
+#include "dalotia_cufile.hpp"
+#endif
 
 #include "dalotia.hpp"
-#include "dalotia_cufile.hpp"
 #include "dalotia_safetensors_file.hpp"
 
 #define CHECK_CUDA(call)                                                 \
@@ -31,6 +33,7 @@ static const char* TENSOR_NAME = "embedding";
 static constexpr int NUM_ELEMENTS = 3 * 4 * 5;  // 60
 static constexpr dalotia_WeightFormat FORMAT = dalotia_float_64;
 
+#ifdef DALOTIA_WITH_CUFILE
 // Try to create a CuFileDriver. Returns nullptr if GDS is unavailable.
 static std::unique_ptr<dalotia::CuFileDriver> try_open_driver() {
     try {
@@ -40,6 +43,7 @@ static std::unique_ptr<dalotia::CuFileDriver> try_open_driver() {
         return nullptr;
     }
 }
+#endif  // DALOTIA_WITH_CUFILE
 
 void test_is_device_pointer() {
     std::cout << "test_is_device_pointer... " << std::flush;
@@ -61,6 +65,7 @@ void test_is_device_pointer() {
     std::cout << "OK" << std::endl;
 }
 
+#ifdef DALOTIA_WITH_CUFILE
 void test_external_driver_open() {
     std::cout << "test_external_driver_open... " << std::flush;
 
@@ -75,7 +80,6 @@ void test_external_driver_open() {
     auto file = std::unique_ptr<dalotia::TensorFile>(
         dalotia::make_tensor_file(TEST_FILE));
 
-    // Host load should still work
     auto [extents, tensor] = file->load_tensor_dense<double>(
         TENSOR_NAME, FORMAT, dalotia_C_ordering);
     for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -88,6 +92,7 @@ void test_external_driver_open() {
 
     std::cout << "OK" << std::endl;
 }
+#endif  // DALOTIA_WITH_CUFILE
 
 void test_host_pointer() {
     std::cout << "test_host_pointer... " << std::flush;
@@ -140,9 +145,8 @@ void test_load_to_gpu() {
     std::cout << "OK (via fallback)" << std::endl;
 }
 
+#ifdef DALOTIA_WITH_CUFILE
 void test_load_to_gpu_with_driver() {
-    // Same as test_load_to_gpu but with the GDS driver active.
-    // Uses GDS if available, otherwise falls back to cudaMemcpy.
     std::cout << "test_load_to_gpu_with_driver... " << std::flush;
 
     auto [extents_ref, tensor_ref] = dalotia::load_tensor_dense<double>(
@@ -170,6 +174,7 @@ void test_load_to_gpu_with_driver() {
     std::cout << "OK" << (driver ? " (GDS attempted)" : " (fallback)")
               << std::endl;
 }
+#endif  // DALOTIA_WITH_CUFILE
 
 void test_same_file_host_and_gpu() {
     // Load the same tensor from a single SafetensorsFile instance to both
@@ -208,10 +213,14 @@ void test_same_file_host_and_gpu() {
 
 int main() {
     test_is_device_pointer();
+#ifdef DALOTIA_WITH_CUFILE
     test_external_driver_open();
+#endif
     test_host_pointer();
     test_load_to_gpu();
+#ifdef DALOTIA_WITH_CUFILE
     test_load_to_gpu_with_driver();
+#endif
     test_same_file_host_and_gpu();
     std::cout << "test_cufile succeeded" << std::endl;
     return 0;
