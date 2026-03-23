@@ -9,13 +9,13 @@
 
 // application code
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     char filename[] = "data/model.safetensors";
     char tensor_name[] = "embedding_firstchanged";
-    DalotiaTensorFile *file = dalotia_open_file(filename);
+    DalotiaTensorFile* file = dalotia_open_file(filename);
     bool tensor_is_sparse =
         dalotia_is_sparse(file, tensor_name);  //...repeat later
-    char *tensor;
+    char* tensor;
     int permutation[3] = {0, 1, 2};
     constexpr dalotia_WeightFormat weightFormat =
         dalotia_WeightFormat::dalotia_float_64;
@@ -51,8 +51,8 @@ int main(int argc, char *argv[]) {
 
         // I want to store the tensor as a very long array
         // allocate memory for the tensor
-        tensor = (char *)malloc(dalotia::sizeof_weight_format<weightFormat>() *
-                                total_size);
+        tensor = (char*)malloc(dalotia::sizeof_weight_format<weightFormat>() *
+                               total_size);
 
         // load the tensor
 
@@ -86,10 +86,10 @@ int main(int argc, char *argv[]) {
         }
 
         // I want to store the tensor as compressed sparse row
-        char *values = reinterpret_cast<char *>(
+        char* values = reinterpret_cast<char*>(
             new float[sparse_extents[0]]);  // blah blah malloc...
-        int *first_indices = new int[sparse_extents[1]];
-        int *second_indices = new int[sparse_extents[2]];
+        int* first_indices = new int[sparse_extents[1]];
+        int* second_indices = new int[sparse_extents[2]];
         dalotia_load_tensor_sparse(file, tensor_name, values, first_indices,
                                    second_indices, format, weightFormat,
                                    ordering);
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 
     // print
     if (!tensor_is_sparse) {
-        double *tensor_double = reinterpret_cast<double *>(tensor);
+        double* tensor_double = reinterpret_cast<double*>(tensor);
         for (int i = 0; i < 256; i++) {
             std::cout << tensor_double[i] << " ";
         }
@@ -113,24 +113,28 @@ int main(int argc, char *argv[]) {
     // typed return values and permutations!
     auto vector_permutation = std::vector<int>{1, 2, 0};
 
-    auto file_cpp = std::unique_ptr<dalotia::TensorFile>(dalotia::make_tensor_file(filename));
-    auto [extents_file_obj, tensor_cpp_file_obj] = file_cpp->load_tensor_dense(tensor_name, weightFormat,
-                                                 ordering, vector_permutation);
-    
+    auto file_cpp = std::unique_ptr<dalotia::TensorFile>(
+        dalotia::make_tensor_file(filename));
+    auto [extents_file_obj, tensor_cpp_file_obj] = file_cpp->load_tensor_dense(
+        tensor_name, weightFormat, ordering, vector_permutation);
+
 #ifdef DALOTIA_WITH_SAFETENSORS_CPP
-    // if we create a derived file on the stack, we have less template magic available
+    // if we create a derived file on the stack, we have less template magic
+    // available
     auto stack_file = dalotia::SafetensorsFile(filename);
     // for instance, this will call the non-template overload and fail:
-    // auto [extents_safetensors, tensor_cpp_safetensors] = stack_file.load_tensor_dense(tensor_name, weightFormat,
-    //                                             ordering, vector_permutation);
+    // auto [extents_safetensors, tensor_cpp_safetensors] =
+    // stack_file.load_tensor_dense(tensor_name, weightFormat,
+    //                                             ordering,
+    //                                             vector_permutation);
     // but we can call the base-class' method directly
-    auto [extents_safetensors, tensor_cpp_safetensors] = 
+    auto [extents_safetensors, tensor_cpp_safetensors] =
         stack_file.dalotia::TensorFile::load_tensor_dense(
-                                        tensor_name, weightFormat,
-                                        ordering, vector_permutation);
+            tensor_name, weightFormat, ordering, vector_permutation);
 
     auto [extents_derived_float, tensor_cpp_derived_float] =
-        file_cpp->load_tensor_dense<float>(tensor_name, ordering, vector_permutation);
+        file_cpp->load_tensor_dense<float>(tensor_name, ordering,
+                                           vector_permutation);
 #endif
 
 #ifdef DALOTIA_WITH_CPP_PMR

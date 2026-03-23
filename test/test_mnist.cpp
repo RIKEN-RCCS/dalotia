@@ -28,7 +28,7 @@ void assert_close(float a, float b) {
 
 template <int dim>
 std::function<int(std::array<int, dim>)> get_tensor_indexer(
-    const std::array<int, dim> &extents) {
+    const std::array<int, dim>& extents) {
     std::array<int, dim> strides;
     // std::exclusive_scan(extents.rbegin(), extents.rend(), strides.rbegin(),
     // 1,
@@ -159,7 +159,7 @@ std::pair<dalotia::vector<float>, dalotia::vector<float>> test_load(
     return std::make_pair(tensor_weight_cpp, tensor_bias_cpp);
 }
 
-int main(int, char **) {
+int main(int, char**) {
     // the model used here is generated as in
     // https://medium.com/@myringoleMLGOD/simple-convolutional-neural-network-cnn-for-dummies-in-pytorch-a-step-by-step-guide-6f4109f6df80
     // (but trained for 100 epochs)

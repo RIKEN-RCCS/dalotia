@@ -47,12 +47,14 @@ class TensorFile {
         // fclose(this->file_);
     }
 
-    [[nodiscard]] virtual const std::vector<std::string> &get_tensor_names() const {
+    [[nodiscard]] virtual const std::vector<std::string>& get_tensor_names()
+        const {
         throw std::runtime_error(
             "get_tensor_names not implemented for this tensor type");
     }
 
-    [[nodiscard]] virtual bool is_sparse(const std::string &/*tensor_name*/) const {
+    [[nodiscard]] virtual bool is_sparse(
+        const std::string& /*tensor_name*/) const {
         throw std::runtime_error(
             "is_sparse not implemented for this tensor type");
         return false;
@@ -145,41 +147,46 @@ class TensorFile {
             if (dalotia::sizeof_weight_format(weight_format) !=
                 sizeof(value_type)) {
                 throw std::runtime_error(
-                    "load_tensor_dense: weight format size does not match value type size");
+                    "load_tensor_dense: weight format size does not match "
+                    "value type size");
             }
             tensor.resize(total_size);
         }
         this->load_tensor_dense(tensor_name, weight_format, ordering,
-            reinterpret_cast<dalotia_byte *>(tensor.data()), permutation);
+                                reinterpret_cast<dalotia_byte*>(tensor.data()),
+                                permutation);
         return std::make_pair(extents, tensor);
     }
 
     template <typename value_type>
     [[nodiscard]] std::pair<std::vector<int>, dalotia::vector<value_type>>
-    load_tensor_dense(const std::string &tensor_name,
+    load_tensor_dense(
+        const std::string& tensor_name,
         dalotia_Ordering ordering = dalotia_C_ordering,
         const std::vector<int>& permutation = {}
 #ifdef DALOTIA_WITH_CPP_PMR
         ,
-        const std::pmr::polymorphic_allocator<dalotia_byte> &allocator =
+        const std::pmr::polymorphic_allocator<dalotia_byte>& allocator =
             std::pmr::polymorphic_allocator<dalotia_byte>()
 #endif  // DALOTIA_WITH_CPP_PMR
     ) {
         // TODO is there an elegant way to map types to values?
         if constexpr (std::is_same_v<value_type, float>) {
             return this->load_tensor_dense<float>(tensor_name, dalotia_float_32,
-                ordering, permutation
+                                                  ordering, permutation
 #ifdef DALOTIA_WITH_CPP_PMR
-                , allocator
+                                                  ,
+                                                  allocator
 #endif  // DALOTIA_WITH_CPP_PMR
             );
         } else if constexpr (std::is_same_v<value_type, double>) {
-            return this->load_tensor_dense<double>(tensor_name, dalotia_float_64,
-                ordering, permutation
+            return this->load_tensor_dense<double>(
+                tensor_name, dalotia_float_64, ordering, permutation
 #ifdef DALOTIA_WITH_CPP_PMR
-                    , allocator
+                ,
+                allocator
 #endif  // DALOTIA_WITH_CPP_PMR
-                );
+            );
         } else {
             throw std::runtime_error(
                 "load_tensor_dense cannot derive the weight format \
@@ -270,16 +277,18 @@ class TensorFile {
 
 // helper function to output iterables
 template <typename Iterable>
-inline std::string to_string(const Iterable &iterable) {
+inline std::string to_string(const Iterable& iterable) {
     std::string result;
-    for (const auto &item : iterable) {
+    for (const auto& item : iterable) {
         if (!result.empty()) {
             result += ", ";
         }
-        if constexpr (std::is_same_v<std::decay_t<decltype(item)>, std::string>) {
+        if constexpr (std::is_same_v<std::decay_t<decltype(item)>,
+                                     std::string>) {
             result += item;  // for strings, just append
         } else {
-            result += std::to_string(item);  // for other types, convert to string
+            result +=
+                std::to_string(item);  // for other types, convert to string
         }
     }
     return result;

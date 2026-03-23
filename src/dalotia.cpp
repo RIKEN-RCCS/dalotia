@@ -12,7 +12,7 @@ using std::filesystem::is_directory;
 namespace dalotia {
 #include <sys/stat.h>
 
-bool is_directory(const char *path) {
+bool is_directory(const char* path) {
     struct stat st;
     if (stat(path, &st) == 0) {
         return S_ISDIR(st.st_mode);
@@ -20,8 +20,8 @@ bool is_directory(const char *path) {
     return false;
 }
 
-bool file_exists(const std::string &name) {
-    if (FILE *file = fopen(name.c_str(), "r")) {
+bool file_exists(const std::string& name) {
+    if (FILE* file = fopen(name.c_str(), "r")) {
         fclose(file);
         return true;
     } else {
@@ -38,7 +38,7 @@ namespace dalotia {
 
 // factory function for the file, selected by file extension and
 // available implementations
-TensorFile *make_tensor_file(const std::string &filename) {
+TensorFile* make_tensor_file(const std::string& filename) {
     // make sure the file exists
     if (!dalotia::file_exists(filename)) {
         throw std::runtime_error("dalotia make_tensor_file: File " + filename +
@@ -57,7 +57,8 @@ TensorFile *make_tensor_file(const std::string &filename) {
 #else   // DALOTIA_WITH_SAFETENSORS_CPP
         throw std::runtime_error("Safetensors support not enabled");
 #endif  // DALOTIA_WITH_SAFETENSORS_CPP
-    } else if (extension == "keras" || extension == "pb" || is_directory(filename.c_str())) {
+    } else if (extension == "keras" || extension == "pb" ||
+               is_directory(filename.c_str())) {
 #ifdef DALOTIA_WITH_TENSORFLOW
         return new TensorflowSavedModel(filename);
 #else   // DALOTIA_WITH_TENSORFLOW
@@ -69,10 +70,11 @@ TensorFile *make_tensor_file(const std::string &filename) {
     return nullptr;
 }
 
-
 // factory function for the file, selected by file extension and
 // available implementations
-TensorFile *load_tensor_file_from_memory(const void * const address, size_t num_bytes, const std::string &format) {
+TensorFile* load_tensor_file_from_memory(const void* const address,
+                                         size_t num_bytes,
+                                         const std::string& format) {
     auto& extension = format;
     // select the file implementation
     if (extension == "safetensors") {
@@ -89,40 +91,41 @@ TensorFile *load_tensor_file_from_memory(const void * const address, size_t num_
 
 }  // namespace dalotia
 
-DalotiaTensorFile *dalotia_open_file(const char *filename) {
-    return reinterpret_cast<DalotiaTensorFile *>(
+DalotiaTensorFile* dalotia_open_file(const char* filename) {
+    return reinterpret_cast<DalotiaTensorFile*>(
         dalotia::make_tensor_file(std::string(filename)));
 }
 
-DalotiaTensorFile *dalotia_load_file_from_memory(const void * const address, size_t num_bytes, const char *format) {
-    return reinterpret_cast<DalotiaTensorFile *>(
-        dalotia::load_tensor_file_from_memory(address, num_bytes, std::string(format)));
+DalotiaTensorFile* dalotia_load_file_from_memory(const void* const address,
+                                                 size_t num_bytes,
+                                                 const char* format) {
+    return reinterpret_cast<DalotiaTensorFile*>(
+        dalotia::load_tensor_file_from_memory(address, num_bytes,
+                                              std::string(format)));
 }
 
-
-void dalotia_close_file(DalotiaTensorFile *file) {
-    delete reinterpret_cast<dalotia::TensorFile *>(file);
+void dalotia_close_file(DalotiaTensorFile* file) {
+    delete reinterpret_cast<dalotia::TensorFile*>(file);
 }
 
 int dalotia_sizeof_weight_format(dalotia_WeightFormat format) {
     return dalotia::sizeof_weight_format(format);
 }
 
-bool dalotia_is_sparse(DalotiaTensorFile *file, const char *tensor_name) {
-    return reinterpret_cast<dalotia::TensorFile *>(file)->is_sparse(
-        tensor_name);
+bool dalotia_is_sparse(DalotiaTensorFile* file, const char* tensor_name) {
+    return reinterpret_cast<dalotia::TensorFile*>(file)->is_sparse(tensor_name);
 }
 
-int dalotia_get_num_tensors(DalotiaTensorFile *file) {
-    return static_cast<int>(reinterpret_cast<dalotia::TensorFile *>(file)
+int dalotia_get_num_tensors(DalotiaTensorFile* file) {
+    return static_cast<int>(reinterpret_cast<dalotia::TensorFile*>(file)
                                 ->get_tensor_names()
                                 .size());
 }
 
-int dalotia_get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
+int dalotia_get_tensor_name(DalotiaTensorFile* file, int index, char* name) {
     auto tensor_names =
-        reinterpret_cast<dalotia::TensorFile *>(file)->get_tensor_names();
-    const std::string &tensor_name = tensor_names.at(index);
+        reinterpret_cast<dalotia::TensorFile*>(file)->get_tensor_names();
+    const std::string& tensor_name = tensor_names.at(index);
     std::copy(tensor_name.begin(), tensor_name.end(), name);
     name[tensor_name.size()] = '\0';  // zero-terminate
     // return the length of the string
@@ -132,38 +135,38 @@ int dalotia_get_tensor_name(DalotiaTensorFile *file, int index, char *name) {
     return static_cast<int>(tensor_name.size());
 }
 
-int dalotia_get_num_dimensions(DalotiaTensorFile *file,
-                               const char *tensor_name) {
-    return reinterpret_cast<dalotia::TensorFile *>(file)->get_num_dimensions(
+int dalotia_get_num_dimensions(DalotiaTensorFile* file,
+                               const char* tensor_name) {
+    return reinterpret_cast<dalotia::TensorFile*>(file)->get_num_dimensions(
         tensor_name);
 }
 
-int dalotia_get_num_tensor_elements(DalotiaTensorFile *file,
-                                    const char *tensor_name) {
-    return reinterpret_cast<dalotia::TensorFile *>(file)
+int dalotia_get_num_tensor_elements(DalotiaTensorFile* file,
+                                    const char* tensor_name) {
+    return reinterpret_cast<dalotia::TensorFile*>(file)
         ->get_num_tensor_elements(tensor_name);
 }
 
-int dalotia_get_nnz(DalotiaTensorFile *file, const char *tensor_name) {
-    return reinterpret_cast<dalotia::TensorFile *>(file)->get_nnz(tensor_name);
+int dalotia_get_nnz(DalotiaTensorFile* file, const char* tensor_name) {
+    return reinterpret_cast<dalotia::TensorFile*>(file)->get_nnz(tensor_name);
 }
 
-int dalotia_get_tensor_extents(DalotiaTensorFile *file, const char *tensor_name,
-                               int *extents) {
-    auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
+int dalotia_get_tensor_extents(DalotiaTensorFile* file, const char* tensor_name,
+                               int* extents) {
+    auto dalotia_file = reinterpret_cast<dalotia::TensorFile*>(file);
     auto extents_vector = dalotia_file->get_tensor_extents(tensor_name);
     std::copy(extents_vector.begin(), extents_vector.end(), extents);
     return extents_vector.size();
 }
 
-int dalotia_get_sparse_tensor_extents(DalotiaTensorFile *file,
-                                      const char *tensor_name, int *extents,
+int dalotia_get_sparse_tensor_extents(DalotiaTensorFile* file,
+                                      const char* tensor_name, int* extents,
                                       dalotia_SparseFormat format) {
-    auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
+    auto dalotia_file = reinterpret_cast<dalotia::TensorFile*>(file);
     int num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
     if (format == dalotia_SparseFormat::dalotia_CSR) {
         auto read_extents = dalotia_file->get_sparse_tensor_extents(
-                tensor_name, dalotia_SparseFormat::dalotia_CSR);
+            tensor_name, dalotia_SparseFormat::dalotia_CSR);
         assert(static_cast<size_t>(read_extents[0]) ==
                dalotia_file->get_nnz(tensor_name));
         std::copy(read_extents.begin(), read_extents.end(), extents);
@@ -174,29 +177,29 @@ int dalotia_get_sparse_tensor_extents(DalotiaTensorFile *file,
     return num_dimensions;
 }
 
-int dalotia_load_tensor_dense(DalotiaTensorFile *file, const char *tensor_name,
-                              char *tensor, dalotia_WeightFormat format,
+int dalotia_load_tensor_dense(DalotiaTensorFile* file, const char* tensor_name,
+                              char* tensor, dalotia_WeightFormat format,
                               dalotia_Ordering ordering) {
-    auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
-    auto byte_tensor = reinterpret_cast<dalotia_byte *>(tensor);
+    auto dalotia_file = reinterpret_cast<dalotia::TensorFile*>(file);
+    auto byte_tensor = reinterpret_cast<dalotia_byte*>(tensor);
     try {
         dalotia_file->load_tensor_dense(tensor_name, format, ordering,
                                         byte_tensor);
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         std::cerr << "dalotia_load_tensor_dense: " << e.what() << std::endl;
         return -1;
     }
     return 0;
 }
 
-int dalotia_load_tensor_dense_with_permutation(DalotiaTensorFile *file,
-                                               const char *tensor_name,
-                                               char *tensor,
+int dalotia_load_tensor_dense_with_permutation(DalotiaTensorFile* file,
+                                               const char* tensor_name,
+                                               char* tensor,
                                                dalotia_WeightFormat format,
                                                dalotia_Ordering ordering,
-                                               const int *permutation) {
-    auto dalotia_file = reinterpret_cast<dalotia::TensorFile *>(file);
-    auto byte_tensor = reinterpret_cast<dalotia_byte *>(tensor);
+                                               const int* permutation) {
+    auto dalotia_file = reinterpret_cast<dalotia::TensorFile*>(file);
+    auto byte_tensor = reinterpret_cast<dalotia_byte*>(tensor);
     try {
         // copy permutation to vector
         auto num_dimensions = dalotia_file->get_num_dimensions(tensor_name);
@@ -205,7 +208,7 @@ int dalotia_load_tensor_dense_with_permutation(DalotiaTensorFile *file,
         dalotia_file->load_tensor_dense(tensor_name, format, ordering,
                                         byte_tensor, permutation_vector);
         return 0;
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         std::cerr << "dalotia_load_tensor_dense_with_permutation: " << e.what()
                   << std::endl;
         return -1;
@@ -214,17 +217,17 @@ int dalotia_load_tensor_dense_with_permutation(DalotiaTensorFile *file,
 
 // TODO with named tensors?
 
-int dalotia_load_tensor_sparse(DalotiaTensorFile *file, const char *tensor_name,
-                               char *values, int *first_indices,
-                               int *second_indices, dalotia_SparseFormat format,
+int dalotia_load_tensor_sparse(DalotiaTensorFile* file, const char* tensor_name,
+                               char* values, int* first_indices,
+                               int* second_indices, dalotia_SparseFormat format,
                                dalotia_WeightFormat weightFormat,
                                dalotia_Ordering ordering) {
-    auto byte_tensor = reinterpret_cast<dalotia_byte *>(values);
+    auto byte_tensor = reinterpret_cast<dalotia_byte*>(values);
     try {
         if (format == dalotia_SparseFormat::dalotia_CSR &&
             weightFormat == dalotia_WeightFormat::dalotia_float_32 &&
             ordering == dalotia_Ordering::dalotia_C_ordering) {
-            reinterpret_cast<dalotia::TensorFile *>(file)->load_tensor_sparse(
+            reinterpret_cast<dalotia::TensorFile*>(file)->load_tensor_sparse(
                 tensor_name, dalotia_SparseFormat::dalotia_CSR,
                 dalotia_WeightFormat::dalotia_float_32,
                 dalotia_Ordering::dalotia_C_ordering, byte_tensor,
@@ -233,7 +236,7 @@ int dalotia_load_tensor_sparse(DalotiaTensorFile *file, const char *tensor_name,
             throw std::runtime_error(
                 "dalotia_load_tensor_sparse: unsupported format combination");
         }
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         std::cerr << "dalotia_load_tensor_sparse: " << e.what() << std::endl;
         return -1;
     }

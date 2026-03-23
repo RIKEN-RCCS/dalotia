@@ -13,14 +13,15 @@
 namespace dalotia {
 
 std::vector<int> final_c_permutation_from_permutation_and_order(
-    const std::vector<int> &permutation, dalotia_Ordering ordering, size_t num_dimensions) {
+    const std::vector<int>& permutation, dalotia_Ordering ordering,
+    size_t num_dimensions) {
     std::vector<int> final_permutation_in_c_order;
     if (permutation.empty()) {
         if (ordering == dalotia_Ordering::dalotia_F_ordering) {
             final_permutation_in_c_order.resize(num_dimensions);
             // assign reverse iota
             std::iota(final_permutation_in_c_order.rbegin(),
-                        final_permutation_in_c_order.rend(), 0);
+                      final_permutation_in_c_order.rend(), 0);
         }  // else leave empty
     } else {
         // find out if the permutation ranges from 0 to d-1 or 1 to d
@@ -32,8 +33,8 @@ std::vector<int> final_c_permutation_from_permutation_and_order(
         } else if (*min == 1 && *max == static_cast<int>(num_dimensions)) {
             final_permutation_in_c_order.resize(num_dimensions);
             std::transform(permutation.begin(), permutation.end(),
-                            final_permutation_in_c_order.begin(),
-                            [](int x) { return x - 1; });
+                           final_permutation_in_c_order.begin(),
+                           [](int x) { return x - 1; });
         } else {
             throw std::runtime_error("Invalid permutation");
         }
@@ -71,8 +72,8 @@ std::vector<int> final_c_permutation_from_permutation_and_order(
     return final_permutation_in_c_order;
 }
 
-std::function<void(dalotia_byte *__restrict__,
-                   const dalotia_byte *__restrict__)>
+std::function<void(dalotia_byte* __restrict__,
+                   const dalotia_byte* __restrict__)>
 get_assignment_function(dalotia_WeightFormat weight_output_format,
                         dalotia_WeightFormat weight_input_format) {
     const size_t load_item_bytes =
@@ -83,8 +84,8 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
         // if they are the same, just assign them dalotia_byte by dalotia_byte
         assert(load_item_bytes == store_item_bytes);
         auto fcn = [load_item_bytes](
-                       dalotia_byte *__restrict__ output_bytes,
-                       const dalotia_byte *__restrict__ input_bytes) {
+                       dalotia_byte* __restrict__ output_bytes,
+                       const dalotia_byte* __restrict__ input_bytes) {
             for (size_t j = 0; j < load_item_bytes; ++j) {
                 output_bytes[j] = input_bytes[j];
             }
@@ -144,8 +145,8 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
             // bfloat-compatible, assign and add zeros at the end (?)
             assert(2 * load_item_bytes == store_item_bytes);
             auto fcn = [load_item_bytes](
-                           dalotia_byte *__restrict__ output_bytes,
-                           const dalotia_byte *__restrict__ input_bytes) {
+                           dalotia_byte* __restrict__ output_bytes,
+                           const dalotia_byte* __restrict__ input_bytes) {
                 for (size_t j = 0; j < load_item_bytes; ++j) {
                     output_bytes[j] = input_bytes[j];
                 }
@@ -161,8 +162,8 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
             // rest
             assert(load_item_bytes == 2 * store_item_bytes);
             auto fcn = [store_item_bytes](
-                           dalotia_byte *__restrict__ output_bytes,
-                           const dalotia_byte *__restrict__ input_bytes) {
+                           dalotia_byte* __restrict__ output_bytes,
+                           const dalotia_byte* __restrict__ input_bytes) {
                 for (size_t j = 0; j < store_item_bytes; ++j) {
                     output_bytes[j] = input_bytes[j];
                 }
@@ -175,10 +176,10 @@ get_assignment_function(dalotia_WeightFormat weight_output_format,
         "get_assignment_function: unsupported format combination");
 }
 
-void assign_linearly(dalotia_byte *__restrict__ dest,
+void assign_linearly(dalotia_byte* __restrict__ dest,
                      dalotia_WeightFormat weight_output_format,
                      size_t num_items,
-                     const dalotia_byte *const __restrict__ tensor_start,
+                     const dalotia_byte* const __restrict__ tensor_start,
                      dalotia_WeightFormat weight_input_format) {
     const size_t load_item_bytes =
         dalotia::sizeof_weight_format(weight_input_format);
@@ -195,31 +196,38 @@ void assign_linearly(dalotia_byte *__restrict__ dest,
 }
 
 template <>
-void assign_permuted<1>(dalotia_byte *__restrict__ dest,
+void assign_permuted<1>(dalotia_byte* __restrict__ dest,
                         dalotia_WeightFormat weight_output_format,
-                        const int *const input_shape,
-                        const dalotia_byte *__restrict__ tensor_start,
+                        const int* const input_shape,
+                        const dalotia_byte* __restrict__ tensor_start,
                         dalotia_WeightFormat weight_input_format,
-                        [[maybe_unused]] const int *permutation) {
+                        [[maybe_unused]] const int* permutation) {
     assert(permutation[0] == 0);
     assign_linearly(dest, weight_output_format, input_shape[0], tensor_start,
                     weight_input_format);
 }
 
 // Explicit instantiations for dimensions 2..8.
-template void assign_permuted<2>(dalotia_byte *, dalotia_WeightFormat,
-    const int *, const dalotia_byte *, dalotia_WeightFormat, const int *);
-template void assign_permuted<3>(dalotia_byte *, dalotia_WeightFormat,
-    const int *, const dalotia_byte *, dalotia_WeightFormat, const int *);
-template void assign_permuted<4>(dalotia_byte *, dalotia_WeightFormat,
-    const int *, const dalotia_byte *, dalotia_WeightFormat, const int *);
-template void assign_permuted<5>(dalotia_byte *, dalotia_WeightFormat,
-    const int *, const dalotia_byte *, dalotia_WeightFormat, const int *);
-template void assign_permuted<6>(dalotia_byte *, dalotia_WeightFormat,
-    const int *, const dalotia_byte *, dalotia_WeightFormat, const int *);
-template void assign_permuted<7>(dalotia_byte *, dalotia_WeightFormat,
-    const int *, const dalotia_byte *, dalotia_WeightFormat, const int *);
-template void assign_permuted<8>(dalotia_byte *, dalotia_WeightFormat,
-    const int *, const dalotia_byte *, dalotia_WeightFormat, const int *);
+template void assign_permuted<2>(dalotia_byte*, dalotia_WeightFormat,
+                                 const int*, const dalotia_byte*,
+                                 dalotia_WeightFormat, const int*);
+template void assign_permuted<3>(dalotia_byte*, dalotia_WeightFormat,
+                                 const int*, const dalotia_byte*,
+                                 dalotia_WeightFormat, const int*);
+template void assign_permuted<4>(dalotia_byte*, dalotia_WeightFormat,
+                                 const int*, const dalotia_byte*,
+                                 dalotia_WeightFormat, const int*);
+template void assign_permuted<5>(dalotia_byte*, dalotia_WeightFormat,
+                                 const int*, const dalotia_byte*,
+                                 dalotia_WeightFormat, const int*);
+template void assign_permuted<6>(dalotia_byte*, dalotia_WeightFormat,
+                                 const int*, const dalotia_byte*,
+                                 dalotia_WeightFormat, const int*);
+template void assign_permuted<7>(dalotia_byte*, dalotia_WeightFormat,
+                                 const int*, const dalotia_byte*,
+                                 dalotia_WeightFormat, const int*);
+template void assign_permuted<8>(dalotia_byte*, dalotia_WeightFormat,
+                                 const int*, const dalotia_byte*,
+                                 dalotia_WeightFormat, const int*);
 
 }  // namespace dalotia

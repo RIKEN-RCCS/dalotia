@@ -11,6 +11,9 @@ if (DALOTIA_WITH_FORTRAN)
     set_target_properties(dalotia_fortran PROPERTIES LINKER_LANGUAGE Fortran)
     target_link_libraries(dalotia_fortran INTERFACE dalotia_cpp)
     # target_link_libraries(dalotia INTERFACE dalotia_fortran)
+    target_include_directories(dalotia_fortran INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_Fortran_MODULE_DIRECTORY}>
+        $<INSTALL_INTERFACE:include>)
     set_target_properties(dalotia_fortran PROPERTIES PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/../include/dalotia_c_interface.mod")
     add_library(dalotia::dalotia_fortran ALIAS dalotia_fortran)
 endif (DALOTIA_WITH_FORTRAN)
