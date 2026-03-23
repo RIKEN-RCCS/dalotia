@@ -47,16 +47,19 @@ class SafetensorsFile : public TensorFile {
         const std::string &tensor_name = "",
         const std::vector<int>& permutation = {}) const override;
 
-    void load_tensor_dense(const std::string &tensor_name,
-                           dalotia_WeightFormat weightFormat,
-                           dalotia_Ordering ordering,
-                           dalotia_byte *__restrict__ tensor,
-                           const std::vector<int>& permutation = {}) override;
+    void load_tensor_dense_impl(const std::string &tensor_name,
+                                dalotia_WeightFormat weightFormat,
+                                dalotia_Ordering ordering,
+                                dalotia_byte *__restrict__ tensor,
+                                const std::vector<int>& permutation = {}) override;
     std::vector<const dalotia_byte*> get_mmap_tensor_pointers(
         const std::string &tensor_name) const override;
-    
+
     // cf. https://github.com/syoyo/safetensors-cpp/blob/main/safetensors.hh
     safetensors::safetensors_t st_;
+
+private:
+    void init_data_source();
 };
 
 }  // namespace dalotia

@@ -14,6 +14,7 @@
 
 #include "dalotia_formats.hpp"
 #include "dalotia_assignment.hpp"
+#include "dalotia_datasource.hpp"
 
 namespace dalotia {
 class TensorFile {
@@ -82,32 +83,27 @@ class TensorFile {
         return {};
     }
 
-    virtual void load_tensor_dense(const std::string &/*tensor_name */,
-                                   dalotia_WeightFormat /*weightFormat */,
-                                   dalotia_Ordering /* ordering */,
-                                   dalotia_byte *__restrict__ /*tensor */,
-                                   const std::vector<int>& /* permutation */ = {}) {
-        // This function will read the whole file and load the tensor,
-        // optionally transposing it according to the permutation
-        throw std::runtime_error(
-            "load_tensor_dense not implemented for this tensor type");
-    }
+    void load_tensor_dense(const std::string& tensor_name,
+                           dalotia_WeightFormat weightFormat,
+                           dalotia_Ordering ordering,
+                           dalotia_byte* __restrict__ tensor,
+                           const std::vector<int>& permutation = {});
 
     template <typename value_type = dalotia_byte>  //? or have no defaults?
     [[nodiscard]] std::pair<std::vector<int>, dalotia::vector<value_type>>
-    load_tensor_dense(const std::string &tensor_name,
-        dalotia_WeightFormat weight_format,
+    load_tensor_dense(
+        const std::string& tensor_name, dalotia_WeightFormat weight_format,
         dalotia_Ordering ordering = dalotia_C_ordering,
         const std::vector<int>& permutation = {}
 #ifdef DALOTIA_WITH_CPP_PMR
         ,
-        const std::pmr::polymorphic_allocator<dalotia_byte> &allocator =
+        const std::pmr::polymorphic_allocator<dalotia_byte>& allocator =
             std::pmr::polymorphic_allocator<dalotia_byte>()
 #endif  // DALOTIA_WITH_CPP_PMR
     ) {
         auto extents = this->get_tensor_extents(tensor_name, permutation);
-        auto total_size = std::accumulate(extents.begin(), extents.end(),
-                                          1, std::multiplies<size_t>());
+        auto total_size = std::accumulate(extents.begin(), extents.end(), 1,
+                                          std::multiplies<size_t>());
 #ifdef DALOTIA_WITH_CPP_PMR
         dalotia::vector<value_type> tensor(allocator);
 #else
@@ -160,24 +156,44 @@ class TensorFile {
                 "load_tensor_dense cannot derive the weight format \
                     from the value type");
         }
-
     }
 
-    virtual void load_tensor_sparse(const std::string &/*tensor_name */,
+    virtual void load_tensor_sparse(const std::string& /*tensor_name */,
                                     dalotia_SparseFormat /*sparseFormat */,
                                     dalotia_WeightFormat /* weightFormat*/,
                                     dalotia_Ordering /* ordering */,
-                                    dalotia_byte *__restrict__ /*values*/,
-                                    int *__restrict__ /* first_indices*/,
-                                    int *__restrict__ /* second_indices*/) {
+                                    dalotia_byte* __restrict__ /*values*/,
+                                    int* __restrict__ /* first_indices*/,
+                                    int* __restrict__ /* second_indices*/) {
         // This function will read the whole file and load the tensor into the
         // three arrays
         throw std::runtime_error(
             "load_tensor_sparse not implemented for this tensor type");
     }
 
+    // Set the host data source. Subclasses call this in their constructor
+    // to provide host-accessible access to the file's data section.
+    void set_data_source(std::unique_ptr<DataSource> source) {
+        data_source_ = std::move(source);
+    }
+
+    DataSource* data_source() const noexcept { return data_source_.get(); }
+
+    // Format-specific host loading. Subclasses override this to implement
+    // the actual tensor reading with format conversion and permutation.
+    virtual void load_tensor_dense_impl(
+        const std::string& /*tensor_name*/,
+        dalotia_WeightFormat /*weightFormat*/, dalotia_Ordering /*ordering*/,
+        dalotia_byte* __restrict__ /*tensor*/,
+        const std::vector<int>& /*permutation*/) {
+        throw std::runtime_error(
+            "load_tensor_dense not implemented for this tensor type");
+    }
+
+    std::unique_ptr<DataSource> data_source_;
+
     virtual std::vector<const dalotia_byte*> get_mmap_tensor_pointers(
-        const std::string &/*tensor_name*/) const {
+        const std::string& /*tensor_name*/) const {
         // This function will return the pointer(s) to the mmaped tensor
         // (single for a dense, potentially multiple for a sparse tensor);
         // empty if not implemented or not available (e.g. if not mmapped)
