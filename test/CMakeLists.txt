@@ -1,5 +1,3 @@
-list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
-
 # cf. https://stackoverflow.com/questions/52730994/how-to-pass-arguments-to-memcheck-with-ctest
 set(MEMORYCHECK_COMMAND_OPTIONS
     "--gen-suppressions=all --suppressions=${CMAKE_CURRENT_SOURCE_DIR}/tensorflow.supp --leak-check=full"

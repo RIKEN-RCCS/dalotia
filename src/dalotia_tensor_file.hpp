@@ -16,13 +16,11 @@
 #include "dalotia_assignment.hpp"
 #include "dalotia_datasource.hpp"
 
-namespace dalotia {
-
 #ifdef DALOTIA_WITH_CUDA
-// Returns true if `ptr` is a CUDA device pointer (cudaMalloc'd or managed).
-// Returns false for host pointers (including cudaMallocHost pinned memory).
-bool is_device_pointer(const void* ptr) noexcept;
-#endif  // DALOTIA_WITH_CUDA
+#include "dalotia_cuda.hpp"
+#endif
+
+namespace dalotia {
 
 class TensorFile {
    public:
@@ -109,7 +107,12 @@ class TensorFile {
                            dalotia_WeightFormat weightFormat,
                            dalotia_Ordering ordering,
                            dalotia_byte* __restrict__ tensor,
-                           const std::vector<int>& permutation = {});
+                           const std::vector<int>& permutation = {}
+#ifdef DALOTIA_WITH_CUDA
+                           ,
+                           cudaStream_t stream = 0
+#endif
+    );
 
     template <typename value_type = dalotia_byte>  //? or have no defaults?
     [[nodiscard]] std::pair<std::vector<int>, dalotia::vector<value_type>>

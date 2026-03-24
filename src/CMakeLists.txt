@@ -1,7 +1,7 @@
 add_library(dalotia_cpp dalotia.cpp) # Daniel Pfeifer says: no variables
 target_sources(dalotia_cpp PRIVATE dalotia_assignment.cpp dalotia_formats.cpp dalotia_datasource.cpp dalotia_tensor_file.cpp)
 set_target_properties(dalotia_cpp PROPERTIES PUBLIC_HEADER
-	"dalotia.h;dalotia_formats.h;dalotia.hpp;dalotia_formats.hpp;dalotia_assignment.hpp;dalotia_datasource.hpp;dalotia_tensor_file.hpp;dalotia_safetensors_file.hpp;dalotia_tensorflow_file.hpp;dalotia_cufile.hpp")
+	"dalotia.h;dalotia_formats.h;dalotia.hpp;dalotia_formats.hpp;dalotia_assignment.hpp;dalotia_datasource.hpp;dalotia_tensor_file.hpp;dalotia_safetensors_file.hpp;dalotia_tensorflow_file.hpp;dalotia_cufile.hpp;dalotia_cuda.hpp")
 # have one dalotia library target that can be used in C++ and Fortran
 add_library(dalotia INTERFACE)
 add_library(dalotia::dalotia_cpp ALIAS dalotia_cpp)
@@ -32,6 +32,8 @@ endif (DALOTIA_WITH_SAFETENSORS_CPP)
 if (DALOTIA_WITH_CUDA)
     target_link_libraries(dalotia_cpp PUBLIC CUDA::cudart)
     target_compile_definitions(dalotia_cpp PUBLIC "DALOTIA_WITH_CUDA")
+    target_sources(dalotia_cpp PRIVATE dalotia_cuda.cpp dalotia_permute_gpu.cu)
+    set_source_files_properties(dalotia_permute_gpu.cu PROPERTIES LANGUAGE CUDA)
 endif (DALOTIA_WITH_CUDA)
 
 if (DALOTIA_WITH_CUFILE)
