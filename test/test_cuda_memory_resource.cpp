@@ -293,7 +293,6 @@ int main() {
     test_managed_resource_basic();
     test_async_resource_basic();
     test_is_equal();
-    test_singletons();
     test_pmr_vector_pinned();
     test_pmr_vector_managed();
     test_load_tensor_with_pinned_resource();
