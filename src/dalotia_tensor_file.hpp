@@ -149,7 +149,7 @@ class TensorFile {
         this->load_tensor_dense(tensor_name, weight_format, ordering,
                                 reinterpret_cast<dalotia_byte*>(tensor.data()),
                                 permutation);
-        return std::make_pair(extents, tensor);
+        return {std::move(extents), std::move(tensor)};
     }
 
     template <typename value_type>

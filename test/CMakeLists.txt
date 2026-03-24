@@ -42,6 +42,12 @@ if (DALOTIA_WITH_CUDA)
         target_link_libraries( test_cufile CUDA::cuda_driver )
     endif()
     add_test( cufile-pointer-detection test_cufile )
+
+    if (DALOTIA_WITH_CPP_PMR)
+        add_executable( test_cuda_memory_resource test_cuda_memory_resource.cpp )
+        target_link_libraries( test_cuda_memory_resource dalotia_cpp CUDA::cudart )
+        add_test( cuda-memory-resource test_cuda_memory_resource )
+    endif (DALOTIA_WITH_CPP_PMR)
 endif (DALOTIA_WITH_CUDA)
 
 if (DALOTIA_WITH_TENSORFLOW)
