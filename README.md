@@ -3,6 +3,9 @@
 ![CTest CI Badge](https://github.com/RIKEN-RCCS/dalotia/actions/workflows/ctest.yml/badge.svg)
 ![Spack install CI Badge](https://github.com/RIKEN-RCCS/dalotia/actions/workflows/spack.yml/badge.svg)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/0942860ff0a34d41b07efdb89fd6e154)](https://app.codacy.com/gh/RIKEN-RCCS/dalotia/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+![C++ 17](https://img.shields.io/badge/C++-17-blue.svg)
+
 
 ## Features
 
