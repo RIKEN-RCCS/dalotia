@@ -79,8 +79,8 @@ jobs:
         options: DALOTIA_WITH_CUFILE=ON DALOTIA_BUILD_TESTS=ON DALOTIA_WITH_FORTRAN=OFF
         build-dir: build-cuda
 
-    - name: Run non-GPU tests
+    - name: Run tests
       uses: threeal/ctest-action@v1.1.0
       with:
         test-dir: build-cuda
-        args: --output-on-failure --exclude-regex cufile-pointer-detection
+        args: --verbose --exclude-regex cufile-pointer-detection
