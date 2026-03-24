@@ -19,7 +19,7 @@ namespace detail {
 
 }  // namespace detail
 
-//TODO if there is a good library to take these from, we should consider it
+// TODO if there is a good library to take these from, we should consider it
 
 class cuda_device_memory_resource : public std::pmr::memory_resource {
    protected:
@@ -97,9 +97,9 @@ class cuda_managed_memory_resource : public std::pmr::memory_resource {
 };
 
 class cuda_async_memory_resource : public std::pmr::memory_resource {
-// The stream is fixed at construction; all allocations and deallocations are
-// ordered on that stream.  The resource must outlive any container using it,
-// and the stream must remain valid for that lifetime.
+    // The stream is fixed at construction; all allocations and deallocations
+    // are ordered on that stream.  The resource must outlive any container
+    // using it, and the stream must remain valid for that lifetime.
    public:
     explicit cuda_async_memory_resource(cudaStream_t stream)
         : stream_(stream) {}
