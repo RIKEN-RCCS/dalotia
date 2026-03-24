@@ -1,4 +1,4 @@
-list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose")
 
 # cf. https://stackoverflow.com/questions/52730994/how-to-pass-arguments-to-memcheck-with-ctest
 set(MEMORYCHECK_COMMAND_OPTIONS
