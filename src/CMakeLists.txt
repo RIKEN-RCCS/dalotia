@@ -41,7 +41,19 @@ if (DALOTIA_WITH_CUFILE)
     find_library(CUFILE_LIBRARY cufile
         PATHS ${CUDAToolkit_LIBRARY_DIR}
         REQUIRED)
+    get_filename_component(_CUFILE_LIB_DIR "${CUFILE_LIBRARY}" DIRECTORY)
+    find_path(CUFILE_INCLUDE_DIR cufile.h
+        HINTS ${_CUFILE_LIB_DIR}/../include
+              ${_CUFILE_LIB_DIR}/../../include
+              ${CUDAToolkit_INCLUDE_DIRS}
+        PATHS /usr/local/cuda/include
+              /usr/include)
     target_link_libraries(dalotia_cpp PUBLIC ${CUFILE_LIBRARY})
+    if (CUFILE_INCLUDE_DIR)
+        target_include_directories(dalotia_cpp PUBLIC ${CUFILE_INCLUDE_DIR})
+    else()
+        message(WARNING "cufile.h not found — set CUFILE_INCLUDE_DIR manually")
+    endif()
     target_compile_definitions(dalotia_cpp PUBLIC "DALOTIA_WITH_CUFILE")
     target_sources(dalotia_cpp PRIVATE dalotia_cufile.cpp)
 endif (DALOTIA_WITH_CUFILE)
