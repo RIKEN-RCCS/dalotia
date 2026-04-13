@@ -44,10 +44,11 @@ void TensorFile::load_tensor_dense(const std::string& tensor_name,
         size_t nbytes = total_elements * element_bytes;
 
         // If permutation needed, load into a temp buffer then permute.
+        cuda_async_memory_resource async_mr(stream);
         CudaBuffer d_tmp;
         dalotia_byte* d_raw = tensor;
         if (needs_permute) {
-            d_tmp = CudaBuffer(nbytes, stream);
+            d_tmp = CudaBuffer(nbytes, &async_mr);
             d_raw = d_tmp.as<dalotia_byte>();
         }
 
