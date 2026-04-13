@@ -1,7 +1,7 @@
 add_library(dalotia_cpp dalotia.cpp) # Daniel Pfeifer says: no variables
 target_sources(dalotia_cpp PRIVATE dalotia_assignment.cpp dalotia_formats.cpp dalotia_datasource.cpp dalotia_tensor_file.cpp)
 set_target_properties(dalotia_cpp PROPERTIES PUBLIC_HEADER
-	"dalotia.h;dalotia_formats.h;dalotia.hpp;dalotia_formats.hpp;dalotia_assignment.hpp;dalotia_datasource.hpp;dalotia_tensor_file.hpp;dalotia_safetensors_file.hpp;dalotia_tensorflow_file.hpp;dalotia_cufile.hpp;dalotia_cuda.hpp")
+	"dalotia.h;dalotia_formats.h;dalotia.hpp;dalotia_formats.hpp;dalotia_assignment.hpp;dalotia_datasource.hpp;dalotia_tensor_file.hpp;dalotia_safetensors_file.hpp;dalotia_tensorflow_file.hpp;dalotia_cufile.hpp;dalotia_cuda.hpp;dalotia_cuda_memory_resource.hpp")
 # have one dalotia library target that can be used in C++ and Fortran
 add_library(dalotia INTERFACE)
 add_library(dalotia::dalotia_cpp ALIAS dalotia_cpp)
@@ -41,7 +41,19 @@ if (DALOTIA_WITH_CUFILE)
     find_library(CUFILE_LIBRARY cufile
         PATHS ${CUDAToolkit_LIBRARY_DIR}
         REQUIRED)
+    get_filename_component(_CUFILE_LIB_DIR "${CUFILE_LIBRARY}" DIRECTORY)
+    find_path(CUFILE_INCLUDE_DIR cufile.h
+        HINTS ${_CUFILE_LIB_DIR}/../include
+              ${_CUFILE_LIB_DIR}/../../include
+              ${CUDAToolkit_INCLUDE_DIRS}
+        PATHS /usr/local/cuda/include
+              /usr/include)
     target_link_libraries(dalotia_cpp PUBLIC ${CUFILE_LIBRARY})
+    if (CUFILE_INCLUDE_DIR)
+        target_include_directories(dalotia_cpp PUBLIC ${CUFILE_INCLUDE_DIR})
+    else()
+        message(WARNING "cufile.h not found — set CUFILE_INCLUDE_DIR manually")
+    endif()
     target_compile_definitions(dalotia_cpp PUBLIC "DALOTIA_WITH_CUFILE")
     target_sources(dalotia_cpp PRIVATE dalotia_cufile.cpp)
 endif (DALOTIA_WITH_CUFILE)

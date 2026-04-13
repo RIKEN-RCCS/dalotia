@@ -6,6 +6,9 @@
 #include <memory>
 #ifdef DALOTIA_WITH_CPP_PMR
 #include <memory_resource>
+#ifdef DALOTIA_WITH_CUDA
+#include "dalotia_cuda_memory_resource.hpp"
+#endif  // DALOTIA_WITH_CUDA
 #endif  // DALOTIA_WITH_CPP_PMR
 #include <numeric>
 #include <string>
